@@ -1,0 +1,15 @@
+# Project-specific Cargo configuration file
+
+# Specify settings for Linux target
+[target.x86_64-unknown-linux-musl]
+rustflags = [
+    "-C",
+    "target-feature=+crt-static", # Ensures that the C runtime is statically linked
+]
+
+[target.x86_64-pc-windows-gnu]
+rustflags = ["-C", "target-feature=+crt-static"]
+
+# Optional: Specify default build target if desired
+[build]
+target = "x86_64-unknown-linux-musl" # Change to your preferred default target
