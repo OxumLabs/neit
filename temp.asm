@@ -6,9 +6,8 @@ _start:
     mov rdi, 0          ; status code 0
     syscall             ; invoke syscall
 
-say:
-    ; String argument (text) in rdi
+global aa:
     ret
 
-sayy:
+a:
     ret

@@ -1,2 +1,0 @@
-pub fn say(txt:string){}
-pub fn sayy(){}

@@ -21,8 +21,12 @@ pub fn genasm(tokens: Vec<Tokens>) -> String {
                 // Handle function definitions
                 let mut func_code = String::new();
 
-                // Define the function label
-                func_code.push_str(&format!("\n{}:\n", func.name));
+                // Define the function
+                if !func.is_global {
+                    func_code.push_str(&format!("\n{}:\n", func.name));
+                } else {
+                    func_code.push_str(&format!("\nglobal {}:\n", func.name));
+                }
 
                 // Setup for handling function arguments
                 for (i, arg) in func.args.iter().enumerate() {
