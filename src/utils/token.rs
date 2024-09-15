@@ -1,4 +1,7 @@
-use super::{tokens::func::process_func, types::Tokens};
+use super::{
+    tokens::func::process_func,
+    types::{Args, Tokens},
+};
 
 #[allow(unused, irrefutable_let_patterns)]
 pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
@@ -8,7 +11,7 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
     let mut function_body = Vec::new();
     let mut brace_depth = 0;
 
-    for ln in code.clone() {
+    for ln in code {
         index += 1;
 
         if ln.is_empty() {
@@ -18,7 +21,9 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
         if (ln.trim().starts_with("pub fn") || ln.trim().starts_with("fn ")) && !ln.ends_with("}") {
             if in_function {
                 return Err(format!(
-                    "Error at line {}: Unexpected function definition while inside another function.\nHint: Close the current function before starting a new one.\nCode:\n   => {}",
+                    "Error at line {}: Unexpected function definition while inside another function.\n\
+                    Hint: Close the current function before starting a new one.\n\
+                    Code:\n   => {}",
                     index, ln
                 ));
             }
@@ -48,7 +53,9 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
                             .any(|tkn| matches!(tkn, Tokens::Func(f) if f.name == func.name))
                         {
                             return Err(format!(
-                                "Error at line {}: Function '{}' is already declared.\nHint: Ensure each function has a unique name.\nCode:\n   => {}",
+                                "Error at line {}: Function '{}' is already declared.\n\
+                                Hint: Ensure each function has a unique name.\n\
+                                Code:\n   => {}",
                                 index, func.name, full_function_code
                             ));
                         }
@@ -65,19 +72,97 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
                 Err(e) => return Err(e),
             }
         } else {
-            let mut fe = false;
-            return Err(format!(
-                "Error at line {}: Invalid code format.\nHint: Ensure function declarations and other statements are properly formatted.\nCode:\n   => {}",
-                index, ln
-            ));
+            let args: Vec<&str> = ln.trim().split('(').collect();
+            let mut found_function = false;
+
+            if args.len() == 2 {
+                let (nm, args_str) = (
+                    args.first().unwrap(),
+                    args.get(1).unwrap().trim_end_matches(')'),
+                );
+
+                // Remove any empty arguments
+                let provided_args: Vec<&str> = args_str
+                    .split(',')
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
+                    .collect();
+
+                println!("provided args str : {:?}", provided_args);
+
+                if let Some(Tokens::Func(f)) = tokens
+                    .iter()
+                    .find(|tkn| matches!(tkn, Tokens::Func(f) if f.name == *nm))
+                {
+                    let expected_args: Vec<Args> = f.args.clone();
+
+                    if provided_args.len() != expected_args.len() {
+                        println!(
+                            "provided args : {:?}\n\nexpected args : {:?}",
+                            provided_args, expected_args
+                        );
+                        return Err(format!(
+                            "Error at line {}: Function '{}' called with incorrect number of arguments.\n\
+                            Hint: Expected {} arguments but got {}.\n\
+                            Code:\n   => {}",
+                            index, nm, expected_args.len(), provided_args.len(), ln
+                        ));
+                    }
+
+                    for (provided, expected) in provided_args.iter().zip(expected_args.iter()) {
+                        let provided_type = match determine_type(provided) {
+                            Ok(t) => t,
+                            Err(e) => {
+                                return Err(format!(
+                                    "Error at line {}: Argument '{}' could not be parsed. {}\n\
+                                    Hint: Ensure arguments are of correct type.\n\
+                                    Code:\n   => {}",
+                                    index, provided, e, ln
+                                ));
+                            }
+                        };
+
+                        let expected_type = match expected {
+                            Args::Str(_) => "string",
+                            Args::Int(_) => "int",
+                            Args::Float(_) => "float",
+                            _ => "unknown",
+                        };
+
+                        if provided_type != expected_type {
+                            return Err(format!(
+                                "Error at line {}: Argument type mismatch in function call '{}'.\n\
+                                Hint: Expected argument type '{}' but got '{}'.\n\
+                                Code:\n   => {}",
+                                index, nm, expected_type, provided_type, ln
+                            ));
+                        }
+                    }
+
+                    tokens.push(Tokens::FnCall(nm.to_string()));
+                    found_function = true;
+                }
+            }
+
+            if !found_function {
+                return Err(format!(
+                    "Error at line {}: Invalid function call or unmatched function name.\n\
+                    Hint: Ensure function calls match declared function names.\n\
+                    Code:\n   => {}",
+                    index, ln
+                ));
+            }
         }
     }
 
     if in_function {
         if brace_depth > 0 {
             return Err(format!(
-                "Error: Unbalanced braces. Function starting at line {} is not closed.\nHint: Check if all opening braces have matching closing braces.\nCode:\n   => {}",
-                index, function_body.join("\n")
+                "Error: Unbalanced braces. Function starting at line {} is not closed.\n\
+                Hint: Check if all opening braces have matching closing braces.\n\
+                Code:\n   => {}",
+                index,
+                function_body.join("\n")
             ));
         }
         let full_function_code = function_body.join("\n");
@@ -90,5 +175,21 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
         }
     } else {
         Ok(tokens)
+    }
+}
+
+fn determine_type(arg: &str) -> Result<&'static str, String> {
+    let trimmed = arg.trim();
+
+    if trimmed.starts_with('"') && trimmed.ends_with('"') {
+        Ok("string")
+    } else if trimmed.starts_with('\'') && trimmed.ends_with('\'') {
+        Ok("string")
+    } else if trimmed.parse::<i32>().is_ok() {
+        Ok("int")
+    } else if trimmed.parse::<f64>().is_ok() {
+        Ok("float")
+    } else {
+        Err(format!("Could not determine type for argument: {}", arg))
     }
 }
