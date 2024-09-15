@@ -11,7 +11,7 @@ pub fn compile_linux(asm: &String) {
             Ok(_) => {
                 // Assemble the file
                 let status = Command::new("nasm")
-                    .arg("-f elf64") // Specify 64-bit ELF format
+                    .args(["-f", "elf64"]) // Specify 64-bit ELF format
                     .arg("-o")
                     .arg("temp.o")
                     .arg("temp.asm")

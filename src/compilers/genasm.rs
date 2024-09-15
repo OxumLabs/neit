@@ -68,6 +68,7 @@ pub fn genasm(tokens: Vec<Tokens>) -> String {
                 // Add the function code to the funcs section
                 funcs.push_str(&func_code);
             }
+            Tokens::FnCall(_nm) => {}
         }
     }
 

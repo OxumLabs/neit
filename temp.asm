@@ -6,8 +6,11 @@ _start:
     mov rdi, 0          ; status code 0
     syscall             ; invoke syscall
 
-global aa:
+main:
     ret
 
-a:
+global say:
+    ret
+
+hi:
     ret

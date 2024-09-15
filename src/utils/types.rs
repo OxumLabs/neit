@@ -1,9 +1,11 @@
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+
 pub enum Tokens {
     Func(FN),
+    FnCall(String), /*  String -> name of function */
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 
 pub struct FN {
     pub name: String,
@@ -14,7 +16,7 @@ pub struct FN {
 }
 
 #[allow(unused)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 
 pub enum Args /* type(name_of_arg)*/ {
     Str(String),

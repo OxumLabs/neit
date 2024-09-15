@@ -1,0 +1,6 @@
+fn main(){}
+pub fn say(){}
+fn hi(){
+
+}
+hi()
