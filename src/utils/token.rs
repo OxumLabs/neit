@@ -27,6 +27,9 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
                 Err(e) => return Err(e),
             }
         }
+        else if ln.is_empty(){
+            continue;
+        }
         /* Add more */
         else {
             return Err(format!(
