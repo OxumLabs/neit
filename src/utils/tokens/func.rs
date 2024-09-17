@@ -1,7 +1,10 @@
-use crate::utils::types::{Args, Tokens, FN};
+use crate::utils::{
+    ftokens::parse_single_line,
+    types::{Args, Tokens, FN},
+};
 
 #[allow(unused)]
-pub fn process_func(ln: &str, index: usize) -> Result<FN, String> {
+pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, String> {
     let mut functions = FN::new("_NAME_".to_string(), false, Vec::new(), Vec::new());
     let mut inf = false;
     let mut fnbody: Vec<Tokens> = Vec::new();
@@ -195,7 +198,18 @@ pub fn process_func(ln: &str, index: usize) -> Result<FN, String> {
                 functions.code = fnbody.clone();
                 inf = false; // Ensure that `inf` is reset after closing brace.
             } else {
-                //add code to function body
+                let ptkn = parse_single_line(ln.trim(), index, p_label);
+                match ptkn {
+                    Ok(tkn) => {
+                        println!("tkn : {:?}", tkn);
+                        functions.code.push(tkn.clone());
+                        fnbody.push(tkn);
+                    }
+                    Err(e) => match e.as_str() {
+                        "|_EMP_|" => continue,
+                        _ => return Err(e),
+                    },
+                }
             }
         } else if ln.is_empty() {
             return Err(format!(
@@ -213,6 +227,6 @@ pub fn process_func(ln: &str, index: usize) -> Result<FN, String> {
     if inf {
         return Err("Error: File ended with an open function body.\nHint: Ensure that all opened functions are properly closed with '}'.".to_string());
     }
-
+    println!("function : {:?}", functions);
     Ok(functions)
 }

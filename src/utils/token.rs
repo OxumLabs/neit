@@ -1,5 +1,5 @@
 use super::{
-    tokens::func::process_func,
+    tokens::{func::process_func, print::process_print},
     types::{Args, Tokens},
 };
 
@@ -10,6 +10,8 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
     let mut in_function = false;
     let mut function_body = Vec::new();
     let mut brace_depth = 0;
+    let mut p_label = 0;
+    let mut fp_label = 364;
 
     for ln in code {
         index += 1;
@@ -46,7 +48,7 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
 
             if brace_depth == 0 {
                 let full_function_code = function_body.join("\n");
-                match process_func(&full_function_code, index) {
+                match process_func(&full_function_code, index, &mut fp_label) {
                     Ok(func) => {
                         if tokens
                             .iter()
@@ -67,10 +69,14 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
                 }
             }
         } else if (ln.starts_with("fn ") || ln.starts_with("pub fn ")) && ln.ends_with("{}") {
-            match process_func(ln, index) {
+            match process_func(ln, index, &mut fp_label) {
                 Ok(f) => tokens.push(Tokens::Func(f)),
                 Err(e) => return Err(e),
             }
+        } else if ln.starts_with("_WRT(") && ln.ends_with(")") {
+            let txt = ln[5..].trim_end_matches(")");
+            let ptxt = process_print(&mut p_label, txt);
+            tokens.push(ptxt);
         } else {
             let args: Vec<&str> = ln.trim().split('(').collect();
             let mut found_function = false;
@@ -166,7 +172,7 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
             ));
         }
         let full_function_code = function_body.join("\n");
-        match process_func(&full_function_code, index) {
+        match process_func(&full_function_code, index, &mut fp_label) {
             Ok(func) => {
                 tokens.push(Tokens::Func(func));
                 Ok(tokens)

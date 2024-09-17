@@ -2,7 +2,8 @@
 
 pub enum Tokens {
     Func(FN),
-    FnCall(String), /*  String -> name of function */
+    FnCall(String),        /*  String -> name of function */
+    Print(String, String), /* String -> Text to print stored on | rax:1(sys_write) , rsi:text , rdx:size/len_of_text , rdi:1 (0 for stdout)*/
 }
 
 #[derive(Debug, Clone)]
