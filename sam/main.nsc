@@ -1,5 +1,6 @@
 may large_val = 6777*1999
 may name = "joy"
-fn hi(){
+fn hi(p:string , int:int){
     may t = 0.0
 }
+hi("hi",1)

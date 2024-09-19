@@ -81,28 +81,14 @@ pub enum Vars {
 impl Vars {
     pub fn to_asm(&self, name: String) -> String {
         match self {
-            Vars::STR(value) => format!(
-                "\n
-                {name} db '{value}', 0
-                ",
-                name = name,
-                value = value
-            ),
-            Vars::INT(value) => format!(
-                "\n
-                {name} dq {value}
-                ",
-                name = name,
-                value = value
-            ),
+            Vars::STR(value) => format!("\n{name} db '{value}', 0\n", name = name, value = value),
+            Vars::INT(value) => format!("\n{name} dq {value}\n", name = name, value = value),
             Vars::F(value) => format!(
-                "\n
-                {name} dq {value}
-                ",
+                "\n{name} dq {value}\n",
                 name = name,
                 value = f64_to_bits(*value) // Convert float to its bit representation
             ),
-            Vars::EX(_) => String::new(), // We'll skip EX for now since it's more complex
+            Vars::EX(_) => String::from("\n"), // We'll skip EX for now since it's more complex
         }
     }
     pub fn new() -> Vars {
