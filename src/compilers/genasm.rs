@@ -7,7 +7,6 @@ pub fn genasm(tokens: Vec<Tokens>) -> String {
     let mut code = String::new();
 
     let mut functions: Vec<(String, String, Vec<Tokens>, bool)> = Vec::new(); // (func_name, asm_code, func_code_tokens, has_vars)
-    let mut fncalls: Vec<String> = Vec::new(); // Function calls
     let mut counter = 0;
     let mut added_data: HashSet<String> = HashSet::new(); // Track data that has already been added
 
@@ -66,10 +65,43 @@ pub fn genasm(tokens: Vec<Tokens>) -> String {
                 functions.push((func.name.clone(), func_code, func.code.clone(), has_vars));
             }
             Tokens::FnCall(ref nm) => {
-                // Collect function calls
-                fncalls.push(nm.clone());
+                // Process function calls outside of functions (i.e., in the main code)
+                let mut call_code = String::new();
+                let args = get_function_args(nm, &tokens);
+
+                // Handle function arguments
+                for (i, arg) in args.iter().enumerate() {
+                    match arg {
+                        Args::Str(_) => {}
+                        Args::Float(_) => {
+                            if i == 0 {
+                                call_code.push_str("    movaps xmm0, [arg_float]\n");
+                            }
+                        }
+                        Args::Int(_) => {
+                            let reg = match i {
+                                0 => "rdi",
+                                1 => "rsi",
+                                2 => "rdx",
+                                3 => "rcx",
+                                4 => "r8",
+                                5 => "r9",
+                                _ => "rax", // Default register for more than 6 arguments
+                            };
+                            call_code.push_str(&format!("    mov {}, 0\n", reg));
+                        }
+                        _ => {}
+                    }
+                }
+
+                // Generate call instruction
+                call_code.push_str(&format!("    call {}\n", nm));
+
+                // Add the function call directly to the main code (_start)
+                code.push_str(&call_code);
             }
             _ => {
+                // Handle other tokens (e.g., variables, print)
                 parse(
                     &mut code.clone(),
                     &mut code,
@@ -85,7 +117,7 @@ pub fn genasm(tokens: Vec<Tokens>) -> String {
         }
     }
 
-    // Second pass: Validate function calls and definitions
+    // Second pass: Generate function code
     let mut final_functions: Vec<(String, String)> = Vec::new(); // Final valid functions (name, asm_code)
 
     for (func_name, mut func_code, func_tokens, has_vars) in functions {
@@ -105,9 +137,6 @@ pub fn genasm(tokens: Vec<Tokens>) -> String {
             }
             func_code.push_str("    ret\n"); // Add return instruction
             final_functions.push((func_name, func_code)); // Add to final list
-        } else {
-            // Remove function call if the function is not included
-            fncalls.retain(|call| call != &func_name);
         }
     }
 
