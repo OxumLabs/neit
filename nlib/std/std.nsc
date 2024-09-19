@@ -1,3 +1,0 @@
-public fn echoln(text:str){
-	_SYS_.write("$text\n")
-}

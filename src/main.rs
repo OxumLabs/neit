@@ -17,6 +17,7 @@ fn main() {
                         let tokens = gentoken(codes);
                         match tokens {
                             Ok(tokens) => {
+                                println!("tokens : \n{:?}", tokens);
                                 let asmc = genasm(tokens);
                                 //println!("ASM code:\n=> {}", asmc);
 

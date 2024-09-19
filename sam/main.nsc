@@ -1,6 +1,5 @@
-fn hello(){
-    _WRT("hello")
-    _WRT(" we are on same line XD\n")
+may large_val = 6777*1999
+may name = "joy"
+fn hi(){
+    may t = 0.0
 }
-hello()
-_WRT("Yo bro wassup! how are you!\n")

@@ -1,5 +1,5 @@
 use super::{
-    tokens::{func::process_func, print::process_print},
+    tokens::{func::process_func, print::process_print, var::process_var},
     types::{Args, Tokens},
 };
 
@@ -68,6 +68,12 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
                     Err(e) => return Err(e),
                 }
             }
+        } else if ln.starts_with("may ") && ln.contains("=") {
+            let vr = process_var(ln);
+            match vr {
+                Ok(vr) => tokens.push(Tokens::Var(vr.0, vr.1)),
+                Err(e) => return Err(e),
+            }
         } else if (ln.starts_with("fn ") || ln.starts_with("pub fn ")) && ln.ends_with("{}") {
             match process_func(ln, index, &mut fp_label) {
                 Ok(f) => tokens.push(Tokens::Func(f)),
@@ -87,14 +93,11 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
                     args.get(1).unwrap().trim_end_matches(')'),
                 );
 
-                // Remove any empty arguments
                 let provided_args: Vec<&str> = args_str
                     .split(',')
                     .map(str::trim)
                     .filter(|s| !s.is_empty())
                     .collect();
-
-                println!("provided args str : {:?}", provided_args);
 
                 if let Some(Tokens::Func(f)) = tokens
                     .iter()
@@ -103,10 +106,6 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
                     let expected_args: Vec<Args> = f.args.clone();
 
                     if provided_args.len() != expected_args.len() {
-                        println!(
-                            "provided args : {:?}\n\nexpected args : {:?}",
-                            provided_args, expected_args
-                        );
                         return Err(format!(
                             "Error at line {}: Function '{}' called with incorrect number of arguments.\n\
                             Hint: Expected {} arguments but got {}.\n\
@@ -196,6 +195,11 @@ fn determine_type(arg: &str) -> Result<&'static str, String> {
     } else if trimmed.parse::<f64>().is_ok() {
         Ok("float")
     } else {
-        Err(format!("Could not determine type for argument: {}", arg))
+        Err(format!(
+            "Error: Argument '{}' does not match expected types (string, int, or float).\n\
+            Hint: Ensure the argument type is correct.\n\
+            Code:\n   => {}",
+            arg, arg
+        ))
     }
 }

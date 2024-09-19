@@ -1,14 +1,21 @@
 use crate::utils::{
     ftokens::parse_single_line,
-    types::{Args, Tokens, FN},
+    types::{fvars, Args, Tokens, FN},
 };
 
 #[allow(unused)]
 pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, String> {
-    let mut functions = FN::new("_NAME_".to_string(), false, Vec::new(), Vec::new());
+    let mut functions = FN::new(
+        "_NAME_".to_string(),
+        false,
+        Vec::new(),
+        Vec::new(),
+        Vec::new(),
+    );
     let mut inf = false;
     let mut fnbody: Vec<Tokens> = Vec::new();
     let lines: Vec<&str> = ln.trim().split("\n").collect();
+    let mut lv: Vec<fvars> = Vec::new();
 
     for ln in lines {
         let ln = ln.trim();
@@ -196,14 +203,22 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
         } else if inf {
             if ln == "}" || ln.ends_with("}") {
                 functions.code = fnbody.clone();
-                inf = false; // Ensure that `inf` is reset after closing brace.
+                inf = false;
             } else {
-                let ptkn = parse_single_line(ln.trim(), index, p_label);
+                let ptkn = parse_single_line(ln.trim(), index, p_label, &mut lv);
                 match ptkn {
                     Ok(tkn) => {
                         println!("tkn : {:?}", tkn);
-                        functions.code.push(tkn.clone());
-                        fnbody.push(tkn);
+                        match tkn {
+                            Tokens::Var(v, n) => {
+                                lv.push(fvars { v, n });
+                            }
+                            _ => {
+                                fnbody.push(tkn.clone());
+                                functions.code.push(tkn.clone());
+                                fnbody.push(tkn);
+                            }
+                        }
                     }
                     Err(e) => match e.as_str() {
                         "|_EMP_|" => continue,
@@ -227,6 +242,7 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
     if inf {
         return Err("Error: File ended with an open function body.\nHint: Ensure that all opened functions are properly closed with '}'.".to_string());
     }
-    println!("function : {:?}", functions);
+    //println!("function : {:?}", functions);
+    functions.local_vars = lv;
     Ok(functions)
 }

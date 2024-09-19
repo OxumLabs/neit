@@ -1,6 +1,6 @@
 use super::{
-    tokens::print::process_print,
-    types::{Args, Tokens},
+    tokens::{print::process_print, var::process_var},
+    types::{fvars, Args, Tokens},
 };
 
 #[allow(unused)]
@@ -8,9 +8,10 @@ pub fn parse_single_line(
     line: &str,
     line_number: usize,
     p_label: &mut i32,
+    lv: &mut Vec<fvars>,
 ) -> Result<Tokens, String> {
     //let mut p_label = 0;
-
+    let line = line.trim();
     if line.trim().is_empty() {
         return Err("|_EMP_|".to_string());
     }
@@ -31,6 +32,14 @@ pub fn parse_single_line(
         *p_label += *p_label + 365;
         let print_token = process_print(p_label, txt);
         return Ok(print_token);
+    } else if line.starts_with("may ") && line.contains("=") {
+        let vr = process_var(line);
+        match vr {
+            Ok(vr) => {
+                return Ok(Tokens::Var(vr.0, vr.1));
+            }
+            Err(e) => return Err(e),
+        }
     }
 
     // Handle function calls (not declarations)
