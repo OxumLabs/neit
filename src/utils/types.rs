@@ -79,9 +79,13 @@ pub enum Vars {
 #[allow(dead_code)]
 
 impl Vars {
-    pub fn to_asm(&self, name: String) -> String {
+    pub fn to_asm(&self, name: String, counter: i32) -> String {
         match self {
-            Vars::STR(value) => format!("\n{name} db '{value}', 0\n", name = name, value = value),
+            Vars::STR(value) => format!(
+                "\n{name}_{counter} db '{value}', 0\n",
+                name = name,
+                value = value
+            ),
             Vars::INT(value) => format!("\n{name} dq {value}\n", name = name, value = value),
             Vars::F(value) => format!(
                 "\n{name} dq {value}\n",

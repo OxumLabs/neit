@@ -1,4 +1,5 @@
 use crate::utils::types::{Args, Tokens};
+use std::collections::HashSet;
 
 pub fn genasm(tokens: Vec<Tokens>) -> String {
     let mut asm = String::new();
@@ -7,6 +8,8 @@ pub fn genasm(tokens: Vec<Tokens>) -> String {
 
     let mut functions: Vec<(String, String, Vec<Tokens>, bool)> = Vec::new(); // (func_name, asm_code, func_code_tokens, has_vars)
     let mut fncalls: Vec<String> = Vec::new(); // Function calls
+    let mut counter = 0;
+    let mut added_data: HashSet<String> = HashSet::new(); // Track data that has already been added
 
     // Data section (for initialized data)
     data.push_str("section .data\n");
@@ -16,21 +19,12 @@ pub fn genasm(tokens: Vec<Tokens>) -> String {
     code.push_str("global _start\n"); // Declare _start as the entry point
     code.push_str("_start:\n");
 
-    // Debugging: Print the tokens at the start
-    println!("\n[DEBUG] Initial Tokens: {:#?}\n", tokens);
-
     // First pass: collect all function definitions and calls
     for token in tokens.clone() {
         match token {
             Tokens::Func(ref func) => {
                 let mut func_code = String::new();
                 let has_vars = !func.local_vars.is_empty(); // Check if function has local variables
-
-                // Debugging: Print function details
-                println!(
-                    "[DEBUG] Processing Function: {}, Is Global: {}, Has Vars: {}",
-                    func.name, func.is_global, has_vars
-                );
 
                 // Define the function
                 if !func.is_global {
@@ -72,16 +66,10 @@ pub fn genasm(tokens: Vec<Tokens>) -> String {
                 functions.push((func.name.clone(), func_code, func.code.clone(), has_vars));
             }
             Tokens::FnCall(ref nm) => {
-                // Debugging: Print function call information
-                println!("[DEBUG] Found Function Call: {}\n", nm);
-
                 // Collect function calls
                 fncalls.push(nm.clone());
             }
             _ => {
-                // Debugging: Print token being processed
-                println!("[DEBUG] Processing token in main code: {:#?}", token);
-
                 parse(
                     &mut code.clone(),
                     &mut code,
@@ -89,7 +77,10 @@ pub fn genasm(tokens: Vec<Tokens>) -> String {
                     token,
                     &tokens,
                     &mut data,
+                    counter,
+                    &mut added_data, // Pass the data tracking set
                 );
+                counter += 5;
             }
         }
     }
@@ -99,25 +90,22 @@ pub fn genasm(tokens: Vec<Tokens>) -> String {
 
     for (func_name, mut func_code, func_tokens, has_vars) in functions {
         if !func_tokens.is_empty() || has_vars {
-            // Debugging: Print information about processing function code
-            println!(
-                "[DEBUG] Processing function {} with tokens: {:#?}\n",
-                func_name, func_tokens
-            );
-
             // Check if function has code or local variables
             for token in func_tokens {
-                parse(&mut func_code, &mut code, true, token, &tokens, &mut data);
+                parse(
+                    &mut func_code,
+                    &mut code,
+                    true,
+                    token,
+                    &tokens,
+                    &mut data,
+                    counter,
+                    &mut added_data, // Pass the data tracking set
+                );
             }
             func_code.push_str("    ret\n"); // Add return instruction
             final_functions.push((func_name, func_code)); // Add to final list
         } else {
-            // Debugging: Removing function call if function isn't included
-            println!(
-                "[DEBUG] Removing function call for {} as it has no code/vars\n",
-                func_name
-            );
-
             // Remove function call if the function is not included
             fncalls.retain(|call| call != &func_name);
         }
@@ -132,17 +120,8 @@ pub fn genasm(tokens: Vec<Tokens>) -> String {
     asm.push_str(&data);
     asm.push_str(&code);
 
-    // Debugging: Print final main code section
-    println!("[DEBUG] Final Main Code Section: \n{}\n", code);
-
     // Append valid functions' code to the asm
-    for (func_name, func_code) in final_functions {
-        // Debugging: Print each function's final assembly code
-        println!(
-            "[DEBUG] Final Assembly for Function {}: \n{}\n",
-            func_name, func_code
-        );
-
+    for (_, func_code) in final_functions {
         asm.push_str(&func_code);
     }
 
@@ -157,10 +136,12 @@ fn parse(
     token: Tokens,
     tokens: &Vec<Tokens>,
     data: &mut String,
+    counter: i32,
+    added_data: &mut HashSet<String>, // Add this parameter to track added data
 ) {
     match token {
         Tokens::Var(var, name) => {
-            let vasm = var.to_asm(name);
+            let vasm = var.to_asm(name, counter);
             data.push_str(&vasm.as_str());
         }
         Tokens::Print(txt, name) => {
@@ -187,13 +168,19 @@ fn parse(
                 t = t.trim_end_matches(",''").to_string();
             }
 
-            // Add the string to the data section
-            data.push_str(&format!("    {} db '{}'\n", name, t));
+            // Create a unique key for the data section
+            let data_key = format!("{}_{}", name, counter);
+
+            // Only add the data if it hasn't been added already
+            if !added_data.contains(&data_key) {
+                data.push_str(&format!("    {} db '{}'\n", data_key, t));
+                added_data.insert(data_key.clone()); // Mark this data as added
+            }
 
             // Generate assembly code to print the string
             let print_code = format!(
                 "    mov rax, 1\n    mov rdi, 1\n    mov rsi, {}\n    mov rdx, {}\n    syscall\n",
-                name,
+                data_key,
                 t.len()
             );
 
