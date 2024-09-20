@@ -1,7 +1,4 @@
-may large_val = 6777*1999
-may name = "joy"
-fn hi(p:string , int:int){
-    may t = 0.0
-    _WRT(t)
+_WRT("Hello world")
+fn hi(){
+    _WRT("hi")
 }
-hi("hi",1)

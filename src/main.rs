@@ -1,7 +1,7 @@
 use std::{env::args, fs, path::Path, process::exit};
 pub mod compilers;
 pub mod utils;
-use compilers::{compile::compile_linux, genasm::genasm};
+use compilers::{compile::compile_linux, genasm::genasm_lin};
 use utils::{fo::checkproj, token::gentoken};
 
 fn main() {
@@ -18,7 +18,7 @@ fn main() {
                         match tokens {
                             Ok(tokens) => {
                                 println!("tokens : \n{:?}", tokens);
-                                let asmc = genasm(tokens);
+                                let asmc = genasm_lin(tokens);
                                 //println!("ASM code:\n=> {}", asmc);
 
                                 compile_linux(&asmc);

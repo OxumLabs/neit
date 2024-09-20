@@ -1,7 +1,7 @@
 use crate::utils::types::{Args, Tokens};
 use std::collections::HashSet;
 
-pub fn genasm(tokens: Vec<Tokens>) -> String {
+pub fn genasm_lin(tokens: Vec<Tokens>) -> String {
     let mut asm = String::new();
     let mut data = String::new();
     let mut code = String::new();
@@ -132,7 +132,7 @@ pub fn genasm(tokens: Vec<Tokens>) -> String {
                     &tokens,
                     &mut data,
                     counter,
-                    &mut added_data, // Pass the data tracking set
+                    &mut added_data,
                 );
             }
             func_code.push_str("    ret\n"); // Add return instruction
@@ -215,9 +215,15 @@ fn parse(
 
             // Add to appropriate section (function body or main code)
             if inf {
-                fnbody.push_str(&print_code);
+                if !fnbody.contains(&print_code) {
+                    // Check if print code is already present
+                    fnbody.push_str(&print_code);
+                }
             } else {
-                code.push_str(&print_code);
+                if !code.contains(&print_code) {
+                    // Check if print code is already present
+                    code.push_str(&print_code);
+                }
             }
         }
         Tokens::FnCall(nm) => {
