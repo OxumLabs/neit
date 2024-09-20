@@ -1,2 +1,3 @@
 pub mod compile;
-pub mod genasm;
+pub mod genasm_lin;
+pub mod genasm_win;

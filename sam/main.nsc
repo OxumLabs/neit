@@ -1,4 +1,1 @@
-_WRT("Hello world")
-fn hi(){
-    _WRT("hi")
-}
+_WRT("Hello, world")

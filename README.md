@@ -1,58 +1,94 @@
-# 🌟 The Neit Programming Language
+<div style="text-align:center">
+<img src="logo.png" width="80px">
+<h2 style="font-size: 45px; color: #4CAF50; text-align: center; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">
+    Neit Programming Language
+</h2>
 
-**Neit** is a cutting-edge, minimalist programming language designed to give developers unmatched speed, simplicity, and efficiency. With a focus on stripping away unnecessary complexity, Neit provides a clean, clutter-free coding experience—empowering you to write code that does exactly what you want, without all the extra baggage.
+<p style="font-size: 30px; color: #f 0f0f0; background-color: #1a1a1a; padding: 20px; border-radius: 10px; line-height: 1.6; text-align: center;">
+    The Neit Programming Language is a modern general-use programming language designed to be very easy by design and fast for production. It builds executables that are libc dependency-free, making the final build extremely lightweight and fast. We utilize the LLVM compiler (work in progress for now; ASM is our go-to). Some simple code in Neit is shown below.
+</p>
 
-Neit breaks away from conventional norms by **not relying on LLVM or libc**, which results in **extremely small binaries** and blazing-fast runtime performance. It is the ultimate tool for developers who want full control over their software while maintaining clarity and simplicity in their code.
+## </div>
 
----
-
-## 🚀 Key Highlights
-
-### ⚡ No Bloat, Just Power
-
-- **Neit eliminates unnecessary dependencies** like **LLVM** and **libc**, compiling your code into the most efficient and lean machine code possible. This means you get **exactly what you need**—no hidden dependencies, no excessive runtime libraries, and no wasted resources.
-
-### ⚡ Lightning Fast Execution
-
-- Neit bypasses layers of abstraction and optimization that traditional compilers rely on, producing **highly optimized machine code** directly from your source code. The result? **Blazing-fast performance** at runtime, with minimal overhead.
-
-### ⚡ Minimalist by Design
-
-- Neit’s syntax is designed to be **simple and intuitive**, allowing you to write clear, concise code without sacrificing power or flexibility. Whether you're building **small utilities** or **complex systems**, Neit lets you focus on **writing functionality**, not boilerplate code.
-
-### ⚡ Bare-Metal Control
-
-- With Neit, you're in control. The language gives you **low-level access** to the hardware, letting you write **super-efficient code** without the overhead of large runtime environments. It's perfect for **systems programming**, **embedded development**, or any application where performance and size are paramount.
+## Code Example
 
 ---
 
-## 🎯 Why Choose Neit?
+```neit
+_WRT("Hello world")
 
-### 🏎️ Extreme Performance
+# This will be replaced by std lib echoln
 
-- Neit compiles **directly to machine code**, without relying on **external libraries** like libc, resulting in **faster execution times** and **smaller binaries**. Your programs are **optimized for performance** from the ground up.
+fn hi() {
+    _WRT("hi")
+}
 
-### 🦋 Small & Lightweight
+hi()
 
-- By avoiding large runtime environments, Neit enables you to build **tiny, portable binaries**. Whether you're writing software for **resource-constrained devices** or need ultra-optimized code, Neit delivers minimal overhead.
+# Call the function
 
-### 🧠 Developer-Centric Design
+fn add(i: int, q: float) {}
+add(1, 2)
 
-- Neit is made for developers who want to **write code with purpose**. Its **minimalist syntax** makes it easy to learn, easy to read, and easy to use. You'll spend more time **creating**, less time debugging unnecessary complexity.
+# Function with arguments
+
+may name = "neit"
+may b = 9
+may z = 9.9
+may x = 90 + 80
+
+# Only constant expressions for now
+```
 
 ---
 
-## 📚 What Makes Neit Different?
+---
 
-- **No LLVM, No libc**: Neit ditches the baggage of traditional compilers and libraries, focusing on only what’s needed to produce the **leanest, most efficient binaries**.
-- **Close to Hardware**: Neit gives you the ability to write code that directly interacts with the hardware, making it ideal for low-level tasks, **systems programming**, or **embedded development**.
-- **Simple, Yet Powerful**: Neit's syntax strikes a balance between simplicity and functionality, providing a **clean and intuitive developer experience** without compromising on power.
-- **Custom Compiler**: The Neit compiler is custom-built to generate optimized machine code **without unnecessary intermediate representations** or external dependencies.
+## Installation Instructions
 
 ---
 
-## A New Era of Lightweight Programming
+### Windows Installation
 
-Neit represents a new paradigm in programming languages. It empowers you to **build smarter, not bigger**, and opens the door to **high-performance applications** with minimal code and overhead. Neit is the future of **small, fast, and efficient programming**.
+Download and install the Windows MSVC compiler to get the linker. Follow the instructions from the official Microsoft site.
+
+### Linux Installation
+
+For Linux:
+Make sure you have NASM and the LD linker installed on your system. You can install them using your package manager:
+
+```bash
+# for debian and ubuntu based
+sudo apt install nasm binutils
+
+# for fedora and its deriavatives / RHEL
+sudo dnf install nasm binutils
+
+
+# for Arch and its deriavatives
+sudo pacman -S nasm binutils
+
+# opensuse
+sudo zypper install nasm binutils
+
+
+# alpine linux
+sudo apk add nasm binutils
+
+```
+
+---
+
+# MIT License
+
+---
+
+**Copyright 2024 Jay Tirth Kundan, Oxum Labs, Bilal Khalil**
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+**THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.**
 
 ---

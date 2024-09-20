@@ -1,7 +1,7 @@
 use crate::utils::types::{Args, Tokens};
 use std::collections::HashSet;
 
-pub fn genasm_lin(tokens: Vec<Tokens>) -> String {
+pub fn genasm_win(tokens: &Vec<Tokens>) -> String {
     let mut asm = String::new();
     let mut data = String::new();
     let mut code = String::new();
@@ -12,9 +12,15 @@ pub fn genasm_lin(tokens: Vec<Tokens>) -> String {
 
     // Data section (for initialized data)
     data.push_str("section .data\n");
+    data.push_str("    hConsole dq 0\n"); // Handle for the console
+    data.push_str("    buffer db 'Hello, World!', 0\n"); // Example string
+    data.push_str("    buffer_length dq 13\n"); // Length of the string
 
     // Text section (for code)
     code.push_str("section .text\n");
+    code.push_str("extern GetStdHandle\n"); // External function for getting console handle
+    code.push_str("extern WriteConsoleA\n"); // External function for writing to console
+    code.push_str("extern ExitProcess\n"); // External function for Windows exit
     code.push_str("global _start\n"); // Declare _start as the entry point
     code.push_str("_start:\n");
 
@@ -32,12 +38,12 @@ pub fn genasm_lin(tokens: Vec<Tokens>) -> String {
                     func_code.push_str(&format!("\nglobal {}\n{}:\n", func.name, func.name));
                 }
 
-                // Setup for handling function arguments
+                // Setup for handling function arguments (Windows ABI)
                 for (i, arg) in func.args.iter().enumerate() {
                     match arg {
                         Args::Str(_) => {
                             if i == 0 {
-                                func_code.push_str("    ; String argument (text) in rdi\n");
+                                func_code.push_str("    ; String argument (text) in rcx\n");
                             }
                         }
                         Args::Float(_) => {
@@ -47,13 +53,11 @@ pub fn genasm_lin(tokens: Vec<Tokens>) -> String {
                         }
                         Args::Int(_) => {
                             let reg = match i {
-                                0 => "rdi",
-                                1 => "rsi",
-                                2 => "rdx",
-                                3 => "rcx",
-                                4 => "r8",
-                                5 => "r9",
-                                _ => "rax", // Default register for more than 6 arguments
+                                0 => "rcx",
+                                1 => "rdx",
+                                2 => "r8",
+                                3 => "r9",
+                                _ => "rax", // Default register for more than 4 arguments
                             };
                             func_code.push_str(&format!("    mov {}, 0\n", reg));
                         }
@@ -65,11 +69,10 @@ pub fn genasm_lin(tokens: Vec<Tokens>) -> String {
                 functions.push((func.name.clone(), func_code, func.code.clone(), has_vars));
             }
             Tokens::FnCall(ref nm) => {
-                // Process function calls outside of functions (i.e., in the main code)
                 let mut call_code = String::new();
                 let args = get_function_args(nm, &tokens);
 
-                // Handle function arguments
+                // Handle function arguments (Windows ABI)
                 for (i, arg) in args.iter().enumerate() {
                     match arg {
                         Args::Str(_) => {}
@@ -80,13 +83,11 @@ pub fn genasm_lin(tokens: Vec<Tokens>) -> String {
                         }
                         Args::Int(_) => {
                             let reg = match i {
-                                0 => "rdi",
-                                1 => "rsi",
-                                2 => "rdx",
-                                3 => "rcx",
-                                4 => "r8",
-                                5 => "r9",
-                                _ => "rax", // Default register for more than 6 arguments
+                                0 => "rcx",
+                                1 => "rdx",
+                                2 => "r8",
+                                3 => "r9",
+                                _ => "rax", // Default register for more than 4 arguments
                             };
                             call_code.push_str(&format!("    mov {}, 0\n", reg));
                         }
@@ -140,10 +141,9 @@ pub fn genasm_lin(tokens: Vec<Tokens>) -> String {
         }
     }
 
-    // Add a simple exit syscall at the end of the main code
-    code.push_str("    mov rax, 60         ; syscall number for exit (sys_exit)\n");
-    code.push_str("    mov rdi, 0          ; status code 0\n");
-    code.push_str("    syscall             ; invoke syscall\n");
+    // Add Windows exit process at the end of the main code
+    code.push_str("    mov rcx, 0          ; status code 0\n");
+    code.push_str("    call ExitProcess    ; call Windows API to exit\n");
 
     // Combine all sections into the final assembly code
     asm.push_str(&data);
@@ -206,22 +206,23 @@ fn parse(
                 added_data.insert(data_key.clone()); // Mark this data as added
             }
 
-            // Generate assembly code to print the string
+            // Windows-specific print using WriteConsole
             let print_code = format!(
-                "    mov rax, 1\n    mov rdi, 1\n    mov rsi, {}\n    mov rdx, {}\n    syscall\n",
-                data_key,
-                t.len()
+                "    mov rax, 0               ; Initialize character count\n\
+                 call GetStdHandle          ; Get the handle for the console\n\
+                 mov rdi, rax               ; Console handle\n\
+                 mov rsi, buffer            ; Pointer to the string\n\
+                 mov rdx, buffer_length     ; Length of the string\n\
+                 call WriteConsoleA         ; Call WriteConsoleA\n"
             );
 
             // Add to appropriate section (function body or main code)
             if inf {
                 if !fnbody.contains(&print_code) {
-                    // Check if print code is already present
                     fnbody.push_str(&print_code);
                 }
             } else {
                 if !code.contains(&print_code) {
-                    // Check if print code is already present
                     code.push_str(&print_code);
                 }
             }
@@ -241,13 +242,11 @@ fn parse(
                     }
                     Args::Int(_) => {
                         let reg = match i {
-                            0 => "rdi",
-                            1 => "rsi",
-                            2 => "rdx",
-                            3 => "rcx",
-                            4 => "r8",
-                            5 => "r9",
-                            _ => "rax", // Default register for more than 6 arguments
+                            0 => "rcx",
+                            1 => "rdx",
+                            2 => "r8",
+                            3 => "r9",
+                            _ => "rax", // Default register for more than 4 arguments
                         };
                         call_code.push_str(&format!("    mov {}, 0\n", reg));
                     }
