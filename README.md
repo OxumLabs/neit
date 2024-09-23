@@ -79,4 +79,4 @@ sudo apk add nasm binutils
 
 ---
 
-# This License is under the **Apache License 2.0 with additional requirements so anyone who is going to fork this work is obliged to read the license thouroghly (its short dont worry)** here : [license](LICENSE)
+# This Project is under the **Apache License 2.0 with additional requirements so anyone who is going to fork this work is obliged to read the license thouroghly (its short dont worry)** here : [license](LICENSE)

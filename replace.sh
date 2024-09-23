@@ -1,2 +1,3 @@
-rm ~/apps/neit-lang/v0/neit
-cp ./bin/linux/neit ~/apps/neit-lang/v0/neit
+rm -rf ~/apps/neit-lang/
+mkdir ~/apps/neit-lang/
+cp ./bin/linux/neit ~/apps/neit-lang/
