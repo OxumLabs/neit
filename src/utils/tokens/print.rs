@@ -1,6 +1,7 @@
 use crate::utils::{maths::evaluate_expression, types::Tokens};
 
 pub fn process_print(num: &mut i32, text: &str, vars: &Vec<Tokens>) -> Tokens {
+    println!("text : {}", text);
     *num += 1;
     let mut result_text = String::new();
     let mut inside_string = false;

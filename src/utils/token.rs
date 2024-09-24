@@ -88,8 +88,9 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
             let ptxt = process_print(&mut p_label, txt, &tokens);
             tokens.push(ptxt);
         } else if ln.starts_with("println(") && ln.ends_with(")") {
-            let mut txt: String = ln[8..].trim_end_matches(")").to_string();
-            txt.push_str(r#"\n"#);
+            let mut txt: String = ln[8..].trim_end_matches("\")").to_string();
+            //txt.trim_end_matches("\"");
+            txt.push_str(r#"\n""#);
             let ptxt = process_print(&mut p_label, &txt, &tokens);
             tokens.push(ptxt);
         } else {
