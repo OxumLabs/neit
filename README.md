@@ -57,7 +57,8 @@ fn yo(x : int , y : string){} # functions can take arguments but they dont do an
 
 ### Windows Installation
 
-Download and install LLVM for windows from : ![llvm](https://github.com/llvm/llvm-project) along with the nasm assembler from : ![nasm](https://www.nasm.us/)
+Download and install LLVM for windows from : ![llvm](https://github.com/llvm/llvm-project)
+along with the nasm assembler from : ![nasm](https://www.nasm.us/)
 
 ### Linux Installation
 
