@@ -15,29 +15,36 @@
 ---
 
 ```neit
-_WRT("Hello world")
 
-# This will be replaced by std lib echoln
+#define functions with fn keyword
+fn hi() { #a local function
 
-fn hi() {
-    _WRT("hi")
 }
 
-hi()
+pub fn hey(){ #public function
 
-# Call the function
+}
 
-fn add(i: int, q: float) {}
-add(1, 2)
+print("Hello world") # print hello world without new line
 
-# Function with arguments
+println("Hello") # prints hello world with new line
 
-may name = "neit"
-may b = 9
-may z = 9.9
-may x = 90 + 80
+hey() #call fucntions
 
-# Only constant expressions for now
+may x = 0 # declarae variables (immutable for now) using may keyword
+
+may z = x-1 # supports mathematical operand like + , - , / , * , ** , // , %
+
+fn hello(){} # btw empty functions
+
+pub fn dem(){} # and empty public functions
+
+println("{z}") # print variables by putting them in {}
+
+println("{100**29}") # print supports maths aswell :3
+
+fn yo(x : int , y : string){} # functions can take arguments but they dont do anything for now :(
+
 ```
 
 ---
