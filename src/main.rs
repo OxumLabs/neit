@@ -167,7 +167,7 @@ pub fn create_new_project(proj: &str) {
     }
 
     // Create main.nsc file
-    let main_file_content = r#"_WRT("Hello, world")"#;
+    let main_file_content = "println(\"Hello, world\")\n#The Neit Programming Language";
     let main_file_path = proj_path.join("main.nsc");
     if let Err(e) = fs::write(&main_file_path, main_file_content) {
         eprintln!("Error: Failed to create 'main.nsc' file: {}", e);
