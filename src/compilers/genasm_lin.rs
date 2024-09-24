@@ -160,7 +160,7 @@ fn parse(
             let data_key = format!("{}_{}", name, counter);
             if !added_data.contains(&data_key) {
                 // Convert '\n' to 0xA (newline in ASCII) in assembly
-                println!("processed text : {}", processed_text);
+                //println!("processed text : {}", processed_text);
                 let asm_string = processed_text.replace("\\n", "', 0xA, '");
                 data.push_str(&format!("    {} db '{}', 0\n", data_key, asm_string));
                 added_data.insert(data_key.clone());

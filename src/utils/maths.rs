@@ -27,39 +27,37 @@ fn tokenize(expr: &str) -> Result<Vec<String>, String> {
             }
             tokens.push(c.to_string());
         } else if c == '*' {
-            if let Some(next) = expr.chars().nth(pos) {
-                if next == '*' {
-                    pos += 1; // Skip the next '*' character
-                    if !current.is_empty() {
-                        tokens.push(current.clone());
-                        current.clear();
-                    }
-                    tokens.push("**".to_string());
-                    continue;
+            if pos < expr.len() && expr.chars().nth(pos) == Some('*') {
+                pos += 1; // Skip the next '*' character
+                if !current.is_empty() {
+                    tokens.push(current.clone());
+                    current.clear();
                 }
+                tokens.push("**".to_string());
+                continue;
+            } else {
+                if !current.is_empty() {
+                    tokens.push(current.clone());
+                    current.clear();
+                }
+                tokens.push("*".to_string());
             }
-            if !current.is_empty() {
-                tokens.push(current.clone());
-                current.clear();
-            }
-            tokens.push("*".to_string());
         } else if c == '/' {
-            if let Some(next) = expr.chars().nth(pos) {
-                if next == '/' {
-                    pos += 1; // Skip the next '/' character
-                    if !current.is_empty() {
-                        tokens.push(current.clone());
-                        current.clear();
-                    }
-                    tokens.push("//".to_string());
-                    continue;
+            if pos < expr.len() && expr.chars().nth(pos) == Some('/') {
+                pos += 1; // Skip the next '/' character
+                if !current.is_empty() {
+                    tokens.push(current.clone());
+                    current.clear();
                 }
+                tokens.push("//".to_string());
+                continue;
+            } else {
+                if !current.is_empty() {
+                    tokens.push(current.clone());
+                    current.clear();
+                }
+                tokens.push("/".to_string());
             }
-            if !current.is_empty() {
-                tokens.push(current.clone());
-                current.clear();
-            }
-            tokens.push("/".to_string());
         } else if c == '%' {
             if !current.is_empty() {
                 tokens.push(current.clone());
@@ -111,13 +109,26 @@ fn parse_mul_div(tokens: &mut Vec<String>, vrs: &Vec<Tokens>) -> Result<f64, Str
     let mut value = parse_exponentiation(tokens, vrs)?;
 
     while let Some(op) = tokens.clone().get(0) {
-        if op == "*" || op == "/" || op == "%" {
+        if op == "*" || op == "/" || op == "%" || op == "//" {
             tokens.remove(0);
             let rhs = parse_exponentiation(tokens, vrs)?;
             value = match op.as_str() {
                 "*" => value * rhs,
                 "/" => value / rhs,
                 "%" => value % rhs,
+                "//" => {
+                    // Floor division logic
+                    let result = value / rhs;
+                    let floor_value = result.floor();
+                    let decimal_part = result - floor_value;
+
+                    // Calculate the final value based on the decimal part
+                    if decimal_part < 0.5 {
+                        floor_value
+                    } else {
+                        floor_value + 1.0
+                    }
+                }
                 _ => value, // Should not reach here
             };
         } else {

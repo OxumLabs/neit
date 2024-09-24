@@ -31,48 +31,60 @@ pub fn compile(asm: &String, proj: &str, target: &str, project_name: &str) {
                         let nasm_args = vec!["-f", "elf64", "-o", "temp.o", asm_file_path];
                         let status = Command::new("nasm")
                             .args(nasm_args)
+                            .stdout(std::process::Stdio::null()) // Suppress output
+                            .stderr(std::process::Stdio::null()) // Suppress error output
                             .status()
                             .expect("Failed to execute `nasm` command");
 
                         if !status.success() {
                             eprintln!("Error: Assembly for Linux failed");
-                            exit(1);
-                        }
+                        } else {
+                            let status = Command::new("clang")
+                                .arg("-o")
+                                .arg(&output_file)
+                                .arg("temp.o")
+                                .arg("-nostdlib")
+                                .arg("-Wl,--no-relax") // Optional: suppress warnings
+                                .stdout(std::process::Stdio::null()) // Suppress output
+                                .stderr(std::process::Stdio::null()) // Suppress error output
+                                .status()
+                                .expect("Failed to execute `clang` command");
 
-                        let status = Command::new("clang")
-                            .arg("-o")
-                            .arg(&output_file)
-                            .arg("temp.o")
-                            .status()
-                            .expect("Failed to execute `clang` command");
-
-                        if !status.success() {
-                            eprintln!("Error: Linking for Linux failed");
-                            exit(1);
+                            if !status.success() {
+                                eprintln!("Error: Linking for Linux failed");
+                            } else {
+                                println!("Successfully built for {}: {:?}", target, output_file);
+                            }
                         }
                     }
                     "windows" => {
                         let nasm_args = vec!["-f", "win64", "-o", "temp.obj", asm_file_path];
                         let status = Command::new("nasm")
                             .args(nasm_args)
+                            .stdout(std::process::Stdio::null()) // Suppress output
+                            .stderr(std::process::Stdio::null()) // Suppress error output
                             .status()
                             .expect("Failed to execute `nasm` command");
 
                         if !status.success() {
                             eprintln!("Error: Assembly for Windows failed");
-                            exit(1);
-                        }
+                        } else {
+                            let status = Command::new("clang")
+                                .arg("-o")
+                                .arg(&output_file)
+                                .arg("temp.obj")
+                                .arg("-nostdlib")
+                                .arg("-Wl,--no-relax") // Optional: suppress warnings
+                                .stdout(std::process::Stdio::null()) // Suppress output
+                                .stderr(std::process::Stdio::null()) // Suppress error output
+                                .status()
+                                .expect("Failed to execute `clang` command");
 
-                        let status = Command::new("clang")
-                            .arg("-o")
-                            .arg(&output_file)
-                            .arg("temp.obj")
-                            .status()
-                            .expect("Failed to execute `clang` command");
-
-                        if !status.success() {
-                            eprintln!("Error: Linking for Windows failed");
-                            exit(1);
+                            if !status.success() {
+                                eprintln!("Error: Linking for Windows failed");
+                            } else {
+                                println!("Successfully built for {}: {:?}", target, output_file);
+                            }
                         }
                     }
                     _ => {
@@ -81,6 +93,7 @@ pub fn compile(asm: &String, proj: &str, target: &str, project_name: &str) {
                     }
                 }
 
+                // Clean up temporary files
                 fs::remove_file(asm_file_path).expect("Failed to delete temporary ASM file");
                 if target == "linux" {
                     fs::remove_file("temp.o").expect("Failed to delete temporary object file");
@@ -88,7 +101,7 @@ pub fn compile(asm: &String, proj: &str, target: &str, project_name: &str) {
                     fs::remove_file("temp.obj").expect("Failed to delete temporary object file");
                 }
 
-                println!("Successfully built for {}: {:?}", target, output_file);
+                // Do not exit after successful build
             }
             Err(_) => {
                 eprintln!("Error: Unable to write assembly code to file\nHint: Ensure correct permissions");

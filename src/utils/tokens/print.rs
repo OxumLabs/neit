@@ -1,7 +1,7 @@
 use crate::utils::{maths::evaluate_expression, types::Tokens};
 
 pub fn process_print(num: &mut i32, text: &str, vars: &Vec<Tokens>) -> Tokens {
-    println!("text : {}", text);
+    //println!("text : {}", text);
     *num += 1;
     let mut result_text = String::new();
     let mut inside_string = false;
@@ -65,6 +65,6 @@ pub fn process_print(num: &mut i32, text: &str, vars: &Vec<Tokens>) -> Tokens {
         }
     }
 
-    println!("resulted text : {}", result_text);
+    //println!("resulted text : {}", result_text);
     Tokens::Print(result_text, format!("p{}", num))
 }

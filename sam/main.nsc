@@ -1,1 +1,2 @@
-println("hello world\n\n") # hello world printing
+may z = 4//3
+print("{1//3}")
