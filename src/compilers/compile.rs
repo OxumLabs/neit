@@ -137,6 +137,7 @@ fn prompt_install(tool: &str) -> io::Result<()> {
             println!("  - For Ubuntu/Debian: sudo apt install nasm");
             println!("  - For Fedora: sudo dnf install nasm");
             println!("  - For Arch: sudo pacman -S nasm");
+            println!("More installation commands can be found at : https://github.com/OxumLabs/neit?tab=readme-ov-file#linux-installation");
 
             println!("\n\n*PRESS ENTER TO EXIT**");
             let mut i = String::new();

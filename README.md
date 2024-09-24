@@ -83,6 +83,34 @@ sudo zypper install nasm lvm
 # alpine linux
 sudo apk add nasm llvm
 
+#solus os
+sudo eopkg install nasm llvm
+
+#gentoo linux
+sudo emerge nasm llvm
+
+#slackware
+slackpkg install nasm llvm
+
+#for lfs
+wget https://www.nasm.us/pub/nasm/releasebuilds/nasm-X.XX.tar.gz
+tar -xzf nasm-X.XX.tar.gz
+cd nasm-X.XX
+./configure
+make
+sudo make install
+
+wget https://github.com/llvm/llvm-project/releases/download/llvmorg-X.XX.0/llvm-X.XX.0.src.tar.xz
+tar -xf llvm-X.XX.0.src.tar.xz
+cd llvm-X.XX.0.src
+mkdir build
+cd build
+cmake ..
+make
+sudo make install
+
+
+
 ```
 
 ---
