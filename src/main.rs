@@ -7,10 +7,15 @@ use std::{
 
 pub mod compilers;
 pub mod utils;
-use compilers::{compile::compile, genasm_lin::genasm_lin, genasm_win::genasm_win};
+use compilers::{
+    compile::{check_tools_installed, compile},
+    genasm_lin::genasm_lin,
+    genasm_win::genasm_win,
+};
 use utils::{fo::checkproj, token::gentoken};
 
 fn main() {
+    let _ = check_tools_installed();
     let args: Vec<String> = env::args().collect();
 
     // Ensure we have the required command and project path

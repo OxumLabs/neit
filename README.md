@@ -57,33 +57,33 @@ fn yo(x : int , y : string){} # functions can take arguments but they dont do an
 
 ### Windows Installation
 
-Download and install the Windows MSVC compiler to get the linker. Follow the instructions from the official Microsoft site.
+Download and install LLVM for windows from : ![llvm](https://github.com/llvm/llvm-project) along with the nasm assembler from : ![nasm](https://www.nasm.us/)
 
 ### Linux Installation
 
 For Linux:
-Make sure you have NASM and the LD linker installed on your system. You can install them using your package manager:
+make sure you have nasm (netwide assembler installer on your system) along with the clang
 
 ```bash
 # for debian and ubuntu based
-sudo apt install nasm binutils
+sudo apt install nasm llvm
 
-# for fedora and its deriavatives / RHEL
-sudo dnf install nasm binutils
+# for fedora and its derivatives / RHEL
+sudo dnf install nasm llvm
 
 
 # for Arch and its deriavatives
-sudo pacman -S nasm binutils
+sudo pacman -S nasm llvm
 
 # opensuse
-sudo zypper install nasm binutils
+sudo zypper install nasm lvm
 
 
 # alpine linux
-sudo apk add nasm binutils
+sudo apk add nasm llvm
 
 ```
 
 ---
 
-# This Project is under the **Apache License 2.0 with additional requirements so anyone who is going to fork this work is obliged to read the license thouroghly (its short dont worry)** here : [license](LICENSE)
+# This Project is under the **Apache License 2.0 so anyone who is going to fork this work is obliged to read the license thouroghly (its short dont worry)** here : [license](LICENSE)

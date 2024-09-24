@@ -156,26 +156,6 @@ fn parse(
         }
         Tokens::Print(txt, name) => {
             let processed_text = String::from(txt);
-            //let mut escape_mode = false;
-
-            // for ch in txt.chars() {
-            //     if escape_mode {
-            //         match ch {
-            //             'n' => processed_text.push_str("\\n"),
-            //             't' => processed_text.push_str("\\t"),
-            //             '\\' => processed_text.push('\\'),
-            //             '"' => processed_text.push('"'),
-            //             '\'' => processed_text.push('\''),
-            //             _ => processed_text.push(ch),
-            //         }
-            //         escape_mode = false;
-            //     } else if ch == '\\' {
-            //         escape_mode = true;
-            //     } else {
-            //         processed_text.push(ch);
-            //     }
-            // }
-
             // Prepare the text for .data section
             let data_key = format!("{}_{}", name, counter);
             if !added_data.contains(&data_key) {
