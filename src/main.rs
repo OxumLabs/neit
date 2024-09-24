@@ -114,6 +114,7 @@ fn build_project(proj: &str) {
     let code: Vec<&str> = main_content.lines().collect();
     match gentoken(code) {
         Ok(tokens) => {
+            //println!("tkns :\n{:?}", tokens);
             // Process each build target
             for target in build_targets {
                 // Generate assembly code based on the target

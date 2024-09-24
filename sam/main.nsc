@@ -1,3 +1,1 @@
-pub fn hi(){
-
-}
+_WRT("Hello {1/2}")

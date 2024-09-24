@@ -4,9 +4,26 @@ use super::maths::evaluate_expression;
 
 pub enum Tokens {
     Func(FN),
-    FnCall(String),        /*  String -> name of function */
+    FnCall(String),          /*  String -> name of function */
     Print(String, String), /* String -> Text to print stored on | rax:1(sys_write) , rsi:text , rdx:size/len_of_text , rdi:1 (1 for stdout)*/
-    Var(Vars, String),     /* Vars -> Variable Data | String -> Variable Name */
+    Var(Vars, String, bool), /* Vars -> Variable Data | String -> Variable Name | bool -> is change-able*/
+}
+pub fn get_vars(tokens: &Vec<fvars>) -> Vec<Vars> {
+    let mut vrs: Vec<Vars> = Vec::new();
+    for i in tokens {
+        vrs.push(i.v.clone());
+    }
+    return vrs;
+}
+pub fn get_vars_tkns(tokens: &Vec<Tokens>) -> Vec<Vars> {
+    let mut vrs: Vec<Vars> = Vec::new();
+    for i in tokens {
+        match i {
+            Tokens::Var(v, _, _) => vrs.push(v.clone()),
+            _ => {}
+        }
+    }
+    return vrs;
 }
 
 #[derive(Debug, Clone)]
@@ -98,7 +115,7 @@ impl Vars {
     pub fn new() -> Vars {
         Vars::STR("___|___".to_string())
     }
-    pub fn update_type(&mut self, value: &str) -> Result<Vars, String> {
+    pub fn update_type(&mut self, value: &str, vrs: &Vec<Tokens>) -> Result<Vars, String> {
         let value = value.trim();
 
         // Check if the value is a string (enclosed in quotes)
@@ -121,7 +138,7 @@ impl Vars {
         }
 
         // Check if the value is a valid expression
-        match evaluate_expression(value) {
+        match evaluate_expression(value, vrs) {
             Ok(result) => {
                 if result.to_string().contains(".") {
                     *self = Vars::F(result);
@@ -133,11 +150,14 @@ impl Vars {
                 }
                 return Ok(self.clone());
             }
-            Err(_) => return Err(format!(
+
+            Err(e) => {
+                return Err(format!(
                 "✘ Error: Value '{}' could not be parsed as a valid type.\n\
-                Hint: Ensure the value is in a valid format for string (\"string\"), integer (123), float (123.45), or expression (e.g., a+b).",
-                value
-            )),
+                Hint: Ensure the value is in a valid format for string (\"string\"), integer (123), float (123.45), or expression (e.g., a+b).\nERROR: {}",
+                value,e
+            ));
+            }
         }
 
         // If all parsing attempts fail, return an error

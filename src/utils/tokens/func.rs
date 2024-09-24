@@ -205,12 +205,13 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
                 functions.code = fnbody.clone();
                 inf = false;
             } else {
-                let ptkn = parse_single_line(ln.trim(), index, p_label, &mut lv);
+                let lv_clone = lv.clone();
+                let ptkn = parse_single_line(ln.trim(), index, p_label, &mut lv, fnbody.clone());
                 match ptkn {
                     Ok(tkn) => {
                         println!("tkn : {:?}", tkn);
                         match tkn {
-                            Tokens::Var(v, n) => {
+                            Tokens::Var(v, n, _) => {
                                 lv.push(fvars { v, n });
                             }
                             _ => {

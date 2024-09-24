@@ -169,7 +169,7 @@ fn parse(
     added_data: &mut HashSet<String>, // Add this parameter to track added data
 ) {
     match token {
-        Tokens::Var(var, name) => {
+        Tokens::Var(var, name, _) => {
             let vasm = var.to_asm(name, counter);
             data.push_str(&vasm.as_str());
         }

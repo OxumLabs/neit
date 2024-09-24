@@ -1,6 +1,6 @@
-use crate::utils::types::Vars;
+use crate::utils::types::{Tokens, Vars};
 
-pub fn process_var(code: &str) -> Result<(Vars, String), String> {
+pub fn process_var(code: &str, vrs: &Vec<Tokens>) -> Result<(Vars, String), String> {
     let pts: Vec<&str> = code.trim_start_matches("may ").split('=').collect();
     if pts.len() != 2 {
         return Err(format!(
@@ -44,7 +44,7 @@ pub fn process_var(code: &str) -> Result<(Vars, String), String> {
     }
 
     let mut vr = Vars::new();
-    match vr.update_type(var_value) {
+    match vr.update_type(var_value, vrs) {
         Ok(_) => {}
         Err(e) => return Err(e),
     }

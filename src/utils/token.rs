@@ -69,10 +69,10 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
                     Err(e) => return Err(e),
                 }
             }
-        } else if ln.starts_with("may ") && ln.contains("=") {
-            let vr = process_var(ln);
+        } else if (ln.starts_with("may ") && !ln.starts_with("may whole ")) && ln.contains("=") {
+            let vr = process_var(ln, &tokens);
             match vr {
-                Ok(vr) => tokens.push(Tokens::Var(vr.0, vr.1)),
+                Ok(vr) => tokens.push(Tokens::Var(vr.0, vr.1, false)),
                 Err(e) => return Err(e),
             }
         } else if (ln.starts_with("fn ") || ln.starts_with("pub fn ")) && ln.ends_with("{}") {
@@ -82,7 +82,7 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
             }
         } else if ln.starts_with("_WRT(") && ln.ends_with(")") {
             let txt = ln[5..].trim_end_matches(")");
-            let ptxt = process_print(&mut p_label, txt);
+            let ptxt = process_print(&mut p_label, txt, &tokens);
             tokens.push(ptxt);
         } else {
             let args: Vec<&str> = ln.trim().split('(').collect();
