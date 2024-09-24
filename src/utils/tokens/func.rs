@@ -166,7 +166,7 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
                     index as i32, ln
                 ));
             }
-            let (name, mut arg) = (pts[0].trim(), pts[1].trim_end_matches("){}"));
+            let (name, mut arg) = (pts[0].trim(), pts[1].trim_end_matches("){"));
             functions.name = name.to_string();
             functions.is_global = true;
             if !arg.trim().is_empty() {

@@ -13,14 +13,15 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
     let mut p_label = 0;
     let mut fp_label = 364;
 
-    for ln in code {
+    for mut ln in code {
         index += 1;
+        ln = ln.trim();
 
         if ln.is_empty() {
             continue;
         }
 
-        if (ln.trim().starts_with("pub fn") || ln.trim().starts_with("fn ")) && !ln.ends_with("}") {
+        if (ln.trim().starts_with("pub fn") || ln.trim().starts_with("fn ")) && ln.ends_with("{") {
             if in_function {
                 return Err(format!(
                     "Error at line {}: Unexpected function definition while inside another function.\n\

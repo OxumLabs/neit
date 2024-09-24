@@ -1,1 +1,3 @@
-_WRT("Hello, world")
+pub fn hi(){
+
+}
