@@ -14,6 +14,9 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
     let mut fp_label = 364;
 
     for mut ln in code {
+        if let Some(pos) = ln.find('#') {
+            ln = &ln[..pos].trim();
+        }
         index += 1;
         ln = ln.trim();
 
@@ -80,9 +83,14 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
                 Ok(f) => tokens.push(Tokens::Func(f)),
                 Err(e) => return Err(e),
             }
-        } else if ln.starts_with("_WRT(") && ln.ends_with(")") {
-            let txt = ln[5..].trim_end_matches(")");
+        } else if ln.starts_with("print(") && ln.ends_with(")") {
+            let txt = ln[6..].trim_end_matches(")");
             let ptxt = process_print(&mut p_label, txt, &tokens);
+            tokens.push(ptxt);
+        } else if ln.starts_with("println(") && ln.ends_with(")") {
+            let mut txt: String = ln[8..].trim_end_matches(")").to_string();
+            txt.push_str(r#"\n"#);
+            let ptxt = process_print(&mut p_label, &txt, &tokens);
             tokens.push(ptxt);
         } else {
             let args: Vec<&str> = ln.trim().split('(').collect();

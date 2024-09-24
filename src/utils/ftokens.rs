@@ -28,8 +28,15 @@ pub fn parse_single_line(
     }
 
     // Process print statements
-    if line.starts_with("_WRT(") && line.ends_with(")") {
+    if line.starts_with("print(") && line.ends_with(")") {
         let txt = line[5..].trim_end_matches(")");
+        *p_label += *p_label + 365;
+        let print_token = process_print(p_label, txt, &vars);
+        return Ok(print_token);
+    } else if line.starts_with("println(") && line.ends_with(")") {
+        let mut txt = line[5..].trim_end_matches(")").to_string();
+        txt.push_str(r#"\n"#);
+        let txt = txt.as_str();
         *p_label += *p_label + 365;
         let print_token = process_print(p_label, txt, &vars);
         return Ok(print_token);

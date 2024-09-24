@@ -6,33 +6,27 @@ pub fn genasm_lin(tokens: &Vec<Tokens>) -> String {
     let mut data = String::new();
     let mut code = String::new();
 
-    let mut functions: Vec<(String, String, Vec<Tokens>, bool)> = Vec::new(); // (func_name, asm_code, func_code_tokens, has_vars)
+    let mut functions: Vec<(String, String, Vec<Tokens>, bool)> = Vec::new();
     let mut counter = 0;
-    let mut added_data: HashSet<String> = HashSet::new(); // Track data that has already been added
+    let mut added_data: HashSet<String> = HashSet::new();
 
-    // Data section (for initialized data)
     data.push_str("section .data\n");
-
-    // Text section (for code)
     code.push_str("section .text\n");
-    code.push_str("global _start\n"); // Declare _start as the entry point
+    code.push_str("global _start\n");
     code.push_str("_start:\n");
 
-    // First pass: collect all function definitions and calls
     for token in tokens.clone() {
         match token {
             Tokens::Func(ref func) => {
                 let mut func_code = String::new();
-                let has_vars = !func.local_vars.is_empty(); // Check if function has local variables
+                let has_vars = !func.local_vars.is_empty();
 
-                // Define the function
                 if !func.is_global {
                     func_code.push_str(&format!("\n{}:\n", func.name));
                 } else {
                     func_code.push_str(&format!("\nglobal {}\n{}:\n", func.name, func.name));
                 }
 
-                // Setup for handling function arguments
                 for (i, arg) in func.args.iter().enumerate() {
                     match arg {
                         Args::Str(_) => {
@@ -53,7 +47,7 @@ pub fn genasm_lin(tokens: &Vec<Tokens>) -> String {
                                 3 => "rcx",
                                 4 => "r8",
                                 5 => "r9",
-                                _ => "rax", // Default register for more than 6 arguments
+                                _ => "rax",
                             };
                             func_code.push_str(&format!("    mov {}, 0\n", reg));
                         }
@@ -61,15 +55,12 @@ pub fn genasm_lin(tokens: &Vec<Tokens>) -> String {
                     }
                 }
 
-                // Store function definitions and code separately
                 functions.push((func.name.clone(), func_code, func.code.clone(), has_vars));
             }
             Tokens::FnCall(ref nm) => {
-                // Process function calls outside of functions (i.e., in the main code)
                 let mut call_code = String::new();
                 let args = get_function_args(nm, &tokens);
 
-                // Handle function arguments
                 for (i, arg) in args.iter().enumerate() {
                     match arg {
                         Args::Str(_) => {}
@@ -86,7 +77,7 @@ pub fn genasm_lin(tokens: &Vec<Tokens>) -> String {
                                 3 => "rcx",
                                 4 => "r8",
                                 5 => "r9",
-                                _ => "rax", // Default register for more than 6 arguments
+                                _ => "rax",
                             };
                             call_code.push_str(&format!("    mov {}, 0\n", reg));
                         }
@@ -94,14 +85,10 @@ pub fn genasm_lin(tokens: &Vec<Tokens>) -> String {
                     }
                 }
 
-                // Generate call instruction
                 call_code.push_str(&format!("    call {}\n", nm));
-
-                // Add the function call directly to the main code (_start)
                 code.push_str(&call_code);
             }
             _ => {
-                // Handle other tokens (e.g., variables, print)
                 parse(
                     &mut code.clone(),
                     &mut code,
@@ -110,19 +97,17 @@ pub fn genasm_lin(tokens: &Vec<Tokens>) -> String {
                     &tokens,
                     &mut data,
                     counter,
-                    &mut added_data, // Pass the data tracking set
+                    &mut added_data,
                 );
                 counter += 5;
             }
         }
     }
 
-    // Second pass: Generate function code
-    let mut final_functions: Vec<(String, String)> = Vec::new(); // Final valid functions (name, asm_code)
+    let mut final_functions: Vec<(String, String)> = Vec::new();
 
     for (func_name, mut func_code, func_tokens, has_vars) in functions {
         if !func_tokens.is_empty() || has_vars {
-            // Check if function has code or local variables
             for token in func_tokens {
                 parse(
                     &mut func_code,
@@ -135,26 +120,22 @@ pub fn genasm_lin(tokens: &Vec<Tokens>) -> String {
                     &mut added_data,
                 );
             }
-            func_code.push_str("    ret\n"); // Add return instruction
-            final_functions.push((func_name, func_code)); // Add to final list
+            func_code.push_str("    ret\n");
+            final_functions.push((func_name, func_code));
         }
     }
 
-    // Add a simple exit syscall at the end of the main code
     code.push_str("    mov rax, 60         ; syscall number for exit (sys_exit)\n");
     code.push_str("    mov rdi, 0          ; status code 0\n");
     code.push_str("    syscall             ; invoke syscall\n");
 
-    // Combine all sections into the final assembly code
     asm.push_str(&data);
     asm.push_str(&code);
 
-    // Append valid functions' code to the asm
     for (_, func_code) in final_functions {
         asm.push_str(&func_code);
     }
 
-    // Return the final assembled code
     asm
 }
 
@@ -166,7 +147,7 @@ fn parse(
     tokens: &Vec<Tokens>,
     data: &mut String,
     counter: i32,
-    added_data: &mut HashSet<String>, // Add this parameter to track added data
+    added_data: &mut HashSet<String>,
 ) {
     match token {
         Tokens::Var(var, name, _) => {
@@ -174,54 +155,51 @@ fn parse(
             data.push_str(&vasm.as_str());
         }
         Tokens::Print(txt, name) => {
-            let mut t = String::new();
-            let mut eso = false;
+            let processed_text = String::from(txt);
+            //let mut escape_mode = false;
 
-            for ch in txt.chars() {
-                if eso {
-                    match ch {
-                        'n' => t.push_str("',0xA,'"), // Newline escape sequence
-                        '\\' => t.push('\\'),         // Escaped backslash
-                        _ => t.push(ch),              // Other escape sequences
-                    }
-                    eso = false;
-                } else if ch == '\\' {
-                    eso = true; // Start of escape sequence
-                } else {
-                    t.push(ch); // Normal character
-                }
-            }
+            // for ch in txt.chars() {
+            //     if escape_mode {
+            //         match ch {
+            //             'n' => processed_text.push_str("\\n"),
+            //             't' => processed_text.push_str("\\t"),
+            //             '\\' => processed_text.push('\\'),
+            //             '"' => processed_text.push('"'),
+            //             '\'' => processed_text.push('\''),
+            //             _ => processed_text.push(ch),
+            //         }
+            //         escape_mode = false;
+            //     } else if ch == '\\' {
+            //         escape_mode = true;
+            //     } else {
+            //         processed_text.push(ch);
+            //     }
+            // }
 
-            // Remove trailing commas and extra single quotes
-            if t.ends_with(",''") {
-                t = t.trim_end_matches(",''").to_string();
-            }
-
-            // Create a unique key for the data section
+            // Prepare the text for .data section
             let data_key = format!("{}_{}", name, counter);
-
-            // Only add the data if it hasn't been added already
             if !added_data.contains(&data_key) {
-                data.push_str(&format!("    {} db '{}'\n", data_key, t));
-                added_data.insert(data_key.clone()); // Mark this data as added
+                // Convert '\n' to 0xA (newline in ASCII) in assembly
+                println!("processed text : {}", processed_text);
+                let asm_string = processed_text.replace("\\n", "', 0xA, '");
+                data.push_str(&format!("    {} db '{}', 0\n", data_key, asm_string));
+                added_data.insert(data_key.clone());
             }
 
-            // Generate assembly code to print the string
+            // Prepare the code for printing the string
             let print_code = format!(
                 "    mov rax, 1\n    mov rdi, 1\n    mov rsi, {}\n    mov rdx, {}\n    syscall\n",
                 data_key,
-                t.len()
+                processed_text.len()
             );
 
-            // Add to appropriate section (function body or main code)
+            // Append to the function body or main code
             if inf {
                 if !fnbody.contains(&print_code) {
-                    // Check if print code is already present
                     fnbody.push_str(&print_code);
                 }
             } else {
                 if !code.contains(&print_code) {
-                    // Check if print code is already present
                     code.push_str(&print_code);
                 }
             }
@@ -230,7 +208,6 @@ fn parse(
             let mut call_code = String::new();
             let args = get_function_args(&nm, tokens);
 
-            // Handle function arguments
             for (i, arg) in args.iter().enumerate() {
                 match arg {
                     Args::Str(_) => {}
@@ -247,7 +224,7 @@ fn parse(
                             3 => "rcx",
                             4 => "r8",
                             5 => "r9",
-                            _ => "rax", // Default register for more than 6 arguments
+                            _ => "rax",
                         };
                         call_code.push_str(&format!("    mov {}, 0\n", reg));
                     }
@@ -255,10 +232,8 @@ fn parse(
                 }
             }
 
-            // Generate call instruction
             call_code.push_str(&format!("    call {}\n", nm));
 
-            // Add call code to the appropriate section
             if inf {
                 fnbody.push_str(&call_code);
             } else {
@@ -269,7 +244,6 @@ fn parse(
     }
 }
 
-// Function to get function arguments from tokens
 fn get_function_args(name: &str, tokens: &[Tokens]) -> Vec<Args> {
     for token in tokens {
         if let Tokens::Func(func) = token {

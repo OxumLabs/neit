@@ -9,7 +9,7 @@ pub fn process_print(num: &mut i32, text: &str, vars: &Vec<Tokens>) -> Tokens {
     let mut expression_mode = false;
     let mut open_brace_count = 0;
 
-    for (i, c) in text.chars().enumerate() {
+    for c in text.chars() {
         match c {
             '"' => {
                 inside_string = !inside_string;
@@ -17,27 +17,6 @@ pub fn process_print(num: &mut i32, text: &str, vars: &Vec<Tokens>) -> Tokens {
                     if let Ok(var_value) = evaluate_expression(&current_var[1..], vars) {
                         result_text.push_str(&var_value.to_string());
                         current_var.clear();
-                    }
-                }
-            }
-            '\\' => {
-                if let Some(next_char) = text.chars().nth(i + 1) {
-                    match next_char {
-                        '\'' => {
-                            result_text.push('\'');
-                        }
-                        'n' => {
-                            result_text.push('\n');
-                        }
-                        '{' => {
-                            result_text.push('{');
-                        }
-                        '}' => {
-                            result_text.push('}');
-                        }
-                        _ => {
-                            result_text.push(c);
-                        }
                     }
                 }
             }
@@ -85,5 +64,6 @@ pub fn process_print(num: &mut i32, text: &str, vars: &Vec<Tokens>) -> Tokens {
         }
     }
 
+    println!("resulted text : {}", result_text);
     Tokens::Print(result_text, format!("p{}", num))
 }

@@ -91,7 +91,7 @@ pub fn compile(asm: &String, proj: &str, target: &str, project_name: &str) {
                 }
 
                 // Clean up temporary files
-                fs::remove_file(asm_file_path).expect("Failed to delete temporary ASM file");
+                //fs::remove_file(asm_file_path).expect("Failed to delete temporary ASM file");
                 if target == "linux" {
                     fs::remove_file("temp.o").expect("Failed to delete temporary object file");
                 } else if target == "windows" {

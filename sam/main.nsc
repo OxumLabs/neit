@@ -1,1 +1,1 @@
-_WRT("Hello {1/2}")
+print("hello world\n")
