@@ -73,9 +73,15 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
                 }
             }
         } else if (ln.starts_with("may ") && !ln.starts_with("may whole ")) && ln.contains("=") {
-            let vr = process_var(ln, &tokens);
+            let vr = process_var(ln, &tokens, false);
             match vr {
                 Ok(vr) => tokens.push(Tokens::Var(vr.0, vr.1, false)),
+                Err(e) => return Err(e),
+            }
+        } else if ln.starts_with("must ") {
+            let vr = process_var(ln, &tokens, true);
+            match vr {
+                Ok(vr) => tokens.push(Tokens::Var(vr.0, vr.1, true)),
                 Err(e) => return Err(e),
             }
         } else if (ln.starts_with("fn ") || ln.starts_with("pub fn ")) && ln.ends_with("{}") {

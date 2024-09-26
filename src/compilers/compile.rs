@@ -61,8 +61,8 @@ pub fn compile(asm: &String, proj: &str, target: &str, project_name: &str) {
                         let nasm_args = vec!["-f", "win64", "-o", "temp.obj", asm_file_path];
                         let status = Command::new("nasm")
                             .args(nasm_args)
-                            .stdout(std::process::Stdio::null()) // Suppress output
-                            .stderr(std::process::Stdio::null()) // Suppress error output
+                            .stdout(std::process::Stdio::null())
+                            .stderr(std::process::Stdio::null())
                             .status()
                             .expect("Failed to execute `nasm` command");
 
@@ -126,7 +126,7 @@ pub fn check_tools_installed() -> io::Result<()> {
 }
 
 fn is_tool_installed(tool: &str) -> bool {
-    Command::new(tool).arg("--version").output().is_ok()
+    Command::new(tool).output().is_ok()
 }
 
 fn prompt_install(tool: &str) -> io::Result<()> {

@@ -41,10 +41,18 @@ pub fn parse_single_line(
         let print_token = process_print(p_label, txt, &vars);
         return Ok(print_token);
     } else if line.starts_with("may ") && line.contains("=") {
-        let vr = process_var(line, &vars);
+        let vr = process_var(line, &vars, false);
         match vr {
             Ok(vr) => {
-                return Ok(Tokens::Var(vr.0, vr.1, false));
+                return Ok(Tokens::Var(vr.0, vr.1, true));
+            }
+            Err(e) => return Err(e),
+        }
+    } else if line.starts_with("must ") {
+        let vr = process_var(line, &vars, true);
+        match vr {
+            Ok(vr) => {
+                return Ok(Tokens::Var(vr.0, vr.1, true));
             }
             Err(e) => return Err(e),
         }

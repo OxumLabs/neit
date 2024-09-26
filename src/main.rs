@@ -15,7 +15,14 @@ use compilers::{
 use utils::{fo::checkproj, token::gentoken};
 
 fn main() {
-    let _ = check_tools_installed();
+    let cti = check_tools_installed();
+    match cti {
+        Ok(_) => {}
+        Err(e) => {
+            println!("Error : One or more tools not installed\n-> {}", e);
+            exit(1);
+        }
+    }
     let args: Vec<String> = env::args().collect();
 
     // Ensure we have the required command and project path
@@ -119,7 +126,7 @@ fn build_project(proj: &str) {
     let code: Vec<&str> = main_content.lines().collect();
     match gentoken(code) {
         Ok(tokens) => {
-            //println!("tkns :\n{:?}", tokens);
+            println!("tkns :\n{:?}", tokens);
             // Process each build target
             for target in build_targets {
                 // Generate assembly code based on the target
