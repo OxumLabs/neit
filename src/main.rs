@@ -11,6 +11,7 @@ use compilers::{
     compile::{check_tools_installed, compile},
     genasm_lin::genasm_lin,
     genasm_win::genasm_win,
+    llvm::c::to_c,
 };
 use utils::{fo::checkproj, token::gentoken};
 
@@ -133,6 +134,7 @@ fn build_project(proj: &str) {
                 let asm_code = match target.as_str() {
                     "linux" => genasm_lin(&tokens),
                     "windows" => genasm_win(&tokens),
+                    "_C" => to_c(&tokens),
                     _ => {
                         eprintln!("Error: Unsupported build target '{}'. Supported targets: linux, windows", target);
                         continue; // Skip to the next target
@@ -140,7 +142,12 @@ fn build_project(proj: &str) {
                 };
 
                 // Compile the generated assembly code, passing the project name
-                compile(&asm_code, proj, &target, &project_name);
+                if target != "_C" {
+                    compile(&asm_code, proj, &target, &project_name);
+                } else {
+                    println!("C Code :\n{}", asm_code);
+                    //comp_c(&asm_code, proj, &target, &project_name);
+                }
             }
         }
         Err(e) => {

@@ -1,2 +1,2 @@
-pub mod bllvm;
-pub mod llvm;
+pub mod bc;
+pub mod c;
