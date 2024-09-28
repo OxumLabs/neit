@@ -8,10 +8,10 @@ use std::{
 pub mod compilers;
 pub mod utils;
 use compilers::{
-    compile::{check_tools_installed, compile},
-    genasm_lin::genasm_lin,
-    genasm_win::genasm_win,
-    llvm::c::to_c,
+    compile::check_tools_installed,
+    //genasm_lin::genasm_lin,
+    //genasm_win::genasm_win,
+    llvm::{bc::comp_c, c::to_c},
 };
 use utils::{fo::checkproj, token::gentoken};
 
@@ -127,27 +127,19 @@ fn build_project(proj: &str) {
     let code: Vec<&str> = main_content.lines().collect();
     match gentoken(code) {
         Ok(tokens) => {
-            println!("tkns :\n{:?}", tokens);
+           // println!("tkns :\n{:?}", tokens);
             // Process each build target
             for target in build_targets {
                 // Generate assembly code based on the target
-                let asm_code = match target.as_str() {
-                    "linux" => genasm_lin(&tokens),
-                    "windows" => genasm_win(&tokens),
-                    "_C" => to_c(&tokens),
-                    _ => {
-                        eprintln!("Error: Unsupported build target '{}'. Supported targets: linux, windows", target);
-                        continue; // Skip to the next target
-                    }
-                };
+                let asm_code = to_c(&tokens);
 
                 // Compile the generated assembly code, passing the project name
-                if target != "_C" {
-                    compile(&asm_code, proj, &target, &project_name);
-                } else {
-                    println!("C Code :\n{}", asm_code);
-                    //comp_c(&asm_code, proj, &target, &project_name);
-                }
+                // if target != "c" {
+                //     compile(&asm_code, proj, &target, &project_name);
+                // } else {
+                   // println!("C Code :\n{}", asm_code);
+                    comp_c(&asm_code, proj, &target, &project_name);
+                //}
             }
         }
         Err(e) => {

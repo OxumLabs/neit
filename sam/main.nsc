@@ -1,2 +1,4 @@
-may name = "joy"
-must i = 0
+fn sorry(){
+    println("sorry sparkles ;-;")
+}
+sorry()

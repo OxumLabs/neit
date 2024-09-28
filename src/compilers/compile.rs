@@ -6,7 +6,9 @@ use std::{
 };
 
 pub fn compile(asm: &String, proj: &str, target: &str, project_name: &str) {
-    let _cti = check_tools_installed().is_ok();
+    println!("Target at Compile (9) : {}",target);
+
+    //let _cti = check_tools_installed().is_ok();
 
     let build_dir = Path::new(proj).join("build");
     if !build_dir.exists() {
@@ -16,6 +18,7 @@ pub fn compile(asm: &String, proj: &str, target: &str, project_name: &str) {
     let output_file = match target {
         "linux" => build_dir.join(project_name),
         "windows" => build_dir.join(format!("{}.exe", project_name)),
+        "C" => build_dir.join(format!("{}.c", project_name)),
         _ => {
             eprintln!("Error: Unsupported build target '{}'.", target);
             exit(1);
@@ -116,9 +119,9 @@ pub fn compile(asm: &String, proj: &str, target: &str, project_name: &str) {
 }
 
 pub fn check_tools_installed() -> io::Result<()> {
-    if !is_tool_installed("nasm") {
-        prompt_install("nasm")?;
-    }
+    // if !is_tool_installed("nasm") {
+    //     prompt_install("nasm")?;
+    // }
     if !is_tool_installed("clang") {
         prompt_install("clang")?;
     }

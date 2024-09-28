@@ -1,9 +1,14 @@
 use crate::utils::types::{Args, Tokens, Vars};
+use std::collections::HashSet;
 
 pub fn to_c(tokens: &Vec<Tokens>) -> String {
     let imports = String::from("#include <stdio.h>\n\n");
     let mut main = String::new();
     let mut funs = String::new();
+    
+    // Set to track declared variables in order to avoid redeclarations
+    let mut declared_vars: HashSet<String> = HashSet::new();
+    let mut printed: HashSet<String> = HashSet::new(); // Set to track printed values
 
     for i in tokens {
         match i {
@@ -23,12 +28,12 @@ pub fn to_c(tokens: &Vec<Tokens>) -> String {
                 // Generate C function header
                 let s = format!("void {}({}) {{\n", fun.name, make_args(&fun.args));
                 funs.push_str(&s);
-                process(&mut funs, &arg_vars, true, &fun.code);
+                process(&mut funs, &arg_vars, true, &fun.code, &mut declared_vars, &mut printed);
                 funs.push_str("}\n\n"); // Close the function definition
             }
             _ => {
                 // Generate main code
-                process(&mut main, &vec![], false, tokens); // No args for main
+                process(&mut main, &vec![], false, tokens, &mut declared_vars, &mut printed); // No args for main
             }
         }
     }
@@ -43,36 +48,60 @@ pub fn to_c(tokens: &Vec<Tokens>) -> String {
     c_code
 }
 
-fn process(func: &mut String, arg_vars: &Vec<String>, _is_fun: bool, tokens: &Vec<Tokens>) {
+fn process(
+    func: &mut String,
+    arg_vars: &Vec<String>,
+    _is_fun: bool,
+    tokens: &Vec<Tokens>,
+    declared_vars: &mut HashSet<String>,
+    printed: &mut HashSet<String>,  // Track printed statements to avoid duplicates
+) {
     for token in tokens {
         match token {
             Tokens::Print(v, _n) => {
-                func.push_str(&format!("    printf(\"%s: %%s\\n\", {});\n", v));
+                // Check if this print statement has already been printed
+                if !printed.contains(v) {
+                    func.push_str(&format!("    printf(\"{}\");\n", v));
+                    printed.insert(v.clone());  // Mark this print statement as printed
+                }
             }
             Tokens::FnCall(fc) => {
                 func.push_str(&format!("    {}();\n", fc));
             }
             Tokens::Var(v, n, mutable) => {
-                // If it's a function, ensure we have proper argument handling
-                if let Some(arg_index) = arg_vars.iter().position(|name| name == n) {
-                    func.push_str(&format!("    {} = arg_vars[{}];\n", n, arg_index));
-                } else {
-                    // Generate variable declaration based on type
-                    let var_declaration = match v {
+                // Skip redeclaring function arguments
+                if arg_vars.contains(n) {
+                    continue;
+                }
+
+                // Check if the variable has already been declared
+                if declared_vars.contains(n) {
+                    continue; // Skip if already declared
+                }
+
+                // Add the variable to the declared set
+                declared_vars.insert(n.clone());
+
+                // Generate variable declaration based on type and mutability
+                let var_declaration = if *mutable {
+                    match v {
                         Vars::STR(s) => format!("char *{} = \"{}\";\n", n, s),
                         Vars::INT(s) => format!("int {} = {};\n", n, s),
                         Vars::F(f) => format!("double {} = {};\n", n, f),
-                        _ => String::new(), // Handle other types as needed
-                    };
-
-                    // Add variable declaration
-                    func.push_str(&var_declaration);
-
-                    // If mutable, we might want to include some initialization logic
-                    if *mutable {
-                        func.push_str(&format!("    {} = 0; // Initial value\n", n));
+                        _ => String::new(),
                     }
-                }
+                } else {
+                    // Immutable variables should be declared as 'const'
+                    match v {
+                        Vars::STR(s) => format!("const char *{} = \"{}\";\n", n, s),
+                        Vars::INT(s) => format!("const int {} = {};\n", n, s),
+                        Vars::F(f) => format!("const double {} = {};\n", n, f),
+                        _ => String::new(),
+                    }
+                };
+
+                // Add variable declaration to the function body
+                func.push_str(&var_declaration);
             }
             _ => {}
         }
