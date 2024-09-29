@@ -1,5 +1,4 @@
-#!/bin/bash
-
+#!/usr/bin/env bash
 # Clean previous builds
 rm -rf ./bin
 mkdir -p bin/linux bin/windows

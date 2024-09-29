@@ -5,7 +5,7 @@ pub fn to_c(tokens: &Vec<Tokens>) -> String {
     let imports = String::from("#include <stdio.h>\n\n");
     let mut main = String::new();
     let mut funs = String::new();
-    
+
     // Set to track declared variables in order to avoid redeclarations
     let mut declared_vars: HashSet<String> = HashSet::new();
     let mut printed: HashSet<String> = HashSet::new(); // Set to track printed values
@@ -28,12 +28,26 @@ pub fn to_c(tokens: &Vec<Tokens>) -> String {
                 // Generate C function header
                 let s = format!("void {}({}) {{\n", fun.name, make_args(&fun.args));
                 funs.push_str(&s);
-                process(&mut funs, &arg_vars, true, &fun.code, &mut declared_vars, &mut printed);
+                process(
+                    &mut funs,
+                    &arg_vars,
+                    true,
+                    &fun.code,
+                    &mut declared_vars,
+                    &mut printed,
+                );
                 funs.push_str("}\n\n"); // Close the function definition
             }
             _ => {
                 // Generate main code
-                process(&mut main, &vec![], false, tokens, &mut declared_vars, &mut printed); // No args for main
+                process(
+                    &mut main,
+                    &vec![],
+                    false,
+                    tokens,
+                    &mut declared_vars,
+                    &mut printed,
+                ); // No args for main
             }
         }
     }
@@ -54,7 +68,7 @@ fn process(
     _is_fun: bool,
     tokens: &Vec<Tokens>,
     declared_vars: &mut HashSet<String>,
-    printed: &mut HashSet<String>,  // Track printed statements to avoid duplicates
+    printed: &mut HashSet<String>, // Track printed statements to avoid duplicates
 ) {
     for token in tokens {
         match token {
@@ -62,7 +76,7 @@ fn process(
                 // Check if this print statement has already been printed
                 if !printed.contains(v) {
                     func.push_str(&format!("    printf(\"{}\");\n", v));
-                    printed.insert(v.clone());  // Mark this print statement as printed
+                    printed.insert(v.clone()); // Mark this print statement as printed
                 }
             }
             Tokens::FnCall(fc) => {

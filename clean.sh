@@ -1,5 +1,4 @@
-#!/bin/bash
-
+#!/usr/bin/env bash
 # Define the list of items to remove
 ITEMS_TO_REMOVE=(
     "temp.asm"        # File

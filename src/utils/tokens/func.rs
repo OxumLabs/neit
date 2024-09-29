@@ -17,6 +17,63 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
     let lines: Vec<&str> = ln.trim().split("\n").collect();
     let mut lv: Vec<fvars> = Vec::new();
 
+    // Helper function to parse arguments
+    fn parse_arguments(
+        arg_str: &str,
+        functions: &mut FN,
+        lv: &mut Vec<fvars>,
+        ln: &str,
+        index: usize,
+    ) -> Result<(), String> {
+        let args = arg_str.split(",");
+        for i in args {
+            let pts: Vec<&str> = i.split(":").collect();
+            if pts.len() != 2 {
+                return Err(format!(
+                    "Error at line {}: Invalid argument declaration.\nCode:\n   => {}\nHint: Ensure that each argument is declared as 'name:type'.",
+                    index as i32, ln
+                ));
+            }
+            let (name, t) = (pts[0].trim(), pts[1].trim());
+            if name.is_empty() {
+                return Err(format!(
+                    "Error at line {}: Argument name cannot be empty.\nCode:\n   => {}\nHint: Provide a valid name for the argument.",
+                    index as i32, ln
+                ));
+            }
+            match t {
+                "string" => {
+                    lv.push(fvars {
+                        v: crate::utils::types::Vars::STR(String::new()),
+                        n: name.to_string(),
+                    });
+                    functions.args.push(Args::Str(name.to_string()));
+                }
+                "int" => {
+                    lv.push(fvars {
+                        v: crate::utils::types::Vars::INT(0),
+                        n: name.to_string(),
+                    });
+                    functions.args.push(Args::Int(name.to_string()));
+                }
+                "float" => {
+                    lv.push(fvars {
+                        v: crate::utils::types::Vars::F(0.0),
+                        n: name.to_string(),
+                    });
+                    functions.args.push(Args::Float(name.to_string()));
+                }
+                _ => {
+                    return Err(format!(
+                        "Error at line {}: Invalid argument type '{}'.\nCode:\n   => {}\nHint: Use 'string', 'int', or 'float' as argument types.",
+                        index, t, ln
+                    ));
+                }
+            }
+        }
+        Ok(())
+    }
+
     for ln in lines {
         let ln = ln.trim();
         if ln.starts_with("pub fn ") && ln.ends_with("{}") {
@@ -31,34 +88,7 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
             functions.name = name.to_string();
             functions.is_global = true;
             if !arg.trim().is_empty() {
-                let args = arg.split(",");
-                for i in args {
-                    let pts: Vec<&str> = i.split(":").collect();
-                    if pts.len() != 2 {
-                        return Err(format!(
-                            "Error at line {}: Invalid argument declaration.\nCode:\n   => {}\nHint: Ensure that each argument is declared as 'name:type'.",
-                            index as i32, ln
-                        ));
-                    }
-                    let (name, t) = (pts[0].trim(), pts[1].trim());
-                    if name.is_empty() {
-                        return Err(format!(
-                            "Error at line {}: Argument name cannot be empty.\nCode:\n   => {}\nHint: Provide a valid name for the argument.",
-                            index as i32, ln
-                        ));
-                    }
-                    match t {
-                        "string" => functions.args.push(Args::Str(name.to_string())),
-                        "int" => functions.args.push(Args::Int(name.to_string())),
-                        "float" => functions.args.push(Args::Float(name.to_string())),
-                        _ => {
-                            return Err(format!(
-                                "Error at line {}: Invalid argument type '{}'.\nCode:\n   => {}\nHint: Use 'string', 'int', or 'float' as argument types.",
-                                index, t, ln
-                            ));
-                        }
-                    }
-                }
+                parse_arguments(arg, &mut functions, &mut lv, ln, index)?;
             } else {
                 functions.args.push(Args::EMP("_".to_string()));
             }
@@ -74,34 +104,7 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
             functions.name = name.to_string();
             functions.is_global = false;
             if !arg.trim().is_empty() {
-                let args = arg.split(",");
-                for i in args {
-                    let pts: Vec<&str> = i.split(":").collect();
-                    if pts.len() != 2 {
-                        return Err(format!(
-                            "Error at line {}: Invalid argument declaration.\nCode:\n   => {}\nHint: Ensure that each argument is declared as 'name:type'.",
-                            index as i32, ln
-                        ));
-                    }
-                    let (name, t) = (pts[0].trim(), pts[1].trim());
-                    if name.is_empty() {
-                        return Err(format!(
-                            "Error at line {}: Argument name cannot be empty.\nCode:\n   => {}\nHint: Provide a valid name for the argument.",
-                            index as i32, ln
-                        ));
-                    }
-                    match t {
-                        "string" => functions.args.push(Args::Str(name.to_string())),
-                        "int" => functions.args.push(Args::Int(name.to_string())),
-                        "float" => functions.args.push(Args::Float(name.to_string())),
-                        _ => {
-                            return Err(format!(
-                                "Error at line {}: Invalid argument type '{}'.\nCode:\n   => {}\nHint: Use 'string', 'int', or 'float' as argument types.",
-                                index, t, ln
-                            ));
-                        }
-                    }
-                }
+                parse_arguments(arg, &mut functions, &mut lv, ln, index)?;
             }
         } else if ln.starts_with("fn ") && ln.ends_with("{") {
             if inf {
@@ -122,34 +125,7 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
             functions.is_global = false;
 
             if !arg.trim().is_empty() {
-                let args = arg.split(",");
-                for i in args {
-                    let pts: Vec<&str> = i.split(":").collect();
-                    if pts.len() != 2 {
-                        return Err(format!(
-                            "Error at line {}: Invalid argument declaration.\nCode:\n   => {}\nHint: Ensure that each argument is declared as 'name:type'.",
-                            index as i32, ln
-                        ));
-                    }
-                    let (name, t) = (pts[0].trim(), pts[1].trim());
-                    if name.is_empty() {
-                        return Err(format!(
-                            "Error at line {}: Argument name cannot be empty.\nCode:\n   => {}\nHint: Provide a valid name for the argument.",
-                            index as i32, ln
-                        ));
-                    }
-                    match t {
-                        "string" => functions.args.push(Args::Str(name.to_string())),
-                        "int" => functions.args.push(Args::Int(name.to_string())),
-                        "float" => functions.args.push(Args::Float(name.to_string())),
-                        _ => {
-                            return Err(format!(
-                                "Error at line {}: Invalid argument type '{}'.\nCode:\n   => {}\nHint: Use 'string', 'int', or 'float' as argument types.",
-                                index, t, ln
-                            ));
-                        }
-                    }
-                }
+                parse_arguments(arg, &mut functions, &mut lv, ln, index)?;
             }
             inf = true;
         } else if ln.starts_with("pub fn ") && ln.ends_with("{") {
@@ -170,34 +146,7 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
             functions.name = name.to_string();
             functions.is_global = true;
             if !arg.trim().is_empty() {
-                let args = arg.split(",");
-                for i in args {
-                    let pts: Vec<&str> = i.split(":").collect();
-                    if pts.len() != 2 {
-                        return Err(format!(
-                            "Error at line {}: Invalid argument declaration.\nCode:\n   => {}\nHint: Ensure that each argument is declared as 'name:type'.",
-                            index as i32, ln
-                        ));
-                    }
-                    let (name, t) = (pts[0].trim(), pts[1].trim());
-                    if name.is_empty() {
-                        return Err(format!(
-                            "Error at line {}: Argument name cannot be empty.\nCode:\n   => {}\nHint: Provide a valid name for the argument.",
-                            index as i32, ln
-                        ));
-                    }
-                    match t {
-                        "string" => functions.args.push(Args::Str(name.to_string())),
-                        "int" => functions.args.push(Args::Int(name.to_string())),
-                        "float" => functions.args.push(Args::Float(name.to_string())),
-                        _ => {
-                            return Err(format!(
-                                "Error at line {}: Invalid argument type '{}'.\nCode:\n   => {}\nHint: Use 'string', 'int', or 'float' as argument types.",
-                                index, t, ln
-                            ));
-                        }
-                    }
-                }
+                parse_arguments(arg, &mut functions, &mut lv, ln, index)?;
             }
             inf = true;
         } else if inf {
@@ -206,7 +155,11 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
                 inf = false;
             } else {
                 let lv_clone = lv.clone();
+                println!("og lv near line 209 func.rs: {:?}", lv);
                 let ptkn = parse_single_line(ln.trim(), index, p_label, &mut lv, fnbody.clone());
+                println!("lv clone after parse single line : {:?}", lv_clone);
+                println!("og lv : {:?}", lv);
+
                 match ptkn {
                     Ok(tkn) => {
                         println!("tkn : {:?}", tkn);
@@ -243,7 +196,6 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
     if inf {
         return Err("Error: File ended with an open function body.\nHint: Ensure that all opened functions are properly closed with '}'.".to_string());
     }
-    //println!("function : {:?}", functions);
     functions.local_vars = lv;
     Ok(functions)
 }

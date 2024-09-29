@@ -1,7 +1,7 @@
 use super::types::{Tokens, Vars};
 
 pub fn evaluate_expression(expr: &str, vrs: &Vec<Tokens>) -> Result<f64, String> {
-    let expr = expr.replace(" ", "");
+    let expr = expr.replace(" ", ""); // Remove spaces
     let mut tokens = tokenize(&expr)?;
     let result = parse_expression(&mut tokens, vrs)?;
     Ok(result)
@@ -10,7 +10,7 @@ pub fn evaluate_expression(expr: &str, vrs: &Vec<Tokens>) -> Result<f64, String>
 fn tokenize(expr: &str) -> Result<Vec<String>, String> {
     let mut tokens = Vec::new();
     let mut current = String::new();
-    let mut pos = 0; // Track position in the expression
+    let mut pos = 0;
 
     while pos < expr.len() {
         let c = expr.chars().nth(pos).unwrap();
@@ -20,64 +20,41 @@ fn tokenize(expr: &str) -> Result<Vec<String>, String> {
             current.push(c);
         } else if c.is_alphabetic() {
             current.push(c);
-        } else if c == '+' || c == '-' || c == '(' || c == ')' {
-            if !current.is_empty() {
-                tokens.push(current.clone());
-                current.clear();
-            }
-            tokens.push(c.to_string());
-        } else if c == '*' {
-            if pos < expr.len() && expr.chars().nth(pos) == Some('*') {
-                pos += 1; // Skip the next '*' character
-                if !current.is_empty() {
-                    tokens.push(current.clone());
-                    current.clear();
-                }
-                tokens.push("**".to_string());
-                continue;
-            } else {
-                if !current.is_empty() {
-                    tokens.push(current.clone());
-                    current.clear();
-                }
-                tokens.push("*".to_string());
-            }
-        } else if c == '/' {
-            if pos < expr.len() && expr.chars().nth(pos) == Some('/') {
-                pos += 1; // Skip the next '/' character
-                if !current.is_empty() {
-                    tokens.push(current.clone());
-                    current.clear();
-                }
-                tokens.push("//".to_string());
-                continue;
-            } else {
-                if !current.is_empty() {
-                    tokens.push(current.clone());
-                    current.clear();
-                }
-                tokens.push("/".to_string());
-            }
-        } else if c == '%' {
-            if !current.is_empty() {
-                tokens.push(current.clone());
-                current.clear();
-            }
-            tokens.push("%".to_string());
-        } else if c == ' ' {
-            if !current.is_empty() {
-                tokens.push(current.clone());
-                current.clear();
-            }
         } else {
-            return Err(format!(
-                "Syntax Error: Invalid character '{}' at position {}",
-                c, pos
-            ));
+            if !current.is_empty() {
+                tokens.push(current.clone());
+                current.clear();
+            }
+            match c {
+                '+' | '-' | '(' | ')' => tokens.push(c.to_string()),
+                '*' => {
+                    if pos < expr.len() && expr.chars().nth(pos) == Some('*') {
+                        pos += 1;
+                        tokens.push("**".to_string());
+                    } else {
+                        tokens.push("*".to_string());
+                    }
+                }
+                '/' => {
+                    if pos < expr.len() && expr.chars().nth(pos) == Some('/') {
+                        pos += 1;
+                        tokens.push("//".to_string());
+                    } else {
+                        tokens.push("/".to_string());
+                    }
+                }
+                '%' => tokens.push("%".to_string()),
+                ' ' => {}
+                _ => {
+                    return Err(format!(
+                        "Syntax Error: Invalid character '{}' at position {}",
+                        c, pos
+                    ))
+                }
+            }
         }
     }
 
-    // Final check for any remaining tokens
     if !current.is_empty() {
         tokens.push(current);
     }
@@ -92,13 +69,15 @@ fn parse_expression(tokens: &mut Vec<String>, vrs: &Vec<Tokens>) -> Result<f64, 
 fn parse_add_sub(tokens: &mut Vec<String>, vrs: &Vec<Tokens>) -> Result<f64, String> {
     let mut value = parse_mul_div(tokens, vrs)?;
 
-    while let Some(op) = &tokens.clone().get(0) {
-        if *op == "+" || *op == "-" {
-            tokens.remove(0);
-            let rhs = parse_mul_div(tokens, vrs)?;
-            value = if *op == "+" { value + rhs } else { value - rhs };
-        } else {
-            break;
+    while !tokens.is_empty() {
+        if let Some(op) = tokens.get(0) {
+            if op == "+" || op == "-" {
+                let op = tokens.remove(0); // Mutable borrow happens here
+                let rhs = parse_mul_div(tokens, vrs)?;
+                value = if op == "+" { value + rhs } else { value - rhs };
+            } else {
+                break;
+            }
         }
     }
 
@@ -108,31 +87,34 @@ fn parse_add_sub(tokens: &mut Vec<String>, vrs: &Vec<Tokens>) -> Result<f64, Str
 fn parse_mul_div(tokens: &mut Vec<String>, vrs: &Vec<Tokens>) -> Result<f64, String> {
     let mut value = parse_exponentiation(tokens, vrs)?;
 
-    while let Some(op) = tokens.clone().get(0) {
-        if op == "*" || op == "/" || op == "%" || op == "//" {
-            tokens.remove(0);
-            let rhs = parse_exponentiation(tokens, vrs)?;
-            value = match op.as_str() {
-                "*" => value * rhs,
-                "/" => value / rhs,
-                "%" => value % rhs,
-                "//" => {
-                    // Floor division logic
-                    let result = value / rhs;
-                    let floor_value = result.floor();
-                    let decimal_part = result - floor_value;
-
-                    // Calculate the final value based on the decimal part
-                    if decimal_part < 0.5 {
-                        floor_value
-                    } else {
-                        floor_value + 1.0
+    while !tokens.is_empty() {
+        if let Some(op) = tokens.get(0) {
+            if op == "*" || op == "/" || op == "%" || op == "//" {
+                let op = tokens.remove(0); // Mutable borrow happens here
+                let rhs = parse_exponentiation(tokens, vrs)?;
+                value = match op.as_str() {
+                    "*" => value * rhs,
+                    "/" => {
+                        if rhs == 0.0 {
+                            return Err("Math Error: Division by zero".to_string());
+                        }
+                        value / rhs
                     }
-                }
-                _ => value, // Should not reach here
-            };
-        } else {
-            break;
+                    "%" => value % rhs,
+                    "//" => {
+                        let result = value / rhs;
+                        let fractional_part = result - result.floor();
+                        if fractional_part >= 0.5 {
+                            (result.floor() as i64 + 1) as f64
+                        } else {
+                            result.floor()
+                        }
+                    }
+                    _ => unreachable!(),
+                };
+            } else {
+                break;
+            }
         }
     }
 
@@ -142,13 +124,15 @@ fn parse_mul_div(tokens: &mut Vec<String>, vrs: &Vec<Tokens>) -> Result<f64, Str
 fn parse_exponentiation(tokens: &mut Vec<String>, vrs: &Vec<Tokens>) -> Result<f64, String> {
     let mut value = parse_primary(tokens, vrs)?;
 
-    while let Some(op) = tokens.clone().get(0) {
-        if op == "**" {
-            tokens.remove(0);
-            let rhs = parse_primary(tokens, vrs)?;
-            value = value.powf(rhs);
-        } else {
-            break;
+    while !tokens.is_empty() {
+        if let Some(op) = tokens.get(0) {
+            if op == "**" {
+                tokens.remove(0); // Mutable borrow happens here
+                let rhs = parse_primary(tokens, vrs)?;
+                value = value.powf(rhs);
+            } else {
+                break;
+            }
         }
     }
 
@@ -176,28 +160,16 @@ fn parse_primary(tokens: &mut Vec<String>, vrs: &Vec<Tokens>) -> Result<f64, Str
             )
         })
     } else {
-        // Handle variables from `vrs`
         for i in vrs {
-            match i {
-                Tokens::Var(v, n, _) => {
-                    if token == *n {
-                        return match v {
-                            Vars::STR(_) => {
-                                Err(format!("Type Error: Variable '{}' is a string and cannot be used in an arithmetic expression", token))
-                            }
-                            Vars::F(f) => Ok(*f),          // Float variable
-                            Vars::INT(i) => Ok(*i as f64), // Integer variable
-                            Vars::EX(e) => {
-                                let result = evaluate_expression(&e, vrs);
-                                match result {
-                                    Ok(val) => Ok(val),
-                                    Err(err) => Err(format!("Evaluation Error in expression for '{}': {}", token, err)),
-                                }
-                            }
-                        };
-                    }
+            if let Tokens::Var(v, n, _) = i {
+                if token == *n {
+                    return match v {
+                        Vars::STR(_) => Err(format!("Type Error: Variable '{}' is a string and cannot be used in an arithmetic expression", token)),
+                        Vars::F(f) => Ok(*f),
+                        Vars::INT(i) => Ok(*i as f64),
+                        Vars::EX(e) => evaluate_expression(&e, vrs),
+                    };
                 }
-                _ => {}
             }
         }
         Err(format!("Name Error: Undefined variable '{}'", token))

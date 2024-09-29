@@ -1,4 +1,1 @@
-fn sorry(){
-    println("sorry sparkles ;-;")
-}
-sorry()
+println("{(8+9)//2}")

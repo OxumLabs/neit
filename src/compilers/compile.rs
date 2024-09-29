@@ -6,7 +6,7 @@ use std::{
 };
 
 pub fn compile(asm: &String, proj: &str, target: &str, project_name: &str) {
-    println!("Target at Compile (9) : {}",target);
+    println!("Target at Compile (9) : {}", target);
 
     //let _cti = check_tools_installed().is_ok();
 

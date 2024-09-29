@@ -9,8 +9,6 @@ pub mod compilers;
 pub mod utils;
 use compilers::{
     compile::check_tools_installed,
-    //genasm_lin::genasm_lin,
-    //genasm_win::genasm_win,
     llvm::{bc::comp_c, c::to_c},
 };
 use utils::{fo::checkproj, token::gentoken};
@@ -20,7 +18,7 @@ fn main() {
     match cti {
         Ok(_) => {}
         Err(e) => {
-            println!("Error : One or more tools not installed\n-> {}", e);
+            println!("Error: One or more tools not installed\n-> {}", e);
             exit(1);
         }
     }
@@ -39,7 +37,6 @@ fn main() {
     let proj = if args.len() > 2 {
         &args[2]
     } else {
-        // Use the current directory if no project path is provided
         &match env::current_dir() {
             Ok(path) => path.to_string_lossy().into_owned(),
             Err(_) => {
@@ -52,22 +49,22 @@ fn main() {
     // Validate the command argument
     let cmd = &args[1];
 
-    // Validate the project path
-
     match cmd.trim() {
         "build" => build_project(proj),
         "run" => run_project(proj),
         "new" => create_new_project(proj),
+        "help" => display_help(),
+        "target-list" => display_target_list(),
         _ => {
             eprintln!(
-                "Error: Invalid command '{}'.\nSupported commands:\n - build\n - run\n - new",
+                "Error: Invalid command '{}'.\nSupported commands:\n - help\n - target-list\n - build\n - run\n - new",
                 cmd
             );
             exit(1);
         }
     }
 }
-#[allow(unused)]
+
 fn build_project(proj: &str) {
     println!("Building the project at: {}", proj);
 
@@ -127,19 +124,13 @@ fn build_project(proj: &str) {
     let code: Vec<&str> = main_content.lines().collect();
     match gentoken(code) {
         Ok(tokens) => {
-           // println!("tkns :\n{:?}", tokens);
             // Process each build target
             for target in build_targets {
                 // Generate assembly code based on the target
                 let asm_code = to_c(&tokens);
 
                 // Compile the generated assembly code, passing the project name
-                // if target != "c" {
-                //     compile(&asm_code, proj, &target, &project_name);
-                // } else {
-                   // println!("C Code :\n{}", asm_code);
-                    comp_c(&asm_code, proj, &target, &project_name);
-                //}
+                comp_c(&asm_code, proj, &target, &project_name);
             }
         }
         Err(e) => {
@@ -148,6 +139,7 @@ fn build_project(proj: &str) {
         }
     }
 }
+
 fn run_project(proj: &str) {
     println!("Running project at: {}", proj);
     // Implement run functionality here
@@ -195,4 +187,23 @@ pub fn create_new_project(proj: &str) {
     }
 
     println!("Project created successfully at: {}", proj);
+}
+
+fn display_help() {
+    println!("Available commands:");
+    println!(" - build       : Builds the project (if in the project dir no need to specify project path).");
+    println!(" - run         : Runs the project (if in the project dir no need to specify project path).");
+    println!(" - new         : Creates a new project in a new folder in currewnt dir named by the given project name.");
+    println!(" - help        : Displays this help message.");
+    println!(" - target-list : Displays available build targets and their purposes.");
+    exit(0);
+}
+
+fn display_target_list() {
+    println!("Available targets:");
+    println!(" - llvm-ir     : Generates LLVM intermediate representation.");
+    println!(" - c           : Generates C code.");
+    println!(" - windows     : Compiles for Windows operating system.");
+    println!(" - linux       : Compiles for Linux operating system.");
+    exit(0);
 }
