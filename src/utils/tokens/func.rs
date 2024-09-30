@@ -156,7 +156,7 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
             } else {
                 let lv_clone = lv.clone();
                 println!("og lv near line 209 func.rs: {:?}", lv);
-                let ptkn = parse_single_line(ln.trim(), index, p_label, &mut lv, fnbody.clone());
+                let ptkn = parse_single_line(ln.trim(), index, p_label, &mut lv, &mut fnbody);
                 println!("lv clone after parse single line : {:?}", lv_clone);
                 println!("og lv : {:?}", lv);
 
@@ -166,6 +166,7 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
                         match tkn {
                             Tokens::Var(v, n, _) => {
                                 lv.push(fvars { v, n });
+                                println!("lv -> {:?}", lv);
                             }
                             _ => {
                                 fnbody.push(tkn.clone());

@@ -1,8 +1,13 @@
 #include <stdio.h>
 
+void a() {
+    int h = 0;
+    h = 0;
+    h = 0;
+    printf("h -> %d\n", h);
+}
+
 int main() {
-    int z = 100;
-    z = 0;
-    z = 0;
+    a();
     return 0;
 }

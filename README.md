@@ -66,6 +66,12 @@ Download and run the [**Neitset**](https://github.com/oxumlabs/neitset) program 
 
 ### Linux Installation
 
+---
+
+Neitset for linux works aswell but it isnt perfect tho you can try to use it at : [**Neitset**](https://github.com/oxumlabs/neitset)
+
+---
+
 For Linux:
 make sure you have nasm (netwide assembler installer on your system) along with the clang
 
