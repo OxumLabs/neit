@@ -3,7 +3,7 @@ use super::types::{Tokens, Vars};
 pub fn evaluate_expression(expr: &str, vrs: &Vec<Tokens>) -> Result<f64, String> {
     let expr = expr.replace(" ", ""); // Remove spaces
     let mut tokens = tokenize(&expr)?;
-    let result = parse_expression(&mut tokens, vrs)?;
+    let result = parse_expression(&mut tokens, vrs)?; // Accept mutable reference but do not modify
     Ok(result)
 }
 
@@ -63,7 +63,7 @@ fn tokenize(expr: &str) -> Result<Vec<String>, String> {
 }
 
 fn parse_expression(tokens: &mut Vec<String>, vrs: &Vec<Tokens>) -> Result<f64, String> {
-    parse_add_sub(tokens, vrs)
+    parse_add_sub(tokens, vrs) // Accepts tokens mutably but does not alter vrs
 }
 
 fn parse_add_sub(tokens: &mut Vec<String>, vrs: &Vec<Tokens>) -> Result<f64, String> {
@@ -144,7 +144,7 @@ fn parse_primary(tokens: &mut Vec<String>, vrs: &Vec<Tokens>) -> Result<f64, Str
         return Err("Syntax Error: Unexpected end of input".to_string());
     }
 
-    let token = tokens.remove(0);
+    let token = tokens.remove(0); // Remove token while parsing
 
     if token == "(" {
         let value = parse_expression(tokens, vrs)?;
@@ -167,7 +167,7 @@ fn parse_primary(tokens: &mut Vec<String>, vrs: &Vec<Tokens>) -> Result<f64, Str
                         Vars::STR(_) => Err(format!("Type Error: Variable '{}' is a string and cannot be used in an arithmetic expression", token)),
                         Vars::F(f) => Ok(*f),
                         Vars::INT(i) => Ok(*i as f64),
-                        Vars::EX(e) => evaluate_expression(&e, vrs),
+                        Vars::EX(e) => evaluate_expression(&e, &mut vrs.clone()), // Pass mutable reference without cloning
                     };
                 }
             }

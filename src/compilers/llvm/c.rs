@@ -97,7 +97,7 @@ fn process(
                 declared_vars.insert(n.clone());
 
                 // Generate variable declaration based on type and mutability
-                let var_declaration = if *mutable {
+                let var_declaration = if !(*mutable) {
                     match v {
                         Vars::STR(s) => format!("char *{} = \"{}\";\n", n, s),
                         Vars::INT(s) => format!("int {} = {};\n", n, s),
@@ -116,6 +116,9 @@ fn process(
 
                 // Add variable declaration to the function body
                 func.push_str(&var_declaration);
+            }
+            Tokens::Revar(n, v) => {
+                func.push_str(format!("{} = {};\n", n, v).as_str());
             }
             _ => {}
         }

@@ -1,4 +1,5 @@
 use super::{
+    maths::evaluate_expression,
     tokens::{func::process_func, print::process_print, var::process_var},
     types::{Args, Tokens},
 };
@@ -15,16 +16,19 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
 
     for mut ln in code {
         if let Some(pos) = ln.find('#') {
-            ln = &ln[..pos].trim();
+            ln = &ln[..pos].trim(); // Remove comments
         }
         index += 1;
-        ln = ln.trim();
+        ln = ln.trim(); // Trim whitespace from the line
 
         if ln.is_empty() {
-            continue;
+            continue; // Skip empty lines
         }
 
-        if (ln.trim().starts_with("pub fn") || ln.trim().starts_with("fn ")) && ln.ends_with("{") {
+        // Handle function definitions
+        if (ln.trim().starts_with("pub fn") || ln.trim().starts_with("fn "))
+            && ln.trim().ends_with("{")
+        {
             if in_function {
                 return Err(format!(
                     "Error at line {}: Unexpected function definition while inside another function.\n\
@@ -40,6 +44,7 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
             brace_depth += ln.matches('{').count();
             brace_depth -= ln.matches('}').count();
 
+            // Check if brace depth is balanced
             if brace_depth == 0 {
                 in_function = false;
                 function_body.clear();
@@ -50,6 +55,7 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
             brace_depth += ln.matches('{').count();
             brace_depth -= ln.matches('}').count();
 
+            // Process the function body once braces are balanced
             if brace_depth == 0 {
                 let full_function_code = function_body.join("\n");
                 match process_func(&full_function_code, index, &mut fp_label) {
@@ -72,35 +78,39 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
                     Err(e) => return Err(e),
                 }
             }
-        } else if (ln.starts_with("may ") && !ln.starts_with("may whole ")) && ln.contains("=") {
-            let vr = process_var(ln, &tokens, false);
+        } else if (ln.trim().starts_with("may") && !ln.trim().starts_with("may whole"))
+            && ln.contains('=')
+        {
+            let vr = process_var(ln.trim(), &tokens, false); // Trim the line before processing
             match vr {
                 Ok(vr) => tokens.push(Tokens::Var(vr.0, vr.1, false)),
                 Err(e) => return Err(e),
             }
-        } else if ln.starts_with("must ") {
-            let vr = process_var(ln, &tokens, true);
+        } else if ln.trim().starts_with("must ") {
+            let vr = process_var(ln.trim(), &tokens, true); // Trim the line before processing
             match vr {
                 Ok(vr) => tokens.push(Tokens::Var(vr.0, vr.1, true)),
                 Err(e) => return Err(e),
             }
-        } else if (ln.starts_with("fn ") || ln.starts_with("pub fn ")) && ln.ends_with("{}") {
-            match process_func(ln, index, &mut fp_label) {
+        } else if (ln.trim().starts_with("fn") || ln.trim().starts_with("pub fn"))
+            && ln.trim().ends_with("{}")
+        {
+            match process_func(ln.trim(), index, &mut fp_label) {
+                // Trim before processing
                 Ok(f) => tokens.push(Tokens::Func(f)),
                 Err(e) => return Err(e),
             }
-        } else if ln.starts_with("print(") && ln.ends_with(")") {
-            let txt = ln[6..].trim_end_matches(")");
+        } else if ln.trim().starts_with("print(") && ln.trim().ends_with(")") {
+            let txt = ln[6..ln.len() - 1].trim(); // Extract print arguments
             let ptxt = process_print(&mut p_label, txt, &tokens);
             tokens.push(ptxt);
-        } else if ln.starts_with("println(") && ln.ends_with(")") {
-            let mut txt: String = ln[8..].trim_end_matches("\")").to_string();
-            //txt.trim_end_matches("\"");
-            txt.push_str(r#"\n""#);
+        } else if ln.trim().starts_with("println(") && ln.trim().ends_with(")") {
+            let mut txt: String = ln[8..ln.len() - 1].trim().to_string(); // Extract println arguments
+            txt.push_str(r#"\n"#);
             let ptxt = process_print(&mut p_label, &txt, &tokens);
             tokens.push(ptxt);
         } else {
-            let args: Vec<&str> = ln.trim().split('(').collect();
+            let args: Vec<&str> = ln.trim().split('(').collect(); // Split on parentheses
             let mut found_function = false;
 
             if args.len() == 2 {
@@ -117,19 +127,21 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
 
                 if let Some(Tokens::Func(f)) = tokens
                     .iter()
-                    .find(|tkn| matches!(tkn, Tokens::Func(f) if f.name == *nm))
+                    .find(|tkn| matches!(tkn, Tokens::Func(f) if f.name == *nm.trim()))
                 {
                     let expected_args: Vec<Args> = f.args.clone();
 
+                    // Validate the number of provided arguments
                     if provided_args.len() != expected_args.len() {
                         return Err(format!(
                             "Error at line {}: Function '{}' called with incorrect number of arguments.\n\
                             Hint: Expected {} arguments but got {}.\n\
                             Code:\n   => {}",
-                            index, nm, expected_args.len(), provided_args.len(), ln
+                            index, nm.trim(), expected_args.len(), provided_args.len(), ln
                         ));
                     }
 
+                    // Validate the types of provided arguments
                     for (provided, expected) in provided_args.iter().zip(expected_args.iter()) {
                         let provided_type = match determine_type(provided) {
                             Ok(t) => t,
@@ -155,27 +167,77 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
                                 "Error at line {}: Argument type mismatch in function call '{}'.\n\
                                 Hint: Expected argument type '{}' but got '{}'.\n\
                                 Code:\n   => {}",
-                                index, nm, expected_type, provided_type, ln
+                                index,
+                                nm.trim(),
+                                expected_type,
+                                provided_type,
+                                ln
                             ));
                         }
                     }
 
-                    tokens.push(Tokens::FnCall(nm.to_string()));
+                    tokens.push(Tokens::FnCall(nm.trim().to_string()));
                     found_function = true;
                 }
             }
 
+            // Handle variable assignment
             if !found_function {
-                return Err(format!(
-                    "Error at line {}: Invalid function call or unmatched function name.\n\
+                let mut vfnd = false;
+                for v in &tokens.clone() {
+                    match v {
+                        Tokens::Var(vr, n, c) => {
+                            let ln = ln.trim();
+                            if let Some(pos) = ln.find(&n.trim()) {
+                                let v = ln[pos + n.len()..].trim(); // Trim after the variable name
+                                if v.starts_with("=") {
+                                    let pts: Vec<&str> = v.split('=').collect();
+                                    if pts.len() == 2 {
+                                        let val = pts.get(1).unwrap().trim(); // Trim the assigned value
+                                        if val.contains("+")
+                                            || val.contains("-")
+                                            || val.contains("*")
+                                            || val.contains("/")
+                                            || val.contains("%")
+                                        {
+                                            match evaluate_expression(&val, &tokens) {
+                                                Ok(v) => {
+                                                    tokens.push(Tokens::Revar(
+                                                        n.to_string(),
+                                                        v.to_string(),
+                                                    ));
+                                                    vfnd = true;
+                                                }
+                                                Err(e) => return Err(e),
+                                            }
+                                        } else {
+                                            // Handle direct assignment (no expression)
+                                            tokens.push(Tokens::Revar(
+                                                n.to_string(),
+                                                val.to_string(),
+                                            ));
+                                            vfnd = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                if !vfnd {
+                    return Err(format!(
+                        "Error at line {}: Invalid function call or unmatched function name.\n\
                     Hint: Ensure function calls match declared function names.\n\
                     Code:\n   => {}",
-                    index, ln
-                ));
+                        index, ln
+                    ));
+                }
             }
         }
     }
 
+    // Final check for unbalanced braces
     if in_function {
         if brace_depth > 0 {
             return Err(format!(
@@ -199,8 +261,9 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
     }
 }
 
+// Helper function to determine the type of an argument
 fn determine_type(arg: &str) -> Result<&'static str, String> {
-    let trimmed = arg.trim();
+    let trimmed = arg.trim(); // Trim the argument
 
     if trimmed.starts_with('"') && trimmed.ends_with('"') {
         Ok("string")

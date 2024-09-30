@@ -15,7 +15,8 @@ pub fn process_print(num: &mut i32, text: &str, vars: &Vec<Tokens>) -> Tokens {
             '"' => {
                 inside_string = !inside_string;
                 if !inside_string && !current_var.is_empty() {
-                    if let Ok(var_value) = evaluate_expression(&current_var[1..], vars) {
+                    if let Ok(var_value) = evaluate_expression(&current_var[1..], &mut vars.clone())
+                    {
                         result_text.push_str(&var_value.to_string());
                         current_var.clear();
                     }
@@ -31,7 +32,8 @@ pub fn process_print(num: &mut i32, text: &str, vars: &Vec<Tokens>) -> Tokens {
                 open_brace_count -= 1;
 
                 if open_brace_count == 0 {
-                    if let Ok(var_value) = evaluate_expression(&current_var[..], vars) {
+                    if let Ok(var_value) = evaluate_expression(&current_var[..], &mut vars.clone())
+                    {
                         result_text.push_str(&var_value.to_string());
                         current_var.clear();
                         is_var = false;
@@ -60,7 +62,7 @@ pub fn process_print(num: &mut i32, text: &str, vars: &Vec<Tokens>) -> Tokens {
     }
 
     if !current_var.is_empty() {
-        if let Ok(var_value) = evaluate_expression(&current_var[1..], vars) {
+        if let Ok(var_value) = evaluate_expression(&current_var[1..], &mut vars.clone()) {
             result_text.push_str(&var_value.to_string());
         }
     }

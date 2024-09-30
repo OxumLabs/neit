@@ -27,6 +27,7 @@ pub fn comp_c(c_code: &String, proj: &str, target: &str, project_name: &str) {
     if target == "c" {
         match File::create(&output_file) {
             Ok(mut c_file) => {
+                let c_code = cfmt(&c_code);
                 if let Err(_) = c_file.write_all(c_code.as_bytes()) {
                     eprintln!(
                         "Error: Unable to write C code to file\nHint: Ensure correct permissions"
@@ -134,4 +135,55 @@ pub fn comp_c(c_code: &String, proj: &str, target: &str, project_name: &str) {
 
     // Clean up the temporary C file
     fs::remove_file(c_file_path).expect("Failed to delete temporary C file");
+}
+
+/* ------------------------------------------- */
+/* FORMAT C CODE */
+/* ------------------------------------------- */
+pub fn cfmt(code: &str) -> String {
+    let mut formatted_code = String::new();
+    let mut indent_level = 0;
+    let mut in_multiline_comment = false;
+    let lines = code.lines();
+
+    for line in lines {
+        let trimmed_line = line.trim();
+        if in_multiline_comment {
+            formatted_code.push_str(&format!("{}\n", line));
+            if trimmed_line.ends_with("*/") {
+                in_multiline_comment = false;
+            }
+            continue;
+        }
+        if trimmed_line.starts_with("/*") {
+            in_multiline_comment = true; // Start of multiline comment
+            formatted_code.push_str(&format!("{}\n", line));
+            continue;
+        }
+
+        // Manage indentation based on braces
+        if trimmed_line.ends_with('{') {
+            formatted_code.push_str(&format!(
+                "{}{}\n",
+                "    ".repeat(indent_level),
+                trimmed_line
+            ));
+            indent_level += 1;
+            continue;
+        } else if trimmed_line == "}" {
+            indent_level -= 1;
+            formatted_code.push_str(&format!(
+                "{}{}\n",
+                "    ".repeat(indent_level),
+                trimmed_line
+            ));
+            continue;
+        }
+        formatted_code.push_str(&format!(
+            "{}{}\n",
+            "    ".repeat(indent_level),
+            trimmed_line
+        ));
+    }
+    formatted_code
 }

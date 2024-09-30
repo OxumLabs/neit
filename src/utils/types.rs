@@ -7,6 +7,7 @@ pub enum Tokens {
     FnCall(String),          /*  String -> name of function */
     Print(String, String), /* String -> Text to print stored on | rax:1(sys_write) , rsi:text , rdx:size/len_of_text , rdi:1 (1 for stdout)*/
     Var(Vars, String, bool), /* Vars -> Variable Data | String -> Variable Name | bool -> is change-able*/
+    Revar(String, String),   /* Name , Value */
 }
 pub fn get_vars(tokens: &Vec<fvars>) -> Vec<Vars> {
     let mut vrs: Vec<Vars> = Vec::new();
@@ -138,7 +139,7 @@ impl Vars {
         }
 
         // Check if the value is a valid expression
-        match evaluate_expression(value, vrs) {
+        match evaluate_expression(value, &mut vrs.clone()) {
             Ok(result) => {
                 if result.to_string().contains(".") {
                     *self = Vars::F(result);

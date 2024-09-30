@@ -1,4 +1,5 @@
 use super::{
+    maths::evaluate_expression,
     tokens::{print::process_print, var::process_var},
     types::{fvars, Args, Tokens},
 };
@@ -55,6 +56,42 @@ pub fn parse_single_line(
                 return Ok(Tokens::Var(vr.0, vr.1, true));
             }
             Err(e) => return Err(e),
+        }
+    }
+    let mut vfnd = false;
+    for v in &vars.clone() {
+        match v {
+            Tokens::Var(vr, n, c) => {
+                let ln = line.trim();
+                if let Some(pos) = ln.find(&n.trim()) {
+                    let v = ln[pos + n.len()..].trim(); // Trim after the variable name
+                    if v.starts_with("=") {
+                        let pts: Vec<&str> = v.split('=').collect();
+                        if pts.len() == 2 {
+                            let val = pts.get(1).unwrap().trim(); // Trim the assigned value
+                            if val.contains("+")
+                                || val.contains("-")
+                                || val.contains("*")
+                                || val.contains("/")
+                                || val.contains("%")
+                            {
+                                match evaluate_expression(&val, &vars) {
+                                    Ok(v) => {
+                                        return Ok(Tokens::Revar(n.to_string(), v.to_string()));
+                                        vfnd = true;
+                                    }
+                                    Err(e) => return Err(e),
+                                }
+                            } else {
+                                // Handle direct assignment (no expression)
+                                return Ok(Tokens::Revar(n.to_string(), val.to_string()));
+                                vfnd = true;
+                            }
+                        }
+                    }
+                }
+            }
+            _ => {}
         }
     }
 
