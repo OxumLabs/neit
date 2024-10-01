@@ -48,8 +48,6 @@ static CKWRDS: &[&str] = &[
     "_Pragma",
 ];
 
-use colored::*;
-
 pub fn process_var(code: &str, vrs: &Vec<Tokens>, whole: bool) -> Result<(Vars, String), String> {
     // Trim leading whitespace and determine the keyword used
     let trimmed_code = code.trim();
@@ -61,7 +59,7 @@ pub fn process_var(code: &str, vrs: &Vec<Tokens>, whole: bool) -> Result<(Vars, 
             "{}: Invalid keyword in line '{}'.\n\
             Reason: The line must start with '{}'.\n\
             Hint: Use 'may variable_name = value' for mutable or 'must variable_name = value' for immutable variables.",
-            "✘ Error".red().bold(), trimmed_code, keyword
+            "✘ Error", trimmed_code, keyword
         ));
     }
 
@@ -77,7 +75,7 @@ pub fn process_var(code: &str, vrs: &Vec<Tokens>, whole: bool) -> Result<(Vars, 
             - 'variable_name' should be a valid identifier (alphanumeric or underscores).\n\
             - 'value' should be any non-empty value you want to assign.\n\
             Example: '{}my_var = 42'",
-            "✘ Error".red().bold(), trimmed_code, keyword, keyword
+            "✘ Error", trimmed_code, keyword, keyword
         ));
     }
 
@@ -90,9 +88,7 @@ pub fn process_var(code: &str, vrs: &Vec<Tokens>, whole: bool) -> Result<(Vars, 
             Reason: The variable name cannot be empty.\n\
             Hint: Provide a valid variable name before the '=' sign.\n\
             Example: '{}my_var = 42'",
-            "✘ Error".red().bold(),
-            trimmed_code,
-            keyword
+            "✘ Error", trimmed_code, keyword
         ));
     }
     if CKWRDS.contains(&var_name) {
@@ -101,8 +97,7 @@ pub fn process_var(code: &str, vrs: &Vec<Tokens>, whole: bool) -> Result<(Vars, 
             Reason: The variable name cannot be a C keyword.\n\
             Hint: Try adding any letter to the variable or using a '_'.\n\
             Example: 'charr = 42'",
-            "✘ Error".red().bold(),
-            var_name
+            "✘ Error", var_name
         ));
     }
 
@@ -112,10 +107,7 @@ pub fn process_var(code: &str, vrs: &Vec<Tokens>, whole: bool) -> Result<(Vars, 
             Reason: The variable name can only contain alphanumeric characters or underscores.\n\
             Hint: Ensure the variable name follows naming conventions.\n\
             Example: '{}valid_name = 42'",
-            "✘ Error".red().bold(),
-            var_name,
-            trimmed_code,
-            keyword
+            "✘ Error", var_name, trimmed_code, keyword
         ));
     }
     if var_value.is_empty() {
@@ -124,9 +116,7 @@ pub fn process_var(code: &str, vrs: &Vec<Tokens>, whole: bool) -> Result<(Vars, 
             Reason: The value after '=' cannot be empty.\n\
             Hint: Provide a valid value after the '=' sign.\n\
             Example: '{}my_var = 42'",
-            "✘ Error".red().bold(),
-            trimmed_code,
-            keyword
+            "✘ Error", trimmed_code, keyword
         ));
     }
 

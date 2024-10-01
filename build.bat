@@ -30,7 +30,6 @@ if %ERRORLEVEL% neq 0 (
 
 rem Build static Windows binary with MSVC
 echo Building Windows binary...
-call "C:\Program Files (x86)\Microsoft Visual Studio\2022\Community\VC\vcvarsall.bat" x64
 cargo build --release --target x86_64-pc-windows-msvc
 if %ERRORLEVEL% neq 0 (
     echo Windows binary build failed.
