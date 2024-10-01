@@ -41,25 +41,22 @@ pub fn process_print(num: &mut i32, text: &str, vars: &Vec<Tokens>) -> Tokens {
                     println!("vars : {:?}", vars);
                     for v in vars.clone() {
                         println!("v : {:?}", v);
-                        match v {
-                            Tokens::Var(v, n, _) => {
-                                println!("CURRENT VAR : {} | n : {}", current_var, n);
-                                if current_var == n {
-                                    var_found = true;
-                                    // Generate the custom notation based on the variable type
-                                    match v {
-                                        Vars::STR(_) => result_text.push_str(&format!("|{}~s|", n)),
-                                        Vars::INT(_) => result_text.push_str(&format!("|{}~d|", n)),
-                                        Vars::F(_) => result_text.push_str(&format!("|{}~f|", n)),
-                                        _ => {}
-                                    }
-                                    current_var.clear();
-                                    is_var = false;
-                                    expression_mode = false;
-                                    break;
+                        if let Tokens::Var(v, n, _) = v {
+                            println!("CURRENT VAR : {} | n : {}", current_var, n);
+                            if current_var == n {
+                                var_found = true;
+                                // Generate the custom notation based on the variable type
+                                match v {
+                                    Vars::STR(_) => result_text.push_str(&format!("|{}~s|", n)),
+                                    Vars::INT(_) => result_text.push_str(&format!("|{}~d|", n)),
+                                    Vars::F(_) => result_text.push_str(&format!("|{}~f|", n)),
+                                    _ => {}
                                 }
+                                current_var.clear();
+                                is_var = false;
+                                expression_mode = false;
+                                break;
                             }
-                            _ => {}
                         }
                     }
 

@@ -14,17 +14,14 @@ pub fn get_vars(tokens: &Vec<fvars>) -> Vec<Vars> {
     for i in tokens {
         vrs.push(i.v.clone());
     }
-    return vrs;
+    vrs
 }
 pub fn get_vars_tkns(tokens: &Vec<Tokens>) -> Vec<Vars> {
     let mut vrs: Vec<Vars> = Vec::new();
     for i in tokens {
-        match i {
-            Tokens::Var(v, _, _) => vrs.push(v.clone()),
-            _ => {}
-        }
+        if let Tokens::Var(v, _, _) = i { vrs.push(v.clone()) }
     }
-    return vrs;
+    vrs
 }
 
 #[derive(Debug, Clone)]
@@ -96,6 +93,12 @@ pub enum Vars {
 }
 #[allow(dead_code)]
 
+impl Default for Vars {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Vars {
     pub fn to_asm(&self, name: String, counter: i32) -> String {
         match self {
@@ -149,15 +152,15 @@ impl Vars {
                         Err(_) => return Err("Error: Unable to parse value as integer".to_string()),
                     }
                 }
-                return Ok(self.clone());
+                Ok(self.clone())
             }
 
             Err(e) => {
-                return Err(format!(
+                Err(format!(
                 "✘ Error: Value '{}' could not be parsed as a valid type.\n\
                 Hint: Ensure the value is in a valid format for string (\"string\"), integer (123), float (123.45), or expression (e.g., a+b).\nERROR: {}",
                 value,e
-            ));
+            ))
             }
         }
 

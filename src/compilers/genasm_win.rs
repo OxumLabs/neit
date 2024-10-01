@@ -65,7 +65,7 @@ pub fn genasm_win(tokens: &Vec<Tokens>) -> String {
             }
             Tokens::FnCall(ref nm, _args) => {
                 let mut call_code = String::new();
-                let args = get_function_args(nm, &tokens);
+                let args = get_function_args(nm, tokens);
 
                 for (i, arg) in args.iter().enumerate() {
                     match arg {
@@ -100,7 +100,7 @@ pub fn genasm_win(tokens: &Vec<Tokens>) -> String {
                     &mut code,
                     false,
                     token,
-                    &tokens,
+                    tokens,
                     &mut data,
                     counter,
                     &mut added_data,
@@ -120,7 +120,7 @@ pub fn genasm_win(tokens: &Vec<Tokens>) -> String {
                     &mut code,
                     true,
                     token,
-                    &tokens,
+                    tokens,
                     &mut data,
                     counter,
                     &mut added_data,
@@ -160,10 +160,10 @@ fn parse(
     match token {
         Tokens::Var(var, name, _) => {
             let vasm = var.to_asm(name, counter);
-            data.push_str(&vasm.as_str());
+            data.push_str(vasm.as_str());
         }
         Tokens::Print(txt, name) => {
-            let processed_text = String::from(txt);
+            let processed_text = txt;
             let data_key = format!("{}_{}", name, counter);
             if !added_data.contains(&data_key) {
                 let asm_string = processed_text.replace("\\n", "\", 0xd, 0xa, \"");

@@ -16,7 +16,7 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
 
     for mut ln in code {
         if let Some(pos) = ln.find('#') {
-            ln = &ln[..pos].trim(); // Remove comments
+            ln = ln[..pos].trim(); // Remove comments
         }
         index += 1;
         ln = ln.trim(); // Trim whitespace from the line
@@ -185,44 +185,41 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
             if !found_function {
                 let mut vfnd = false;
                 for v in &tokens.clone() {
-                    match v {
-                        Tokens::Var(vr, n, c) => {
-                            let ln = ln.trim();
-                            if let Some(pos) = ln.find(&n.trim()) {
-                                let v = ln[pos + n.len()..].trim(); // Trim after the variable name
-                                if v.starts_with("=") {
-                                    let pts: Vec<&str> = v.split('=').collect();
-                                    if pts.len() == 2 {
-                                        let val = pts.get(1).unwrap().trim(); // Trim the assigned value
-                                        if val.contains("+")
-                                            || val.contains("-")
-                                            || val.contains("*")
-                                            || val.contains("/")
-                                            || val.contains("%")
-                                        {
-                                            match evaluate_expression(&val, &tokens) {
-                                                Ok(v) => {
-                                                    tokens.push(Tokens::Revar(
-                                                        n.to_string(),
-                                                        v.to_string(),
-                                                    ));
-                                                    vfnd = true;
-                                                }
-                                                Err(e) => return Err(e),
+                    if let Tokens::Var(vr, n, c) = v {
+                        let ln = ln.trim();
+                        if let Some(pos) = ln.find(n.trim()) {
+                            let v = ln[pos + n.len()..].trim(); // Trim after the variable name
+                            if v.starts_with("=") {
+                                let pts: Vec<&str> = v.split('=').collect();
+                                if pts.len() == 2 {
+                                    let val = pts.get(1).unwrap().trim(); // Trim the assigned value
+                                    if val.contains("+")
+                                        || val.contains("-")
+                                        || val.contains("*")
+                                        || val.contains("/")
+                                        || val.contains("%")
+                                    {
+                                        match evaluate_expression(val, &tokens) {
+                                            Ok(v) => {
+                                                tokens.push(Tokens::Revar(
+                                                    n.to_string(),
+                                                    v.to_string(),
+                                                ));
+                                                vfnd = true;
                                             }
-                                        } else {
-                                            // Handle direct assignment (no expression)
-                                            tokens.push(Tokens::Revar(
-                                                n.to_string(),
-                                                val.to_string(),
-                                            ));
-                                            vfnd = true;
+                                            Err(e) => return Err(e),
                                         }
+                                    } else {
+                                        // Handle direct assignment (no expression)
+                                        tokens.push(Tokens::Revar(
+                                            n.to_string(),
+                                            val.to_string(),
+                                        ));
+                                        vfnd = true;
                                     }
                                 }
                             }
                         }
-                        _ => {}
                     }
                 }
                 if !vfnd {

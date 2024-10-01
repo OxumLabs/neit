@@ -16,7 +16,7 @@ fn tokenize(expr: &str) -> Result<Vec<String>, String> {
         let c = expr.chars().nth(pos).unwrap();
         pos += 1;
 
-        if c.is_digit(10) || c == '.' {
+        if c.is_ascii_digit() || c == '.' {
             current.push(c);
         } else if c.is_alphabetic() {
             current.push(c);
@@ -70,7 +70,7 @@ fn parse_add_sub(tokens: &mut Vec<String>, vrs: &Vec<Tokens>) -> Result<f64, Str
     let mut value = parse_mul_div(tokens, vrs)?;
 
     while !tokens.is_empty() {
-        if let Some(op) = tokens.get(0) {
+        if let Some(op) = tokens.first() {
             if op == "+" || op == "-" {
                 let op = tokens.remove(0); // Mutable borrow happens here
                 let rhs = parse_mul_div(tokens, vrs)?;
@@ -88,7 +88,7 @@ fn parse_mul_div(tokens: &mut Vec<String>, vrs: &Vec<Tokens>) -> Result<f64, Str
     let mut value = parse_exponentiation(tokens, vrs)?;
 
     while !tokens.is_empty() {
-        if let Some(op) = tokens.get(0) {
+        if let Some(op) = tokens.first() {
             if op == "*" || op == "/" || op == "%" || op == "//" {
                 let op = tokens.remove(0); // Mutable borrow happens here
                 let rhs = parse_exponentiation(tokens, vrs)?;
@@ -125,7 +125,7 @@ fn parse_exponentiation(tokens: &mut Vec<String>, vrs: &Vec<Tokens>) -> Result<f
     let mut value = parse_primary(tokens, vrs)?;
 
     while !tokens.is_empty() {
-        if let Some(op) = tokens.get(0) {
+        if let Some(op) = tokens.first() {
             if op == "**" {
                 tokens.remove(0); // Mutable borrow happens here
                 let rhs = parse_primary(tokens, vrs)?;
@@ -152,7 +152,7 @@ fn parse_primary(tokens: &mut Vec<String>, vrs: &Vec<Tokens>) -> Result<f64, Str
             return Err("Syntax Error: Mismatched parentheses".to_string());
         }
         Ok(value)
-    } else if token.chars().all(|c| c.is_digit(10) || c == '.') {
+    } else if token.chars().all(|c| c.is_ascii_digit() || c == '.') {
         token.parse::<f64>().map_err(|e| {
             format!(
                 "Conversion Error: Failed to parse number '{}' - {}",
@@ -167,7 +167,7 @@ fn parse_primary(tokens: &mut Vec<String>, vrs: &Vec<Tokens>) -> Result<f64, Str
                         Vars::STR(_) => Err(format!("Type Error: Variable '{}' is a string and cannot be used in an arithmetic expression", token)),
                         Vars::F(f) => Ok(*f),
                         Vars::INT(i) => Ok(*i as f64),
-                        Vars::EX(e) => evaluate_expression(&e, &mut vrs.clone()), // Pass mutable reference without cloning
+                        Vars::EX(e) => evaluate_expression(e, &mut vrs.clone()), // Pass mutable reference without cloning
                     };
                 }
             }

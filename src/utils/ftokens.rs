@@ -11,7 +11,7 @@ pub fn parse_single_line(
     p_label: &mut i32,
     lv: &mut Vec<fvars>,
     vars: &mut Vec<Tokens>,
-    f_args: &Vec<Args>,
+    f_args: &[Args],
 ) -> Result<Tokens, String> {
     let line = line.trim();
     if line.is_empty() {
@@ -31,7 +31,7 @@ pub fn parse_single_line(
     // Process print statements
     if line.starts_with("print(") && line.ends_with(")") {
         let txt = line[6..].trim_end_matches(")");
-        *p_label += *p_label + 365;
+        *p_label += 365;
         println!("vars at ln 35 ftokens.rs : {:?}", vars);
         let print_token = process_print(p_label, txt, vars);
         return Ok(print_token);
@@ -39,7 +39,7 @@ pub fn parse_single_line(
         let mut txt = line[8..].trim_end_matches("\")").to_string();
         txt.push_str(r#"\n""#);
         let txt = txt.as_str();
-        *p_label += *p_label + 365;
+        *p_label += 365;
         println!("vars at ln 42 ftokens.rs : {:?}", vars);
         let print_token = process_print(p_label, txt, vars);
         return Ok(print_token);
@@ -73,38 +73,35 @@ pub fn parse_single_line(
 
     let mut vfnd = false;
     for v in vars.iter() {
-        match v {
-            Tokens::Var(vr, n, c) => {
-                let ln = line.trim();
-                if let Some(pos) = ln.find(&n.trim()) {
-                    let v = ln[pos + n.len()..].trim(); // Trim after the variable name
-                    if v.starts_with("=") {
-                        let pts: Vec<&str> = v.split('=').collect();
-                        if pts.len() == 2 {
-                            let val = pts.get(1).unwrap().trim(); // Trim the assigned value
-                            if val.contains("+")
-                                || val.contains("-")
-                                || val.contains("*")
-                                || val.contains("/")
-                                || val.contains("%")
-                            {
-                                match evaluate_expression(val, vars) {
-                                    Ok(v) => {
-                                        vfnd = true;
-                                        return Ok(Tokens::Revar(n.to_string(), v.to_string()));
-                                    }
-                                    Err(e) => return Err(e),
+        if let Tokens::Var(vr, n, c) = v {
+            let ln = line.trim();
+            if let Some(pos) = ln.find(n.trim()) {
+                let v = ln[pos + n.len()..].trim(); // Trim after the variable name
+                if v.starts_with("=") {
+                    let pts: Vec<&str> = v.split('=').collect();
+                    if pts.len() == 2 {
+                        let val = pts.get(1).unwrap().trim(); // Trim the assigned value
+                        if val.contains("+")
+                            || val.contains("-")
+                            || val.contains("*")
+                            || val.contains("/")
+                            || val.contains("%")
+                        {
+                            match evaluate_expression(val, vars) {
+                                Ok(v) => {
+                                    vfnd = true;
+                                    return Ok(Tokens::Revar(n.to_string(), v.to_string()));
                                 }
-                            } else {
-                                // Handle direct assignment (no expression)
-                                vfnd = true;
-                                return Ok(Tokens::Revar(n.to_string(), val.to_string()));
+                                Err(e) => return Err(e),
                             }
+                        } else {
+                            // Handle direct assignment (no expression)
+                            vfnd = true;
+                            return Ok(Tokens::Revar(n.to_string(), val.to_string()));
                         }
                     }
                 }
             }
-            _ => {}
         }
     }
 

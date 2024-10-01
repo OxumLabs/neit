@@ -1,10 +1,11 @@
 use std::{
+    env::consts::OS,
     fs::{self, File},
     io::Write,
     path::Path,
     process::{exit, Command},
 };
-
+#[allow(clippy::redundant_pattern_matching)]
 #[allow(unused_assignments)]
 pub fn comp_c(c_code: &String, proj: &str, target: &str, project_name: &str) {
     let build_dir = Path::new(proj).join("build");
@@ -27,7 +28,7 @@ pub fn comp_c(c_code: &String, proj: &str, target: &str, project_name: &str) {
     if target == "c" {
         match File::create(&output_file) {
             Ok(mut c_file) => {
-                let c_code = cfmt(&c_code);
+                let c_code = cfmt(c_code);
                 if let Err(_) = c_file.write_all(c_code.as_bytes()) {
                     eprintln!(
                         "Error: Unable to write C code to file\nHint: Ensure correct permissions"
@@ -73,45 +74,78 @@ pub fn comp_c(c_code: &String, proj: &str, target: &str, project_name: &str) {
         ]
     } else {
         // Compilation for Linux/Windows with optimizations
-        vec![
-            c_file_path.to_str().unwrap(),
-            "-o",
-            output_file.to_str().unwrap(),
-            "-O3",
-            "-march=native",
-            "-mtune=native",
-            "-static",      // Ensure fully static linking (no dynamic dependencies)
-            "-fuse-ld=lld", // Use LLVM's faster linker
-            // Link-Time Optimization (LTO)
-            "-flto", // Enable link-time optimization (LTO) across all files
-            // Function Optimizations
-            "-finline-functions", // Aggressively inline functions to reduce function call overhead
-            "-funroll-loops",     // Unroll loops to eliminate branching inside loops
-            // Vectorization and SIMD Optimizations
-            "-fvectorize",     // Automatically vectorize loops
-            "-fslp-vectorize", // Apply vectorization to straight-line code
-            "-mavx2",          // Use AVX2 instructions for vectorization (if supported by CPU)
-            "-mfma",           // Use FMA (fused multiply-add) instructions for floating-point
-            // Floating-Point Optimizations
-            "-ffast-math", // Aggressive floating-point optimizations (may ignore strict IEEE compliance)
-            "-ffinite-math-only", // Assume no NaNs or infinities
-            "-fno-math-errno", // Don't set errno for math functions
-            "-fassociative-math", // Allow reassociation of floating-point operations
-            "-freciprocal-math", // Use reciprocal approximation for divisions
-            // Memory and Cache Optimizations
-            "-fstrict-aliasing", // Assume strict aliasing rules, which allows better optimizations
-            "-fomit-frame-pointer", // Don't use a frame pointer (frees up a register)
-            "-ffunction-sections", // Place each function in its own section for dead code elimination
-            "-fdata-sections",     // Place data in its own sections for dead code elimination
-            "-fmerge-all-constants", // Merge identical constants to reduce code size
-            // Concurrency and Parallelism
-            "-fopenmp", // Enable OpenMP support for parallelism
-            // Debugging and Safety (Disable any runtime checks for release builds)
-            "-DNDEBUG",                 // Disable assertions
-            "-fstack-protector-strong", // Stack protection for security, but still lightweight
-            // Linker Final Static Flags
-            "-pthread", // Link with pthread for multi-threading (needed for static binaries on Linux)
-        ]
+        if OS == "linux" {
+            vec![
+                c_file_path.to_str().unwrap(),
+                "-o",
+                output_file.to_str().unwrap(),
+                "-O3",                      // Optimize for maximum speed
+                "-march=native",            // Generate code optimized for the host CPU
+                "-mtune=native",            // Tune code for the host CPU
+                "-static",                  // Ensure fully static linking
+                "-fuse-ld=lld",             // Use LLVM's faster linker
+                "-flto=thin",               // Use Thin LTO for faster link-time optimizations
+                "-finline-functions",       // Aggressively inline functions
+                "-funroll-loops",           // Unroll loops
+                "-fvectorize",              // Automatically vectorize loops
+                "-fslp-vectorize",          // Apply vectorization to straight-line code
+                "-mavx2",                   // Use AVX2 instructions (if supported by CPU)
+                "-mfma",                    // Use FMA instructions for floating-point operations
+                "-ffast-math",              // Enable aggressive floating-point optimizations
+                "-ffinite-math-only",       // Assume no NaNs or infinities
+                "-fno-math-errno",          // Don't set errno for math functions
+                "-fassociative-math",       // Allow reassociation of floating-point operations
+                "-freciprocal-math",        // Use reciprocal approximation for divisions
+                "-fstrict-aliasing",        // Assume strict aliasing rules
+                "-fomit-frame-pointer",     // Omit frame pointer for more registers
+                "-ffunction-sections",      // Place functions in separate sections
+                "-fdata-sections",          // Place data in separate sections
+                "-fmerge-all-constants",    // Merge identical constants
+                "-DNDEBUG",                 // Disable assertions
+                "-fstack-protector-strong", // Enable stack protection
+                "-pthread",                 // Link with pthread for multi-threading
+                "-pipe", // Use pipes rather than temporary files for communication between processes (speeds up compilation)
+                "-flto-jobs=4", // Automatically parallelize LTO across available CPUs
+                "-Wl,--threads=4", // Set the number of threads for the linker based on CPU cores
+                "-Wl,--gc-sections", // Garbage collect unused sections for smaller binaries
+            ]
+        } else {
+            vec![
+                c_file_path.to_str().unwrap(),
+                "-o",
+                output_file.to_str().unwrap(),
+                "-O3",                      // Optimize for maximum speed
+                "-march=native",            // Generate code optimized for the host CPU
+                "-mtune=native",            // Tune code for the host CPU
+                "-static",                  // Ensure fully static linking
+                "-fuse-ld=lld",             // Use LLVM's faster linker
+                "-flto=thin",               // Use Thin LTO for faster link-time optimizations
+                "-finline-functions",       // Aggressively inline functions
+                "-funroll-loops",           // Unroll loops
+                "-fvectorize",              // Automatically vectorize loops
+                "-fslp-vectorize",          // Apply vectorization to straight-line code
+                "-mavx2",                   // Use AVX2 instructions (if supported by CPU)
+                "-mfma",                    // Use FMA instructions for floating-point operations
+                "-ffast-math",              // Enable aggressive floating-point optimizations
+                "-ffinite-math-only",       // Assume no NaNs or infinities
+                "-fno-math-errno",          // Don't set errno for math functions
+                "-fassociative-math",       // Allow reassociation of floating-point operations
+                "-freciprocal-math",        // Use reciprocal approximation for divisions
+                "-fstrict-aliasing",        // Assume strict aliasing rules
+                "-fomit-frame-pointer",     // Omit frame pointer for more registers
+                "-ffunction-sections",      // Place functions in separate sections
+                "-fdata-sections",          // Place data in separate sections
+                "-fmerge-all-constants",    // Merge identical constants
+                "-fopenmp",                 // Enable OpenMP support for parallelism
+                "-DNDEBUG",                 // Disable assertions
+                "-fstack-protector-strong", // Enable stack protection
+                "-pthread",                 // Link with pthread for multi-threading
+                "-pipe", // Use pipes for faster communication between compilation stages
+                "-flto-jobs=auto", // Automatically parallelize LTO using all available CPUs
+                "-Wl,/OPT:REF", // Linker optimization: eliminate unreferenced code/data
+                "-Wl,/OPT:ICF", // Identical COMDAT folding to reduce binary size
+            ]
+        }
     };
 
     // Execute the clang command

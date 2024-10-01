@@ -38,7 +38,7 @@ pub fn to_c(tokens: &Vec<Tokens>) -> String {
     main.push_str("int main() {\n");
     process(
         &mut main,
-        &vec![],
+        &[],
         false,
         tokens, // Process all tokens, or filter them if necessary
         &mut declared_vars,
@@ -55,7 +55,7 @@ pub fn to_c(tokens: &Vec<Tokens>) -> String {
 
 fn process(
     func: &mut String,
-    arg_vars: &Vec<String>,
+    arg_vars: &[String],
     _is_fun: bool,
     tokens: &Vec<Tokens>,
     declared_vars: &mut HashSet<String>,
@@ -64,7 +64,7 @@ fn process(
         match token {
             Tokens::Print(v, _n) => {
                 // Always add the print statement to allow duplicates
-                let pc = p_to_c(&v, tokens);
+                let pc = p_to_c(v, tokens);
                 let pc = format!("    printf({});\n", pc); // Add a newline after printf
                 func.push_str(&pc);
             }
@@ -114,7 +114,7 @@ fn process(
     }
 }
 
-fn make_args(args: &Vec<Args>) -> String {
+fn make_args(args: &[Args]) -> String {
     let mut farg = String::new();
     for (i, arg) in args.iter().enumerate() {
         match arg {
