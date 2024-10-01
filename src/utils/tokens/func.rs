@@ -171,7 +171,6 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
                 functions.code = fnbody.clone();
                 inf = false;
             } else {
-                let lv_clone = lv.clone();
                 let ptkn = parse_single_line(
                     ln.trim(),
                     index,
@@ -187,8 +186,6 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
                             lv.push(fvars { v, n });
                         }
                         _ => {
-                            fnbody.push(tkn.clone());
-                            functions.code.push(tkn.clone());
                             fnbody.push(tkn);
                         }
                     },

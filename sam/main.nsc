@@ -1,1 +1,4 @@
-println("Hello world!")
+fn hi(){
+    println("Hello world!")
+    may z = 0.0
+}

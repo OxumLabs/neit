@@ -29,18 +29,29 @@ pub fn to_c(tokens: &Vec<Tokens>) -> String {
             // Generate C function header
             let s = format!("void {}({}) {{\n", fun.name, make_args(&fun.args));
             funs.push_str(&s);
+            println!("funcs : {}\nfuns token : {:?}", funs, fun.code);
+            // Process function code (function body)
             process(&mut funs, &arg_vars, true, &fun.code, &mut declared_vars);
+            println!("funs after processing : {}", funs);
             funs.push_str("\n}\n\n"); // Close the function definition
         }
     }
 
     // Now handle the main function generation
     main.push_str("int main() {\n");
+
+    // Filter out function tokens so they are not processed in main
+    let non_function_tokens: Vec<&Tokens> = tokens
+        .iter()
+        .filter(|token| !matches!(token, Tokens::Func(_)))
+        .collect();
+
+    // Process the non-function tokens in the global scope
     process(
         &mut main,
         &[],
         false,
-        tokens, // Process all tokens, or filter them if necessary
+        &non_function_tokens.iter().cloned().cloned().collect(),
         &mut declared_vars,
     ); // No args for main
     main.push_str("    return 0;\n}\n"); // Close main function
