@@ -77,11 +77,9 @@ pub fn comp_c(c_code: &String, proj: &str, target: &str, project_name: &str) {
             c_file_path.to_str().unwrap(),
             "-o",
             output_file.to_str().unwrap(),
-            // Optimization Levels
             "-O3",
-            "-march=native", // Use all available CPU features
-            "-mtune=native", // Optimize for the host CPU
-            // Static Linking
+            "-march=native",
+            "-mtune=native",
             "-static",      // Ensure fully static linking (no dynamic dependencies)
             "-fuse-ld=lld", // Use LLVM's faster linker
             // Link-Time Optimization (LTO)

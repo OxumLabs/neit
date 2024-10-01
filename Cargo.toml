@@ -10,7 +10,10 @@ lto = "fat"             # Link-Time Optimization (LTO) across crate dependencies
 codegen-units = 1       # Single codegen unit for maximum optimization (at the cost of compile time)
 panic = "abort"         # Do not generate code for unwinding in case of a panic
 strip = true            # Remove debug symbols to reduce the size of the binary
-debug = false           # Do not include debug information in the release build
+debug = true           # Do not include debug information in the release build
 overflow-checks = false # Disable overflow checks (this can improve performance but sacrifices safety)
 incremental = false     # Disable incremental compilation to maximize optimization
 rpath = false           # Do not include runtime path information
+
+[dependencies]
+colored = "2.1.0"

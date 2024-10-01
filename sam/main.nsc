@@ -1,6 +1,1 @@
-fn a(){
-    may h = 0
-    h = h*100
-    println("h -> {h}")
-}
-a()
+println("Hello world!")

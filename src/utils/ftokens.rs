@@ -11,6 +11,7 @@ pub fn parse_single_line(
     p_label: &mut i32,
     lv: &mut Vec<fvars>,
     vars: &mut Vec<Tokens>,
+    f_args: &Vec<Args>,
 ) -> Result<Tokens, String> {
     let line = line.trim();
     if line.is_empty() {
@@ -116,15 +117,13 @@ pub fn parse_single_line(
         );
 
         // Remove any empty arguments
-        let provided_args: Vec<&str> = args_str
+        let provided_args: Vec<String> = args_str
             .split(',')
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
+            .map(|s| s.trim().to_string()) // Convert &str to String after trimming
+            .filter(|s| !s.is_empty()) // Filter out empty strings
             .collect();
 
-        // Simulate finding the function in existing tokens (using hardcoded expected args)
-        //TODO : Fetch OG args
-        let expected_args: Vec<Args> = vec![]; // You'd fetch this from pre-existing function definitions
+        let expected_args: Vec<Args> = f_args.to_vec();
 
         if provided_args.len() != expected_args.len() {
             return Err(format!(
@@ -169,7 +168,7 @@ pub fn parse_single_line(
             }
         }
 
-        return Ok(Tokens::FnCall(nm.to_string()));
+        return Ok(Tokens::FnCall(nm.to_string(), provided_args));
     }
 
     Err(format!(

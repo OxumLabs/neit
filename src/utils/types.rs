@@ -4,7 +4,7 @@ use super::maths::evaluate_expression;
 
 pub enum Tokens {
     Func(FN),
-    FnCall(String),          /*  String -> name of function */
+    FnCall(String, Vec<String>), /*  String -> name of function , Vec<String> -> Args */
     Print(String, String), /* String -> Text to print stored on | rax:1(sys_write) , rsi:text , rdx:size/len_of_text , rdi:1 (1 for stdout)*/
     Var(Vars, String, bool), /* Vars -> Variable Data | String -> Variable Name | bool -> is change-able*/
     Revar(String, String),   /* Name , Value */

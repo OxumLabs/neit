@@ -11,7 +11,6 @@ pub fn to_c(tokens: &Vec<Tokens>) -> String {
 
     // Set to track declared variables in order to avoid redeclarations
     let mut declared_vars: HashSet<String> = HashSet::new();
-    let mut printed: HashSet<String> = HashSet::new(); // Set to track printed values
 
     // First, handle function definitions
     for i in tokens {
@@ -30,14 +29,7 @@ pub fn to_c(tokens: &Vec<Tokens>) -> String {
             // Generate C function header
             let s = format!("void {}({}) {{\n", fun.name, make_args(&fun.args));
             funs.push_str(&s);
-            process(
-                &mut funs,
-                &arg_vars,
-                true,
-                &fun.code,
-                &mut declared_vars,
-                &mut printed,
-            );
+            process(&mut funs, &arg_vars, true, &fun.code, &mut declared_vars);
             funs.push_str("\n}\n\n"); // Close the function definition
         }
     }
@@ -50,7 +42,6 @@ pub fn to_c(tokens: &Vec<Tokens>) -> String {
         false,
         tokens, // Process all tokens, or filter them if necessary
         &mut declared_vars,
-        &mut printed,
     ); // No args for main
     main.push_str("    return 0;\n}\n"); // Close main function
 
@@ -68,23 +59,17 @@ fn process(
     _is_fun: bool,
     tokens: &Vec<Tokens>,
     declared_vars: &mut HashSet<String>,
-    printed: &mut HashSet<String>, // Track printed statements to avoid duplicates
 ) {
     for token in tokens {
         match token {
             Tokens::Print(v, _n) => {
-                // Check if this print statement has already been printed
-                if !printed.contains(v) {
-                    let pc = p_to_c(&v, tokens);
-                    println!("pc -> {}", pc);
-                    let pc = format!("printf({});", pc);
-                    func.push_str(pc.as_str());
-                    //func.push_str(&format!("    printf(\"{}\");\n", v));
-                    printed.insert(v.clone()); // Mark this print statement as printed
-                }
+                // Always add the print statement to allow duplicates
+                let pc = p_to_c(&v, tokens);
+                let pc = format!("    printf({});\n", pc); // Add a newline after printf
+                func.push_str(&pc);
             }
-            Tokens::FnCall(fc) => {
-                func.push_str(&format!("    {}();\n", fc));
+            Tokens::FnCall(fc, args) => {
+                func.push_str(&format!("    {}({});\n", fc, args.join(",")));
             }
             Tokens::Var(v, n, mutable) => {
                 // Skip redeclaring function arguments

@@ -21,32 +21,38 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
     fn parse_arguments(
         arg_str: &str,
         functions: &mut FN,
+        fnb: &mut Vec<Tokens>,
         lv: &mut Vec<fvars>,
         ln: &str,
         index: usize,
     ) -> Result<(), String> {
-        let args = arg_str.split(",");
+        let args = arg_str.split(",").map(str::trim);
         for i in args {
-            let pts: Vec<&str> = i.split(":").collect();
+            let pts: Vec<&str> = i.split(":").map(str::trim).collect();
             if pts.len() != 2 {
                 return Err(format!(
                     "Error at line {}: Invalid argument declaration.\nCode:\n   => {}\nHint: Ensure that each argument is declared as 'name:type'.",
                     index as i32, ln
                 ));
             }
-            let (name, t) = (pts[0].trim(), pts[1].trim());
+            let (name, t) = (pts[0], pts[1]);
             if name.is_empty() {
                 return Err(format!(
                     "Error at line {}: Argument name cannot be empty.\nCode:\n   => {}\nHint: Provide a valid name for the argument.",
                     index as i32, ln
                 ));
             }
-            match t {
+            match t.to_lowercase().as_str() {
                 "string" => {
                     lv.push(fvars {
                         v: crate::utils::types::Vars::STR(String::new()),
                         n: name.to_string(),
                     });
+                    fnb.push(Tokens::Var(
+                        crate::utils::types::Vars::STR(String::new()),
+                        name.to_string(),
+                        false,
+                    ));
                     functions.args.push(Args::Str(name.to_string()));
                 }
                 "int" => {
@@ -54,6 +60,11 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
                         v: crate::utils::types::Vars::INT(0),
                         n: name.to_string(),
                     });
+                    fnb.push(Tokens::Var(
+                        crate::utils::types::Vars::INT(0),
+                        name.to_string(),
+                        false,
+                    ));
                     functions.args.push(Args::Int(name.to_string()));
                 }
                 "float" => {
@@ -61,6 +72,12 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
                         v: crate::utils::types::Vars::F(0.0),
                         n: name.to_string(),
                     });
+                    fnb.push(Tokens::Var(
+                        crate::utils::types::Vars::F(0.0),
+                        name.to_string(),
+                        false,
+                    ));
+
                     functions.args.push(Args::Float(name.to_string()));
                 }
                 _ => {
@@ -88,7 +105,7 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
             functions.name = name.to_string();
             functions.is_global = true;
             if !arg.trim().is_empty() {
-                parse_arguments(arg, &mut functions, &mut lv, ln, index)?;
+                parse_arguments(arg, &mut functions, &mut fnbody, &mut lv, ln, index)?;
             } else {
                 functions.args.push(Args::EMP("_".to_string()));
             }
@@ -104,7 +121,7 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
             functions.name = name.to_string();
             functions.is_global = false;
             if !arg.trim().is_empty() {
-                parse_arguments(arg, &mut functions, &mut lv, ln, index)?;
+                parse_arguments(arg, &mut functions, &mut fnbody, &mut lv, ln, index)?;
             }
         } else if ln.starts_with("fn ") && ln.ends_with("{") {
             if inf {
@@ -125,7 +142,7 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
             functions.is_global = false;
 
             if !arg.trim().is_empty() {
-                parse_arguments(arg, &mut functions, &mut lv, ln, index)?;
+                parse_arguments(arg, &mut functions, &mut fnbody, &mut lv, ln, index)?;
             }
             inf = true;
         } else if ln.starts_with("pub fn ") && ln.ends_with("{") {
@@ -146,7 +163,7 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
             functions.name = name.to_string();
             functions.is_global = true;
             if !arg.trim().is_empty() {
-                parse_arguments(arg, &mut functions, &mut lv, ln, index)?;
+                parse_arguments(arg, &mut functions, &mut fnbody, &mut lv, ln, index)?;
             }
             inf = true;
         } else if inf {
@@ -155,26 +172,26 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
                 inf = false;
             } else {
                 let lv_clone = lv.clone();
-                println!("og lv near line 209 func.rs: {:?}", lv);
-                let ptkn = parse_single_line(ln.trim(), index, p_label, &mut lv, &mut fnbody);
-                println!("lv clone after parse single line : {:?}", lv_clone);
-                println!("og lv : {:?}", lv);
+                let ptkn = parse_single_line(
+                    ln.trim(),
+                    index,
+                    p_label,
+                    &mut lv,
+                    &mut fnbody,
+                    &functions.args,
+                );
 
                 match ptkn {
-                    Ok(tkn) => {
-                        println!("tkn : {:?}", tkn);
-                        match tkn {
-                            Tokens::Var(v, n, _) => {
-                                lv.push(fvars { v, n });
-                                println!("lv -> {:?}", lv);
-                            }
-                            _ => {
-                                fnbody.push(tkn.clone());
-                                functions.code.push(tkn.clone());
-                                fnbody.push(tkn);
-                            }
+                    Ok(tkn) => match tkn {
+                        Tokens::Var(v, n, _) => {
+                            lv.push(fvars { v, n });
                         }
-                    }
+                        _ => {
+                            fnbody.push(tkn.clone());
+                            functions.code.push(tkn.clone());
+                            fnbody.push(tkn);
+                        }
+                    },
                     Err(e) => match e.as_str() {
                         "|_EMP_|" => continue,
                         _ => return Err(e),

@@ -57,7 +57,7 @@ pub fn genasm_lin(tokens: &Vec<Tokens>) -> String {
 
                 functions.push((func.name.clone(), func_code, func.code.clone(), has_vars));
             }
-            Tokens::FnCall(ref nm) => {
+            Tokens::FnCall(ref nm, _args) => {
                 let mut call_code = String::new();
                 let args = get_function_args(nm, &tokens);
 
@@ -184,7 +184,7 @@ fn parse(
                 }
             }
         }
-        Tokens::FnCall(nm) => {
+        Tokens::FnCall(nm, _args) => {
             let mut call_code = String::new();
             let args = get_function_args(&nm, tokens);
 

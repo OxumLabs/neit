@@ -134,7 +134,7 @@ fn build_project(proj: &str) {
             }
         }
         Err(e) => {
-            eprintln!("Error processing tokens: {}", e);
+            eprintln!("{}", e);
             exit(1);
         }
     }

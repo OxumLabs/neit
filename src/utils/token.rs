@@ -105,8 +105,8 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
             let ptxt = process_print(&mut p_label, txt, &tokens);
             tokens.push(ptxt);
         } else if ln.trim().starts_with("println(") && ln.trim().ends_with(")") {
-            let mut txt: String = ln[8..ln.len() - 1].trim().to_string(); // Extract println arguments
-            txt.push_str(r#"\n"#);
+            let mut txt: String = ln[8..ln.len() - 2].trim().to_string(); // Extract println arguments
+            txt.push_str(r#"\n""#);
             let ptxt = process_print(&mut p_label, &txt, &tokens);
             tokens.push(ptxt);
         } else {
@@ -119,10 +119,10 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
                     args.get(1).unwrap().trim_end_matches(')'),
                 );
 
-                let provided_args: Vec<&str> = args_str
+                let provided_args: Vec<String> = args_str
                     .split(',')
-                    .map(str::trim)
-                    .filter(|s| !s.is_empty())
+                    .map(|s| s.trim().to_string()) // Convert &str to String after trimming
+                    .filter(|s| !s.is_empty()) // Filter out empty strings
                     .collect();
 
                 if let Some(Tokens::Func(f)) = tokens
@@ -176,7 +176,7 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
                         }
                     }
 
-                    tokens.push(Tokens::FnCall(nm.trim().to_string()));
+                    tokens.push(Tokens::FnCall(nm.trim().to_string(), provided_args));
                     found_function = true;
                 }
             }

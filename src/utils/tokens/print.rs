@@ -89,11 +89,10 @@ pub fn process_print(num: &mut i32, text: &str, vars: &Vec<Tokens>) -> Tokens {
     if !current_var.is_empty() {
         result_text.push_str(&current_var);
     }
-    println!("result text : {}\n", result_text);
     Tokens::Print(result_text, format!("p{}", num))
 }
 
-pub fn p_to_c(text: &str, vars: &Vec<Tokens>) -> String {
+pub fn p_to_c(text: &str, _vars: &Vec<Tokens>) -> String {
     let mut c_code = String::new();
     c_code.push('\"');
     let mut collected_vars = Vec::new();
