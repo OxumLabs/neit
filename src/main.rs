@@ -187,6 +187,7 @@ fn run_project(proj: &str) {
                                 "-o".to_string(),
                                 outf.clone(),
                                 "-fuse-ld=lld".to_string(),
+                                "-Wno-format".to_string(),
                             ];
                             let cmd = Command::new("clang").args(cargs).status();
 

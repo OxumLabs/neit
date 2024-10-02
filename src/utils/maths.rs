@@ -1,7 +1,7 @@
 use super::types::{Tokens, Vars};
 use std::process::exit;
 
-pub fn process_print(num: &mut i32, text: &str, vars: &Vec<Tokens>) -> Tokens {
+pub fn pp(num: &mut i32, text: &str, vars: &Vec<Tokens>) -> Tokens {
     *num += 1;
     let mut result_text = String::new();
     let mut inside_string = false;
@@ -93,7 +93,7 @@ fn handle_current_var(result_text: &mut String, current_var: &str, vars: &Vec<To
 
 pub fn evaluate_expression(expr: &str, vars: &Vec<Tokens>) -> Result<f64, String> {
     let expr = expr.replace(" ", ""); // Remove spaces
-    println!("expr : {}", expr);
+                                      //println!("expr : {}", expr);
     let mut tokens = tokenize(&expr)?;
     let result = parse_expression(&mut tokens, vars)?;
     Ok(result)

@@ -79,6 +79,7 @@ pub fn comp_c(c_code: &String, proj: &str, target: &str, project_name: &str) {
                 c_file_path.to_str().unwrap(),
                 "-o",
                 output_file.to_str().unwrap(),
+                "-Wno-format",
                 "-O3",                      // Optimize for maximum speed
                 "-march=native",            // Generate code optimized for the host CPU
                 "-mtune=native",            // Tune code for the host CPU
@@ -114,7 +115,8 @@ pub fn comp_c(c_code: &String, proj: &str, target: &str, project_name: &str) {
                 c_file_path.to_str().unwrap(),
                 "-o",
                 output_file.to_str().unwrap(),
-                "-O3",                      // Optimize for maximum speed
+                "-O3",
+                "-Wno-format",              // Optimize for maximum speed
                 "-march=native",            // Generate code optimized for the host CPU
                 "-mtune=native",            // Tune code for the host CPU
                 "-static",                  // Ensure fully static linking

@@ -45,10 +45,10 @@ double fdf(double a, double b) {
             // Generate C function header
             let s = format!("void {}({}) {{\n", fun.name, make_args(&fun.args));
             funs.push_str(&s);
-            println!("funcs : {}\nfuns token : {:?}", funs, fun.code);
+            //println!("funcs : {}\nfuns token : {:?}", funs, fun.code);
             // Process function code (function body)
             process(&mut funs, &arg_vars, true, &fun.code, &mut declared_vars);
-            println!("funs after processing : {}", funs);
+            //println!("funs after processing : {}", funs);
             funs.push_str("\n}\n\n"); // Close the function definition
         }
     }

@@ -1,6 +1,6 @@
 use super::{
-    maths::{evaluate_expression, process_print},
-    tokens::var::process_var,
+    maths::evaluate_expression,
+    tokens::{print::process_print, var::process_var},
     types::{fvars, Args, Tokens},
 };
 

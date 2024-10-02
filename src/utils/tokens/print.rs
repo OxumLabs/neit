@@ -20,7 +20,6 @@ pub fn process_print(num: &mut i32, text: &str, vars: &Vec<Tokens>) -> Tokens {
                 inside_string = !inside_string;
                 // Ensure we only push formatted text when the string is closed
                 if !inside_string && !current_var.is_empty() {
-                    // If current_var was already processed, we do not push it here
                     result_text.push_str(&current_var);
                     current_var.clear();
                 }
@@ -56,7 +55,6 @@ pub fn process_print(num: &mut i32, text: &str, vars: &Vec<Tokens>) -> Tokens {
 
                         // Handle case where variable was not found, treating it as an expression
                         if !var_found {
-                            // Handle expression evaluation
                             let value = evaluate_expression(&current_var, vars);
                             match value {
                                 Ok(v) => {
@@ -113,22 +111,7 @@ pub fn p_to_c(text: &str, _vars: &Vec<Tokens>) -> String {
     // Split the input text by spaces to handle different parts of the expression
     let tokens: Vec<&str> = text.split_whitespace().collect();
 
-    for token in tokens {
-        // if token.contains("//") {
-        //     // Handle floor division by splitting on '//' and creating the equivalent C expression
-        //     let parts: Vec<&str> = token.split("//").collect();
-        //     if parts.len() == 2 {
-        //         // Ensure both parts exist
-        //         let left = parts[0].trim();
-        //         let right = parts[1].trim();
-        //         // Create C code for floor division
-        //         c_code.push_str(&format!(
-        //             "({} / {}) - (({} %% {}) < 0)",
-        //             left, right, left, right
-        //         ));
-        //     }
-        // } else {
-        // Process other tokens
+    for (i, token) in tokens.iter().enumerate() {
         for c in token.chars() {
             if inside_var {
                 if c == '|' {
@@ -164,9 +147,9 @@ pub fn p_to_c(text: &str, _vars: &Vec<Tokens>) -> String {
                 }
                 inside_var = true; // Next characters will be treated as variable or expression
             } else if c == '}' {
+                inside_var = false;
                 // End of an expression
                 if !var_name.is_empty() {
-                    // Process the variable or expression before closing
                     let expression = var_name.clone();
                     if expression.contains("/")
                         || expression.contains("*")
@@ -178,9 +161,9 @@ pub fn p_to_c(text: &str, _vars: &Vec<Tokens>) -> String {
                     } else {
                         // It's a variable; we need to format it
                         let mut var_found = false;
-                        for v in _vars.clone() {
+                        for v in _vars.iter() {
                             if let Tokens::Var(v_type, n, _) = v {
-                                if n == expression {
+                                if *n == expression {
                                     var_found = true;
                                     match v_type {
                                         Vars::STR(_) => c_code.push_str(&format!("|{}~s|", n)),
@@ -204,6 +187,17 @@ pub fn p_to_c(text: &str, _vars: &Vec<Tokens>) -> String {
                 literal_text.push(c); // Collect literal text until we hit a variable
             }
         }
+
+        // After processing each token, append any literal text
+        if !literal_text.is_empty() {
+            c_code.push_str(&literal_text);
+            literal_text.clear();
+        }
+
+        // Add a space after each token except for the last one
+        if i < tokens.len() - 1 {
+            c_code.push(' ');
+        }
     }
 
     // Add any remaining literal text after processing
@@ -212,28 +206,20 @@ pub fn p_to_c(text: &str, _vars: &Vec<Tokens>) -> String {
     }
 
     c_code.push('\"'); // Close the string literal
-
-    // Now append all the collected variables to the printf statement\
-    //let mut index = 0;
     for cv in collected_vars.iter_mut() {
-        println!("cv -> {}", cv);
+        //println!("cv -> {}", cv);
         if cv.contains("//") {
             let pts: Vec<&str> = cv.split("//").collect();
-
-            // Try parsing the first part as a float
             let first_value = pts[0].trim();
             if let Ok(_) = first_value.parse::<f64>() {
-                // Attempt to parse as float
-                // If successful, call fdf
                 *cv = format!("fdf({}, {})", first_value, pts[1].trim());
             } else {
-                // If not successful, call fdi
                 *cv = format!("fdi({}, {})", first_value, pts[1].trim());
             }
         }
         // index += 1; // Increment index if necessary
     }
-
+    // Now append all the collected variables to the printf statement
     if !collected_vars.is_empty() {
         c_code.push_str(", ");
         c_code.push_str(&collected_vars.join(", ")); // Join collected variables with commas

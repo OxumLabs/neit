@@ -1,5 +1,7 @@
-may z = 1001%2
-fn say(z : int){
-    println("{z}")
+fn welcome(name : string , age : int){
+    println("Hello nice to meet you {name}! , i see you are {age} years old!\nyou will be {age + 1} years old next year!")
+    println("{2//2}")
 }
-say(z)
+may name = "jay"
+must age = 16
+welcome(name,16)
