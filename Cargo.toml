@@ -7,7 +7,7 @@ edition = "2021"
 [profile.release]
 opt-level = 3           # Optimize for binary size (alternative: "s" for size; "3" for maximum speed)
 lto = "fat"             # Link-Time Optimization (LTO) across crate dependencies, "fat" maximizes optimization
-codegen-units = 1       # Single codegen unit for maximum optimization (at the cost of compile time)
+codegen-units = 4       # Single codegen unit for maximum optimization (at the cost of compile time)
 panic = "abort"         # Do not generate code for unwinding in case of a panic
 strip = true            # Remove debug symbols to reduce the size of the binary
 debug = true           # Do not include debug information in the release build

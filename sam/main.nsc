@@ -1,4 +1,4 @@
-fn hi(){
-    println("Hello world!")
-    may z = 0.0
-}
+may z = 0.1212
+println("{z}")
+z = 19280.89123
+println("{z}")

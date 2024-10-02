@@ -1,7 +1,6 @@
 use super::maths::evaluate_expression;
 
-#[derive(Debug, Clone)]
-
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum Tokens {
     Func(FN),
     FnCall(String, Vec<String>), /*  String -> name of function , Vec<String> -> Args */
@@ -19,12 +18,14 @@ pub fn get_vars(tokens: &Vec<fvars>) -> Vec<Vars> {
 pub fn get_vars_tkns(tokens: &Vec<Tokens>) -> Vec<Vars> {
     let mut vrs: Vec<Vars> = Vec::new();
     for i in tokens {
-        if let Tokens::Var(v, _, _) = i { vrs.push(v.clone()) }
+        if let Tokens::Var(v, _, _) = i {
+            vrs.push(v.clone())
+        }
     }
     vrs
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 
 pub struct FN {
     pub name: String,
@@ -34,7 +35,7 @@ pub struct FN {
     pub local_vars: Vec<fvars>,
     /* variable system */
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[allow(non_camel_case_types)]
 pub struct fvars {
     pub v: Vars,
@@ -42,7 +43,7 @@ pub struct fvars {
 }
 
 #[allow(unused)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 
 pub enum Args /* type(name_of_arg)*/ {
     Str(String),
@@ -84,7 +85,7 @@ impl FN {
     }
 }
 #[allow(dead_code)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum Vars {
     STR(String),
     INT(i64),

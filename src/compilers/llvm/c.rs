@@ -97,7 +97,8 @@ fn process(
                 declared_vars.insert(n.clone());
 
                 // Generate variable declaration based on type and mutability
-                let var_declaration = if *mutable {
+                let var_declaration = if !mutable {
+                    //println!("mutable var_declr (101 c.rs) => {:?}", v);
                     match v {
                         Vars::STR(s) => format!("char *{} = \"{}\";\n", n, s),
                         Vars::INT(s) => format!("int {} = {};\n", n, s),
@@ -106,6 +107,7 @@ fn process(
                     }
                 } else {
                     // Immutable variables should be declared as 'const'
+                    //println!("immutable var_declr (101 c.rs) => {:?}", v);
                     match v {
                         Vars::STR(s) => format!("const char *{} = \"{}\";\n", n, s),
                         Vars::INT(s) => format!("const int {} = {};\n", n, s),

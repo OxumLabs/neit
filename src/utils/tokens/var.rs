@@ -51,7 +51,7 @@ static CKWRDS: &[&str] = &[
 pub fn process_var(code: &str, vrs: &Vec<Tokens>, whole: bool) -> Result<(Vars, String), String> {
     // Trim leading whitespace and determine the keyword used
     let trimmed_code = code.trim();
-    let keyword = if whole { "must " } else { "may " };
+    let keyword = if whole { "may " } else { "must " };
 
     // Check if the code starts with the correct keyword
     if !trimmed_code.starts_with(keyword) {

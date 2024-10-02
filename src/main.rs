@@ -1,8 +1,9 @@
 use std::{
-    env,
-    fs::{self, read_to_string},
+    env::{self, consts::OS},
+    fs::{self, read_to_string, File},
+    io::Write,
     path::Path,
-    process::exit,
+    process::{exit, Command, Stdio},
 };
 
 pub mod compilers;
@@ -142,7 +143,107 @@ fn build_project(proj: &str) {
 
 fn run_project(proj: &str) {
     println!("Running project at: {}", proj);
-    // Implement run functionality here
+
+    // Check if the project is valid
+    if let Err(e) = checkproj(&proj.to_string()) {
+        eprintln!("{}", e);
+        exit(1);
+    }
+
+    // Read the main.nsc file
+    let mf = format!("{}/main.nsc", proj);
+    let mc = match read_to_string(&mf) {
+        Ok(content) => content,
+        Err(e) => {
+            eprintln!("Error: Unable to read 'main.nsc' file at '{}': {}", proj, e);
+            exit(1);
+        }
+    };
+
+    let cds: Vec<&str> = mc.split("\n").collect();
+    match gentoken(cds) {
+        Ok(tkns) => {
+            let dtf = format!("{}/_.c", proj); // Temporary C file
+            let outf = match OS {
+                "windows" => format!("{}/_.exe", proj),
+                "linux" => format!("{}/_.out", proj),
+                _ => {
+                    eprintln!("Error: Unknown OS");
+                    exit(1);
+                }
+            };
+
+            // Create the C file
+            match File::create(&dtf) {
+                Ok(mut dtcf) => {
+                    let c = to_c(&tkns);
+
+                    // Write C code to the temporary C file
+                    match dtcf.write_all(c.as_bytes()) {
+                        Ok(_) => {
+                            // Compile the C file into an executable
+                            let cargs = vec![
+                                dtf.clone().to_string(),
+                                "-o".to_string(),
+                                outf.clone(),
+                                "-fuse-ld=lld".to_string(),
+                            ];
+                            let cmd = Command::new("clang").args(cargs).status();
+
+                            match cmd {
+                                Ok(ok) => {
+                                    if ok.success() {
+                                        let status = Command::new(outf.clone())
+                                            .stdout(Stdio::inherit()) // Inherit stdout for real-time output
+                                            .stderr(Stdio::inherit()) // Inherit stderr for real-time error reporting
+                                            .status()
+                                            .expect("Failed to run the executable");
+
+                                        // Wait for the child process to finish
+                                        if !status.success() {
+                                            eprintln!("Process finished with an error.");
+                                        }
+
+                                        // Clean up temporary files after execution
+                                        if let Err(e) = fs::remove_file(&dtf) {
+                                            eprintln!(
+                                                "Warning: Could not delete temp C file '{}': {}",
+                                                dtf, e
+                                            );
+                                        }
+                                        if let Err(e) = fs::remove_file(&outf) {
+                                            eprintln!(
+                                                "Warning: Could not delete temp executable '{}': {}",
+                                                outf, e
+                                            );
+                                        }
+                                    } else {
+                                        eprintln!("Error: Compilation failed.");
+                                    }
+                                }
+                                Err(_) => {
+                                    eprintln!("Error: Failed to run clang or lld!");
+                                    exit(1);
+                                }
+                            }
+                        }
+                        Err(_) => {
+                            eprintln!("Error: Unable to write to C file.");
+                            exit(1);
+                        }
+                    }
+                }
+                Err(_) => {
+                    eprintln!("Error: Unable to create C file.");
+                    exit(1);
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("{}", e);
+            exit(1);
+        }
+    }
 }
 
 pub fn create_new_project(proj: &str) {

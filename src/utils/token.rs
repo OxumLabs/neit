@@ -81,15 +81,15 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
         } else if (ln.trim().starts_with("may") && !ln.trim().starts_with("may whole"))
             && ln.contains('=')
         {
-            let vr = process_var(ln.trim(), &tokens, false); // Trim the line before processing
+            let vr = process_var(ln.trim(), &tokens, true);
             match vr {
                 Ok(vr) => tokens.push(Tokens::Var(vr.0, vr.1, false)),
                 Err(e) => return Err(e),
             }
         } else if ln.trim().starts_with("must ") {
-            let vr = process_var(ln.trim(), &tokens, true); // Trim the line before processing
+            let vr = process_var(ln.trim(), &tokens, false);
             match vr {
-                Ok(vr) => tokens.push(Tokens::Var(vr.0, vr.1, true)),
+                Ok(vr) => tokens.push(Tokens::Var(vr.0, vr.1, false)),
                 Err(e) => return Err(e),
             }
         } else if (ln.trim().starts_with("fn") || ln.trim().starts_with("pub fn"))
@@ -105,8 +105,9 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
             let ptxt = process_print(&mut p_label, txt, &tokens);
             tokens.push(ptxt);
         } else if ln.trim().starts_with("println(") && ln.trim().ends_with(")") {
-            let mut txt: String = ln[8..ln.len() - 2].trim().to_string(); // Extract println arguments
-            txt.push_str(r#"\n""#);
+            let mut txt: String = ln[9..ln.len() - 2].trim().to_string(); // Extract println arguments
+                                                                          //txt.push_str(r#"\n""#);
+            let txt = format!(r#""\n{}""#, txt);
             let ptxt = process_print(&mut p_label, &txt, &tokens);
             tokens.push(ptxt);
         } else {
@@ -211,10 +212,7 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
                                         }
                                     } else {
                                         // Handle direct assignment (no expression)
-                                        tokens.push(Tokens::Revar(
-                                            n.to_string(),
-                                            val.to_string(),
-                                        ));
+                                        tokens.push(Tokens::Revar(n.to_string(), val.to_string()));
                                         vfnd = true;
                                     }
                                 }

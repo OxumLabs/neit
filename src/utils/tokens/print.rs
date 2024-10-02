@@ -30,19 +30,11 @@ pub fn process_print(num: &mut i32, text: &str, vars: &Vec<Tokens>) -> Tokens {
             }
             '}' if is_var => {
                 open_brace_count -= 1;
-                println!(
-                    "current var : {} | open brace count : {}",
-                    current_var, open_brace_count
-                );
 
                 if open_brace_count == 0 {
                     let mut var_found = false;
-                    // We are not evaluating the expression, just identifying the type and name
-                    println!("vars : {:?}", vars);
                     for v in vars.clone() {
-                        println!("v : {:?}", v);
                         if let Tokens::Var(v, n, _) = v {
-                            println!("CURRENT VAR : {} | n : {}", current_var, n);
                             if current_var == n {
                                 var_found = true;
                                 // Generate the custom notation based on the variable type
