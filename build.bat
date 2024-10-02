@@ -8,11 +8,12 @@ mkdir bin\windows
 
 rem Define WSL and Cargo path
 set WSL_PATH=C:\Windows\System32\wsl.exe
-set CARGO_PATH=~/.cargo/bin/cargo
+set CARGO_PATH=/home/joy/.cargo/bin/cargo  
+rem Update with your WSL username
 
 rem Build static Linux binary with MUSL using WSL
 echo Building Linux binary...
-%WSL_PATH% %CARGO_PATH% build --release --target x86_64-unknown-linux-gnu
+%WSL_PATH% %CARGO_PATH% build --release --target x86_64-unknown-linux-musl
 if %ERRORLEVEL% neq 0 (
     echo Linux binary build failed.
     exit /b 1
@@ -22,7 +23,7 @@ if %ERRORLEVEL% neq 0 (
 
 rem Copy Linux binary to bin\linux
 echo Copying Linux binary...
-%WSL_PATH% cp /mnt/f/rust/neit/target/x86_64-unknown-linux-gnu/release/neit /mnt/f/rust/neit/bin/linux/neit
+%WSL_PATH% cp /mnt/f/rust/neit/target/x86_64-unknown-linux-musl/release/neit /mnt/f/rust/neit/bin/linux/neit
 if %ERRORLEVEL% neq 0 (
     echo Failed to copy Linux binary.
     exit /b 1
@@ -54,9 +55,8 @@ if %ERRORLEVEL% neq 0 (
     exit /b 1
 )
 
-
 rem Final output message
-echo Binaries files successfully copied to .\bin
+echo Binary files successfully copied to .\bin
 
 endlocal
 pause
