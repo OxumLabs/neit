@@ -1,4 +1,4 @@
-may z = 0
+may z = 1001%2
 fn say(z : int){
     println("{z}")
 }

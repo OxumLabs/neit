@@ -1,7 +1,7 @@
 use super::{
     maths::evaluate_expression,
     tokens::{func::process_func, print::process_print as other_process_print, var::process_var},
-    types::{Args, Tokens},
+    types::{Args, Tokens, Vars},
 };
 
 #[allow(unused, irrefutable_let_patterns)]
@@ -145,7 +145,7 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
 
                     // Validate the types of provided arguments
                     for (provided, expected) in provided_args.iter().zip(expected_args.iter()) {
-                        let provided_type = match determine_type(provided) {
+                        let provided_type = match determine_type(provided, &tokens) {
                             Ok(t) => t,
                             Err(e) => {
                                 return Err(format!(
@@ -258,8 +258,19 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
 }
 
 // Helper function to determine the type of an argument
-fn determine_type(arg: &str) -> Result<&'static str, String> {
+fn determine_type(arg: &str, tokens: &Vec<Tokens>) -> Result<&'static str, String> {
     let trimmed = arg.trim(); // Trim the argument
+    for t in tokens {
+        match t {
+            Tokens::Var(v, _, _) => match v {
+                Vars::STR(_) => return Ok("string"),
+                Vars::INT(_) => return Ok("int"),
+                Vars::F(_) => return Ok("float"),
+                _ => {}
+            },
+            _ => {}
+        }
+    }
 
     if trimmed.starts_with('"') && trimmed.ends_with('"') {
         Ok("string")
