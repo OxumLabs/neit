@@ -5,9 +5,25 @@ use crate::utils::{
 use std::collections::HashSet;
 
 pub fn to_c(tokens: &Vec<Tokens>) -> String {
-    let imports = String::from("#include <stdio.h>\n\n");
+    let imports = String::from("#include <stdio.h>\n#include <math.h>\n\n");
     let mut main = String::new();
     let mut funs = String::new();
+    funs.push_str(
+        r#"
+int fdi(int a, int b) {
+    return a / b - ((a % b) < 0);
+}
+"#,
+    );
+
+    // Define floor division for floats
+    funs.push_str(
+        r#"
+double fdf(double a, double b) {
+    return floor(a / b);
+}
+"#,
+    );
 
     // Set to track declared variables in order to avoid redeclarations
     let mut declared_vars: HashSet<String> = HashSet::new();

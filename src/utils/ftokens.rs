@@ -1,6 +1,6 @@
 use super::{
-    maths::evaluate_expression,
-    tokens::{print::process_print, var::process_var},
+    maths::{evaluate_expression, process_print},
+    tokens::var::process_var,
     types::{fvars, Args, Tokens},
 };
 
@@ -32,7 +32,6 @@ pub fn parse_single_line(
     if line.starts_with("print(") && line.ends_with(")") {
         let txt = line[6..].trim_end_matches(")");
         *p_label += 365;
-        println!("vars at ln 35 ftokens.rs : {:?}", vars);
         let print_token = process_print(p_label, txt, vars);
         return Ok(print_token);
     } else if line.starts_with("println(") && line.ends_with(")") {
@@ -40,7 +39,6 @@ pub fn parse_single_line(
         txt.push_str(r#"\n""#);
         let txt = txt.as_str();
         *p_label += 365;
-        println!("vars at ln 42 ftokens.rs : {:?}", vars);
         let print_token = process_print(p_label, txt, vars);
         return Ok(print_token);
     } else if line.starts_with("may ") && line.contains("=") {

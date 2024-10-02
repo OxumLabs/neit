@@ -1,6 +1,6 @@
 use super::{
     maths::evaluate_expression,
-    tokens::{func::process_func, print::process_print, var::process_var},
+    tokens::{func::process_func, print::process_print as other_process_print, var::process_var},
     types::{Args, Tokens},
 };
 
@@ -102,13 +102,14 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
             }
         } else if ln.trim().starts_with("print(") && ln.trim().ends_with(")") {
             let txt = ln[6..ln.len() - 1].trim(); // Extract print arguments
-            let ptxt = process_print(&mut p_label, txt, &tokens);
+            let ptxt = other_process_print(&mut p_label, txt, &tokens);
             tokens.push(ptxt);
         } else if ln.trim().starts_with("println(") && ln.trim().ends_with(")") {
             let mut txt: String = ln[9..ln.len() - 2].trim().to_string(); // Extract println arguments
                                                                           //txt.push_str(r#"\n""#);
             let txt = format!(r#""\n{}""#, txt);
-            let ptxt = process_print(&mut p_label, &txt, &tokens);
+            let ptxt = other_process_print(&mut p_label, &txt, &tokens);
+            //let ptxt = process_print(&mut p_label, &txt, &tokens);
             tokens.push(ptxt);
         } else {
             let args: Vec<&str> = ln.trim().split('(').collect(); // Split on parentheses
