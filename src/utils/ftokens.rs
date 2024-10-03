@@ -21,9 +21,9 @@ pub fn parse_single_line(
     // Return an error if a function declaration is encountered.
     if line.starts_with("fn ") || line.starts_with("pub fn") {
         return Err(format!(
-            "Error at line {}: Function declarations are not allowed here.\n\
-                Hint: Function declarations should not be placed in this context.\n\
-                Code:\n   => {}",
+            "🚫 Whoa there! Looks like you tried to declare a function at line {}—and that's a big no-no! 🙅‍♂️\n\
+            🤔 Hint: Functions are a bit picky and don’t like to be placed here (inside another fucntion!!! can you imagine?). Try moving them to a more suitable spot!\n\
+            Code:\n   => {}",
             line_number, line
         ));
     }
@@ -130,9 +130,10 @@ pub fn parse_single_line(
 
         if provided_args.len() != expected_args.len() {
             return Err(format!(
-                "Error at line {}: Function '{}' called with incorrect number of arguments.\n\
-                    Hint: Expected {} arguments but got {}.\n\
-                    Code:\n   => {}",
+                "🚫 Uh-oh at line {}! It seems the function '{}' was called with the wrong number of arguments! 😱\n\
+                🔍 Hint: I expected {} arguments, but you only gave me {}! Let’s make sure they match up! 🤔\n\
+                Code:\n   => {}\n\
+                Remember, every function loves to have its correct number of arguments—let's keep it happy! 🎉😊",
                 line_number,
                 nm,
                 expected_args.len(),
@@ -146,9 +147,10 @@ pub fn parse_single_line(
                 Ok(t) => t,
                 Err(e) => {
                     return Err(format!(
-                        "Error at line {}: Argument '{}' could not be parsed. {}\n\
-                            Hint: Ensure arguments are of correct type.\n\
-                            Code:\n   => {}",
+                        "🚨 Uh-oh! At line {}, I couldn't make sense of the argument '{}'—it just doesn’t compute! 🤖💥\n\
+                        {} \n\
+                        🔍 Hint: Double-check that your arguments are of the right type—let’s keep everything in harmony! 🎶\n\
+                        Code:\n   => {}",
                         line_number, provided, e, line
                     ));
                 }
@@ -163,9 +165,9 @@ pub fn parse_single_line(
 
             if provided_type != expected_type {
                 return Err(format!(
-                    "Error at line {}: Argument type mismatch in function call '{}'.\n\
-                        Hint: Expected argument type '{}' but got '{}'.\n\
-                        Code:\n   => {}",
+                    "🚫 Whoopsie! At line {}, there’s a mix-up with the argument in the function call '{}'. 🤔💥\n\
+                    🔍 Hint: I was expecting a '{}' but got a '{}' instead! Let’s get our types in sync! 🎉\n\
+                    Code:\n   => {}",
                     line_number, nm, expected_type, provided_type, line
                 ));
             }
@@ -175,9 +177,10 @@ pub fn parse_single_line(
     }
 
     Err(format!(
-        "Error at line {}: Could not parse the provided line.\n\
-            Hint: Ensure the code syntax is correct.\n\
-            Code:\n   => {}",
+        "🚫 Yikes! At line {}, I couldn’t parse the provided line—it’s a bit jumbled! 😵‍💫\n\
+        🔍 Hint: Let’s make sure the code syntax is spot on! 🧐✨\n\
+        Code:\n   => {}\n\
+        Remember, a clean code line is a happy code line! Let’s tidy it up! 🎉😊",
         line_number, line
     ))
 }

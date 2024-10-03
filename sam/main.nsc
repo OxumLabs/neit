@@ -1,3 +1,4 @@
-may z = "joy"
-takein(z)
-println("{z}")
+fn hi(name : string){
+    println("hi")
+}
+hi(3)

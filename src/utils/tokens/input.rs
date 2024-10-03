@@ -14,11 +14,14 @@ pub fn process_input(ln: &str, vars: &[Tokens]) -> Result<Tokens, String> {
                     if !is_mutable {
                         println!("var : {:?}", token);
                         return Err(format!(
-                            "🚫 Oops! You can't mutate the static variable '{}'.\n\
-                             🔧 To fix this, try declaring it as mutable like this:\n\
-                             \tmay {} = <value>",
+                            "🚫 Whoa there, buddy! You're trying to mess with the static variable '{}', but I can't let you do that! 😅\n\
+                             🛑 Static variables are like rocks—once set, they don’t change!\n\
+                             🤔 If you really wanna change it, maybe try making it mutable? Like this:\n\
+                             \tlet mut {} = <value>\n\
+                             (Just a suggestion, no pressure! 😎)",
                             name, name
                         ));
+                        
                     }
 
                     // If the variable is a string type, return the corresponding token
@@ -28,20 +31,17 @@ pub fn process_input(ln: &str, vars: &[Tokens]) -> Result<Tokens, String> {
                         }
                         _ => {
                             return Err(format!(
-                                "⚠️ Uh-oh! The variable '{}' is not a string.\n\
-                                 🔍 Expected: String\n\
-                                 🛠️ Actual: {}\n\
-                                 ✏️ Make sure you're using the right type in your input.",
+                                "🤔 Hmm... I was expecting a string for '{}', but it looks like you've given me a {}.\n\
+                                 🛠️ I was really hoping for: String.\n\
+                                 ✏️ Could you double-check and make sure you're using the right type?",
                                 name,
-                                format!(
-                                    "{}",
-                                    match var_type {
-                                        Vars::INT(_) => "integer",
-                                        Vars::F(_) => "float",
-                                        _ => "undefined!?",
-                                    }
-                                )
-                            ));
+                                match var_type {
+                                    Vars::INT(_) => "integer",
+                                    Vars::F(_) => "float",
+                                    _ => "something I don't recognize",
+                                }
+                            ))
+                            
                         }
                     }
                 }
@@ -52,9 +52,10 @@ pub fn process_input(ln: &str, vars: &[Tokens]) -> Result<Tokens, String> {
 
     // Return an error if the variable was not found
     Err(format!(
-        "❓ Hmmm... I couldn't find the variable '{}'.\n\
-         🔍 Double-check that it's declared and there's no typo.\n\
-         ✏️ Make sure it's defined before you try to use it.",
+        "❓ Uhhh... where did the variable '{}' go? 🤔\n\
+         🔍 I looked everywhere, but I just can't find it!\n\
+         ✏️ Maybe double-check if you spelled it right or declared it? My memory isn't the best sometimes! 😅",
         vrname
     ))
+    
 }

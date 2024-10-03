@@ -141,7 +141,7 @@ fn process(
                 let var_declaration = if *mutable {
                     //println!("mutable var_declr (101 c.rs) => {:?}", v);
                     match v {
-                        Vars::STR(s) => format!("char {}[{}] = \"{}\";\n", n, n.len() + 1024, s),
+                        Vars::STR(s) => format!("char {}[{}] = \"{}\";\n", n, n.len() + 3333, s),
                         Vars::INT(s) => format!("int {} = {};\n", n, s),
                         Vars::F(f) => format!("double {} = {};\n", n, f),
                         _ => String::new(),

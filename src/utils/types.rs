@@ -151,18 +151,22 @@ impl Vars {
                 } else {
                     match result.to_string().parse::<i64>() {
                         Ok(int_value) => *self = Vars::INT(int_value),
-                        Err(_) => return Err("Error: Unable to parse value as integer".to_string()),
+                        Err(_) => return Err("🚫 Oopsie! I couldn’t parse that value as an integer—it's playing hard to get! 😩🔢\n\
+                        Make sure the value looks like a proper integer; no sneaky decimals or funny business! 🤔✨\n\
+                        Let’s help it find its number identity! 🎉😊".to_string()),
                     }
                 }
                 Ok(self.clone())
             }
 
             Err(e) => {
-                Err(format!(
-                "✘ Error: Value '{}' could not be parsed as a valid type.\n\
-                Hint: Ensure the value is in a valid format for string (\"string\"), integer (123), float (123.45), or expression (e.g., a+b).\nERROR: {}",
-                value,e
-            ))
+                return Err(format!(
+                    "🚫 Uh-oh! I tried to make sense of the value '{}' but it just wouldn’t play nice! 🤔💥\n\
+                    ✘ Error: It couldn’t be parsed as a valid type.\n\
+                    🔍 Hint: Make sure your value is in the right format—like a string (\"string\"), an integer (123), a float (123.45), or even an expression (e.g., a+b). Let’s get it sorted out! 🎩✨\n\
+                    ERROR: {}",
+                    value, e
+                ));
             }
         }
 

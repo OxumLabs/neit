@@ -21,7 +21,12 @@ fn main() {
     match cti {
         Ok(_) => {}
         Err(e) => {
-            println!("Error: One or more tools not installed\n-> {}", e);
+            eprintln!(
+                "🚨 Oopsie! It seems like one or more tools are missing from the toolbox! 🛠️😱\n\
+            -> Let’s get those tools installed so we can get back to work! 🎉✨\n\
+            ERROR: {}",
+                e
+            );
             exit(1);
         }
     }
@@ -30,9 +35,12 @@ fn main() {
     // Ensure we have the required command and project path
     if args.len() < 2 {
         eprintln!(
-            "Error: Missing command.\nUsage: {} <command> [<project_path>]",
+            "🚫 Oopsie! It looks like you forgot to include a command! 🤔✨\n\
+            📜 Usage: {} <command> [<project_path>]\n\
+            Let’s get that command in there so we can keep the fun going! 🎉🎈",
             args[0]
         );
+
         exit(1);
     }
 
@@ -43,7 +51,10 @@ fn main() {
         &match env::current_dir() {
             Ok(path) => path.to_string_lossy().into_owned(),
             Err(_) => {
-                eprintln!("Error: Unable to determine current directory.");
+                eprintln!(
+                    "🚫 Oopsie! I can't seem to find the current directory—it's like it vanished into thin air! 🪄✨\n\
+                    🔍 Let’s check if it’s hiding somewhere or if we need to give it a little nudge! 🤔💨"
+                );
                 exit(1);
             }
         }
@@ -60,9 +71,17 @@ fn main() {
         "target-list" => display_target_list(),
         _ => {
             eprintln!(
-                "Error: Invalid command '{}'.\nSupported commands:\n - help\n - target-list\n - build\n - run\n - new",
+                "🚫 Oopsie! It looks like the command '{}' is not valid—it's like trying to use a banana as a phone! 📞🍌\n\
+                🔍 Supported commands:\n\
+                - help: Need a hand?\n\
+                - target-list: What’s on the menu?\n\
+                - build: Let’s construct something awesome!\n\
+                - run: Time to get moving!\n\
+                - new: Ready for a fresh start?\n\
+                Let’s stick to these commands and keep the fun rolling! 🎉✨",
                 cmd
             );
+
             exit(1);
         }
     }
@@ -88,9 +107,12 @@ fn build_project(proj: &str) {
         Ok(content) => content,
         Err(e) => {
             eprintln!(
-                "Error: Unable to read 'project.conf' file at '{}': {}",
+                "🚫 Uh-oh! I tried to read the 'project.conf' file at '{}' but it seems to be playing hide and seek! 🙈📁\n\
+                🔍 Error: {} \n\
+                Let’s find out what’s going on—maybe it’s just shy? 🤔✨",
                 proj, e
             );
+
             exit(1);
         }
     };
@@ -113,7 +135,10 @@ fn build_project(proj: &str) {
 
     // Ensure the project name is found
     if project_name.is_empty() {
-        eprintln!("Error: No project name found in 'project.conf'.");
+        eprintln!(
+            "🚫 Uh-oh! It seems like I couldn’t find a project name in 'project.conf'—it’s like looking for a needle in a haystack! 🤔🌾\n\
+            🔍 Let’s make sure you’ve got a name in there so we can get this party started! 🎉✨"
+        );
         exit(1);
     }
 
@@ -121,7 +146,12 @@ fn build_project(proj: &str) {
     let main_content = match read_to_string(&main_file_path) {
         Ok(content) => content,
         Err(e) => {
-            eprintln!("Error: Unable to read 'main.nsc' file at '{}': {}", proj, e);
+            eprintln!(
+                "🚫 Uh-oh! I tried to read the 'main.nsc' file at '{}' but it seems to have gone on an adventure without me! 🗺️✨\n\
+                🔍 Error: {} \n\
+                Let’s track it down and see what’s going on—maybe it needs a map! 🗺️🔍",
+                proj, e
+            );
             exit(1);
         }
     };
@@ -179,7 +209,12 @@ fn run_project(proj: &str) {
     let mc = match read_to_string(&mf) {
         Ok(content) => content,
         Err(e) => {
-            eprintln!("Error: Unable to read 'main.nsc' file at '{}': {}", proj, e);
+            eprintln!(
+                "🚫 Uh-oh! I tried to read the 'main.nsc' file at '{}' but it seems to have gone on an adventure without me! 🗺️✨\n\
+                🔍 Error: {} \n\
+                Let’s track it down and see what’s going on—maybe it needs a map! 🗺️🔍",
+                proj, e
+            );
             exit(1);
         }
     };
@@ -192,7 +227,10 @@ fn run_project(proj: &str) {
                 "windows" => format!("{}/_.exe", proj),
                 "linux" => format!("{}/_.out", proj),
                 _ => {
-                    eprintln!("Error: Unknown OS");
+                    eprintln!(
+                        "🚫 Oopsie! I can't seem to figure out what operating system we're on—it's like trying to find a unicorn in a haystack! 🦄🌾\n\
+                        🔍 If you could use windows , macos or the goat - *LINUX*!, that would be super helpful! Let’s get this sorted out so we can keep the fun going! 🎉✨"
+                    );
                     exit(1);
                 }
             };
@@ -222,7 +260,8 @@ fn run_project(proj: &str) {
                                             .stdout(Stdio::inherit()) // Inherit stdout for real-time output
                                             .stderr(Stdio::inherit()) // Inherit stderr for real-time error reporting
                                             .status()
-                                            .expect("Failed to run the executable");
+                                            .expect("🚫 Oopsie! It looks like the executable decided to take a nap instead of running! 😴💤\n\
+                                            Let's wake it up and try again!");
 
                                         // Wait for the child process to finish
                                         if !status.success() {
@@ -316,20 +355,22 @@ pub fn create_new_project(proj: &str) {
 }
 
 fn display_help() {
-    println!("Available commands:");
-    println!(" - build       : Builds the project (if in the project dir no need to specify project path).");
-    println!(" - run         : Runs the project (if in the project dir no need to specify project path).");
-    println!(" - new         : Creates a new project in a new folder in currewnt dir named by the given project name.");
-    println!(" - help        : Displays this help message.");
-    println!(" - target-list : Displays available build targets and their purposes.");
+    println!("🎉 Available Commands:");
+    println!(" - 🛠️ build       : Builds the project (if you're in the project directory, no need to specify the project path).");
+    println!(" - 🏃‍♂️ run         : Runs the project (if you're in the project directory, no need to specify the project path).");
+    println!(" - ✨ new         : Creates a shiny new project in a new folder named after the magical project name you provide! 🌟");
+    println!(" - ❓ help        : Displays this super helpful message, just in case you need a friendly reminder! 🤗");
+    println!(" - 🎯 target-list : Shows available build targets and their purposes—let’s see what we can aim for! 🎯");
     exit(0);
 }
 
 fn display_target_list() {
-    println!("Available targets:");
-    println!(" - llvm-ir     : Generates LLVM intermediate representation.");
-    println!(" - c           : Generates C code.");
-    println!(" - windows     : Compiles for Windows operating system.");
-    println!(" - linux       : Compiles for Linux operating system.");
+    println!("🎯 Available Targets:");
+    println!(" - 🦄 llvm-ir     : Generates LLVM intermediate representation—like magic for your code! ✨");
+    println!(" - 🐍 c           : Generates C code—let’s speak the language of the compilers! 💬");
+    println!(
+        " - 🪟 windows     : Compiles for Windows—time to make it shine on the land of Windows! 🌟"
+    );
+    println!(" - 🐧 linux       : Compiles for Linux—let’s rock the open-source world! 🤘");
     exit(0);
 }

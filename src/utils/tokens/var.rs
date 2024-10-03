@@ -56,9 +56,10 @@ pub fn process_var(code: &str, vrs: &Vec<Tokens>, whole: bool) -> Result<(Vars, 
     // Check if the code starts with the correct keyword
     if !trimmed_code.starts_with(keyword) {
         return Err(format!(
-            "{}: Invalid keyword in line '{}'.\n\
-            Reason: The line must start with '{}'.\n\
-            Hint: Use 'may variable_name = value' for mutable or 'must variable_name = value' for immutable variables.",
+            "{} Oopsie! I found an invalid keyword in line '{}'. 😅\n\
+            🚫 Reason: The line should start with '{}'.\n\
+            🔍 Hint: Remember to use 'may variable_name = value' for mutable variables or 'must variable_name = value' for immutable ones!\n\
+            Let’s keep it tidy! 🎉",
             "✘ Error", trimmed_code, keyword
         ));
     }
@@ -69,12 +70,13 @@ pub fn process_var(code: &str, vrs: &Vec<Tokens>, whole: bool) -> Result<(Vars, 
         .collect();
     if pts.len() != 2 {
         return Err(format!(
-            "{}: Invalid syntax in line '{}'.\n\
-            Reason: The line must contain exactly one '=' sign separating the variable name and value.\n\
-            Hint: Use the format '{}variable_name = value'.\n\
-            - 'variable_name' should be a valid identifier (alphanumeric or underscores).\n\
-            - 'value' should be any non-empty value you want to assign.\n\
-            Example: '{}my_var = 42'",
+            "{} Uh-oh! I found some invalid syntax in line '{}'. 😬\n\
+            🚫 Reason: There should be exactly one '=' sign separating the variable name and value!\n\
+            🔍 Hint: Use the format '{}variable_name = value'.\n\
+            - Remember, 'variable_name' should be a valid identifier (think alphanumeric or underscores).\n\
+            - And 'value' needs to be something non-empty that you want to assign!\n\
+            🎉 Example: '{}my_var = 42'\n\
+            Let's get it right! 😊",
             "✘ Error", trimmed_code, keyword, keyword
         ));
     }
@@ -84,38 +86,42 @@ pub fn process_var(code: &str, vrs: &Vec<Tokens>, whole: bool) -> Result<(Vars, 
     // Validate variable name
     if var_name.is_empty() {
         return Err(format!(
-            "{}: Empty variable name in line '{}'.\n\
-            Reason: The variable name cannot be empty.\n\
-            Hint: Provide a valid variable name before the '=' sign.\n\
-            Example: '{}my_var = 42'",
+            "{} Whoopsie! I spotted an empty variable name in line '{}'. 😅\n\
+            🚫 Reason: The variable name can’t be empty—let’s give it a proper name!\n\
+            🔍 Hint: Make sure to provide a valid variable name before the '=' sign.\n\
+            🎉 Example: '{}my_var = 42'\n\
+            Let’s tidy this up! 😊",
             "✘ Error", trimmed_code, keyword
         ));
     }
     if CKWRDS.contains(&var_name) {
         return Err(format!(
-            "{}: Invalid variable name '{}'.\n\
-            Reason: The variable name cannot be a C keyword.\n\
-            Hint: Try adding any letter to the variable or using a '_'.\n\
-            Example: 'charr = 42'",
+            "{} Oh no! I see an invalid variable name '{}'. 🤦‍♂️\n\
+            🚫 Reason: You can't use a C keyword as a variable name—those words have special powers! ✨\n\
+            🔍 Hint: Try spicing it up by adding a letter or tossing in an underscore ('_').\n\
+            🎉 Example: Instead of using a keyword, how about naming it 'charr = 42'? It’s quirky and fun!\n\
+            🧐 Remember, variables need unique names to shine—let's give your variable a proper identity! 🎈",
             "✘ Error", var_name
         ));
     }
 
     if !var_name.chars().all(|c| c.is_alphanumeric() || c == '_') {
         return Err(format!(
-            "{}: Invalid variable name '{}' in line '{}'.\n\
-            Reason: The variable name can only contain alphanumeric characters or underscores.\n\
-            Hint: Ensure the variable name follows naming conventions.\n\
-            Example: '{}valid_name = 42'",
+            "{} Uh-oh! I found an invalid variable name '{}' in line '{}'. 😬\n\
+            🚫 Reason: Your variable name can only fill itself with alphanumeric characters or underscores—no funny business allowed! 🛑\n\
+            🔍 Hint: Let's make sure it follows the naming conventions! Keep it classy, folks! ✨\n\
+            🎉 Example: You could use something like '{}valid_name = 42'. Simple and elegant, just like a fine cheese! 🧀\n\
+            Remember, names matter—let's give your variable a fabulous identity! 🎈",
             "✘ Error", var_name, trimmed_code, keyword
         ));
     }
     if var_value.is_empty() {
         return Err(format!(
-            "{}: Empty variable value in line '{}'.\n\
-            Reason: The value after '=' cannot be empty.\n\
-            Hint: Provide a valid value after the '=' sign.\n\
-            Example: '{}my_var = 42'",
+            "{} Oops! I’ve spotted an empty variable value in line '{}'. 😅\n\
+            🚫 Reason: The value after '=' can’t be empty—let's fill it in! ✨\n\
+            🔍 Hint: Make sure to provide a valid value after the '=' sign.\n\
+            🎉 Example: You could write something like '{}my_var = 42'. It’s nice and straightforward! 😊\n\
+            Remember, every variable deserves a value—let’s make it happen! 🎈",
             "✘ Error", trimmed_code, keyword
         ));
     }
