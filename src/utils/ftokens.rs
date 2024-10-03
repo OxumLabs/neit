@@ -1,6 +1,6 @@
 use super::{
     maths::evaluate_expression,
-    tokens::{print::process_print, var::process_var},
+    tokens::{input::process_input, print::process_print, var::process_var},
     types::{fvars, Args, Tokens},
 };
 
@@ -41,6 +41,14 @@ pub fn parse_single_line(
         *p_label += 365;
         let print_token = process_print(p_label, txt, vars);
         return Ok(print_token);
+    } else if line.starts_with("takein(") {
+        let tkn = process_input(&line, &vars);
+        match tkn {
+            Ok(tkn) => {
+                vars.push(tkn);
+            }
+            Err(e) => return Err(e),
+        }
     } else if line.starts_with("may ") && line.contains("=") {
         let vr = process_var(line, vars, false);
         match vr {

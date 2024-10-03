@@ -65,7 +65,8 @@ pub fn process_print(num: &mut i32, text: &str, vars: &Vec<Tokens>) -> Tokens {
                                     }
                                 }
                                 Err(e) => {
-                                    eprintln!("{}", e);
+                                    // Improved error message with emojis
+                                    eprintln!("❌ Error: Failed to evaluate the expression '{}'! \nReason: {}", current_var, e);
                                     exit(1);
                                 }
                             }
@@ -177,7 +178,11 @@ pub fn p_to_c(text: &str, _vars: &Vec<Tokens>) -> String {
                         }
                         // Handle case where variable was not found
                         if !var_found {
-                            eprintln!("Error: Unknown variable '{}'", expression);
+                            // Improved error message with emojis
+                            eprintln!(
+                                "❌ Error: Unknown variable '{}'! Please ensure it is defined.",
+                                expression
+                            );
                             exit(1);
                         }
                     }

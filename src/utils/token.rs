@@ -1,6 +1,6 @@
 use super::{
     maths::evaluate_expression,
-    tokens::{func::process_func, print::process_print, var::process_var},
+    tokens::{func::process_func, input::process_input, print::process_print, var::process_var},
     types::{Args, Tokens, Vars},
 };
 
@@ -83,7 +83,7 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
         {
             let vr = process_var(ln.trim(), &tokens, true);
             match vr {
-                Ok(vr) => tokens.push(Tokens::Var(vr.0, vr.1, false)),
+                Ok(vr) => tokens.push(Tokens::Var(vr.0, vr.1, true)),
                 Err(e) => return Err(e),
             }
         } else if ln.trim().starts_with("must ") {
@@ -105,6 +105,14 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
                                                                           //let txt = format!(r#""\n{}""#, txt);
             let ptxt = process_print(&mut p_label, &txt, &tokens);
             tokens.push(ptxt);
+        } else if ln.starts_with("takein(") {
+            let tkn = process_input(&ln, &tokens);
+            match tkn {
+                Ok(tkn) => {
+                    tokens.push(tkn);
+                }
+                Err(e) => return Err(e),
+            }
         } else if ln.trim().starts_with("println(") && ln.trim().ends_with(")") {
             let mut txt: String = ln[9..ln.len() - 2].trim().to_string(); // Extract println arguments
             let txt = format!(r#""\n{}""#, txt);

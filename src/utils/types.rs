@@ -7,6 +7,7 @@ pub enum Tokens {
     Print(String, String), /* String -> Text to print stored on | rax:1(sys_write) , rsi:text , rdx:size/len_of_text , rdi:1 (1 for stdout)*/
     Var(Vars, String, bool), /* Vars -> Variable Data | String -> Variable Name | bool -> is change-able*/
     Revar(String, String),   /* Name , Value */
+    In(String),              /* String -> Variable name to take input in */
 }
 pub fn get_vars(tokens: &Vec<fvars>) -> Vec<Vars> {
     let mut vrs: Vec<Vars> = Vec::new();

@@ -31,14 +31,18 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
             let pts: Vec<&str> = i.split(":").map(str::trim).collect();
             if pts.len() != 2 {
                 return Err(format!(
-                    "Error at line {}: Invalid argument declaration.\nCode:\n   => {}\nHint: Ensure that each argument is declared as 'name:type'.",
+                    "🚫 Error at line {}: Invalid argument declaration.\n\
+                     Code:\n   => {}\n\
+                     🔍 Hint: Each argument should be in the format 'name:type'.",
                     index as i32, ln
                 ));
             }
             let (name, t) = (pts[0], pts[1]);
             if name.is_empty() {
                 return Err(format!(
-                    "Error at line {}: Argument name cannot be empty.\nCode:\n   => {}\nHint: Provide a valid name for the argument.",
+                    "🚫 Error at line {}: Argument name cannot be empty.\n\
+                     Code:\n   => {}\n\
+                     🔍 Hint: Provide a valid name for the argument.",
                     index as i32, ln
                 ));
             }
@@ -77,12 +81,13 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
                         name.to_string(),
                         false,
                     ));
-
                     functions.args.push(Args::Float(name.to_string()));
                 }
                 _ => {
                     return Err(format!(
-                        "Error at line {}: Invalid argument type '{}'.\nCode:\n   => {}\nHint: Use 'string', 'int', or 'float' as argument types.",
+                        "🚫 Error at line {}: Invalid argument type '{}'.\n\
+                         Code:\n   => {}\n\
+                         🔍 Hint: Use 'string', 'int', or 'float' for argument types.",
                         index, t, ln
                     ));
                 }
@@ -97,7 +102,9 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
             let pts: Vec<&str> = ln[7..].split("(").collect();
             if pts.len() != 2 {
                 return Err(format!(
-                    "Error at line {}: Incorrect function declaration format.\nCode:\n   => {}\nHint: Ensure the function is declared as 'fn name(arg1:type, arg2:type)'.",
+                    "🚫 Error at line {}: Incorrect function declaration format.\n\
+                     Code:\n   => {}\n\
+                     🔍 Hint: Ensure the format is 'pub fn name(arg1:type, arg2:type)'.",
                     index as i32, ln
                 ));
             }
@@ -113,7 +120,9 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
             let pts: Vec<&str> = ln[3..].split("(").collect();
             if pts.len() != 2 {
                 return Err(format!(
-                    "Error at line {}: Incorrect function declaration format.\nCode:\n   => {}\nHint: Ensure the function is declared as 'fn name(arg1:type, arg2:type)'.",
+                    "🚫 Error at line {}: Incorrect function declaration format.\n\
+                     Code:\n   => {}\n\
+                     🔍 Hint: Ensure the format is 'fn name(arg1:type, arg2:type)'.",
                     index as i32, ln
                 ));
             }
@@ -126,14 +135,18 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
         } else if ln.starts_with("fn ") && ln.ends_with("{") {
             if inf {
                 return Err(format!(
-                    "Error at line {}: Nested function definitions are not allowed.\nCode:\n   => {}\nHint: Ensure that functions are properly closed before starting a new one.",
+                    "🚫 Error at line {}: Nested function definitions are not allowed.\n\
+                     Code:\n   => {}\n\
+                     🔍 Hint: Close the previous function before defining a new one.",
                     index, ln
                 ));
             }
             let pts: Vec<&str> = ln[3..].split("(").collect();
             if pts.len() != 2 {
                 return Err(format!(
-                    "Error at line {}: Incorrect function declaration format.\nCode:\n   => {}\nHint: Ensure the function is declared as 'fn name(arg1:type, arg2:type){{'.",
+                    "🚫 Error at line {}: Incorrect function declaration format.\n\
+                     Code:\n   => {}\n\
+                     🔍 Hint: Ensure the format is 'fn name(arg1:type){{'.",
                     index as i32, ln
                 ));
             }
@@ -148,14 +161,18 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
         } else if ln.starts_with("pub fn ") && ln.ends_with("{") {
             if inf {
                 return Err(format!(
-                    "Error at line {}: Nested function definitions are not allowed.\nCode:\n   => {}\nHint: Ensure that functions are properly closed before starting a new one.",
+                    "🚫 Error at line {}: Nested function definitions are not allowed.\n\
+                     Code:\n   => {}\n\
+                     🔍 Hint: Close the previous function before defining a new one.",
                     index, ln
                 ));
             }
             let pts: Vec<&str> = ln[7..].split("(").collect();
             if pts.len() != 2 {
                 return Err(format!(
-                    "Error at line {}: Incorrect function declaration format.\nCode:\n   => {}\nHint: Ensure the function is declared as 'pub fn name(arg1:type, arg2:type){{'.",
+                    "🚫 Error at line {}: Incorrect function declaration format.\n\
+                     Code:\n   => {}\n\
+                     🔍 Hint: Ensure the format is 'pub fn name(arg1:type){{'.",
                     index as i32, ln
                 ));
             }
@@ -197,20 +214,27 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
             }
         } else if ln.is_empty() {
             return Err(format!(
-                "Error at line {}: Unexpected empty line.\nCode:\n   => {}\nHint: Ensure that the code is properly formatted and not left blank where code is expected.",
+                "🚫 Error at line {}: Unexpected empty line.\n\
+                 Code:\n   => {}\n\
+                 🔍 Hint: Ensure that code lines are not left blank.",
                 index, ln
             ));
         } else {
             return Err(format!(
-                "Error at line {}: Unrecognized line format.\nCode:\n   => {}\nHint: Ensure that the line follows the expected function declaration or body format.",
+                "🚫 Error at line {}: Unrecognized line format.\n\
+                 Code:\n   => {}\n\
+                 🔍 Hint: Make sure the line follows the expected function declaration or body format.",
                 index, ln
             ));
         }
     }
 
     if inf {
-        return Err("Error: File ended with an open function body.\nHint: Ensure that all opened functions are properly closed with '}'.".to_string());
+        return Err("🚫 Error: File ended with an open function body.\n\
+                     🔍 Hint: Ensure all opened functions are closed with '}'."
+            .to_string());
     }
+
     functions.local_vars = lv;
     Ok(functions)
 }

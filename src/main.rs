@@ -9,7 +9,9 @@ use std::{
 pub mod compilers;
 pub mod utils;
 use compilers::{
-    compile::check_tools_installed,
+    compile::{check_tools_installed, compile},
+    genasm_lin::genasm_lin,
+    genasm_win::genasm_win,
     llvm::{bc::comp_c, c::to_c},
 };
 use utils::{fo::checkproj, token::gentoken};
@@ -65,6 +67,8 @@ fn main() {
         }
     }
 }
+
+#[allow(unused)]
 
 fn build_project(proj: &str) {
     println!("Building the project at: {}", proj);
@@ -128,10 +132,30 @@ fn build_project(proj: &str) {
             // Process each build target
             for target in build_targets {
                 // Generate assembly code based on the target
-                let asm_code = to_c(&tokens);
+                let mut asm_code = String::new();
+                if target != "win_asm" && target != "lin_asm" {
+                    asm_code = to_c(&tokens); // Handle unsupported targets
+                } else {
+                    if target == "win_asm" {
+                        asm_code = genasm_win(&tokens); // Generate Windows ASM
+                        println!("\n\nWindows ASM :\n{}\n\n", asm_code);
+                    } else {
+                        asm_code = genasm_lin(&tokens); // Generate Windows ASM
+                        println!("\n\nLinux ASM :\n{}\n\n", asm_code);
+                    }
+                }
 
                 // Compile the generated assembly code, passing the project name
-                comp_c(&asm_code, proj, &target, &project_name);
+                if target == "win_asm" {
+                    // Compile for Windows assembly target
+                    compile(&asm_code, proj, &target, &project_name);
+                } else if target == "lin_asm" {
+                    // Compile for Linux assembly target
+                    compile(&asm_code, proj, &target, &project_name);
+                } else {
+                    // Compile for any other targets
+                    comp_c(&asm_code, proj, &target, &project_name);
+                }
             }
         }
         Err(e) => {

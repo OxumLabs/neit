@@ -1,4 +1,8 @@
-use crate::utils::types::{Args, Tokens};
+// ... other imports ...
+use crate::utils::{
+    tokens::print::p_to_c,
+    types::{Args, Tokens},
+};
 use std::collections::HashSet;
 
 pub fn genasm_lin(tokens: &Vec<Tokens>) -> String {
@@ -63,7 +67,9 @@ pub fn genasm_lin(tokens: &Vec<Tokens>) -> String {
 
                 for (i, arg) in args.iter().enumerate() {
                     match arg {
-                        Args::Str(_) => {}
+                        Args::Str(_) => {
+                            call_code.push_str("    ; String argument (text) in rdi\n");
+                        }
                         Args::Float(_) => {
                             if i == 0 {
                                 call_code.push_str("    movaps xmm0, [arg_float]\n");
@@ -125,6 +131,7 @@ pub fn genasm_lin(tokens: &Vec<Tokens>) -> String {
         }
     }
 
+    // Clean exit for Linux
     code.push_str("    mov rax, 60         ; syscall number for exit (sys_exit)\n");
     code.push_str("    mov rdi, 0          ; status code 0\n");
     code.push_str("    syscall             ; invoke syscall\n");
@@ -139,6 +146,7 @@ pub fn genasm_lin(tokens: &Vec<Tokens>) -> String {
     asm
 }
 
+// Helper function to parse various tokens
 fn parse(
     fnbody: &mut String,
     code: &mut String,
@@ -156,28 +164,15 @@ fn parse(
         }
         Tokens::Print(txt, name) => {
             let processed_text = txt;
-            // Prepare the text for .data section
-            let data_key = format!("{}_{}", name, counter);
-            if !added_data.contains(&data_key) {
-                // Convert '\n' to 0xA (newline in ASCII) in assembly
-                //println!("processed text : {}", processed_text);
-                let asm_string = processed_text.replace("\\n", "', 0xA, '");
-                data.push_str(&format!("    {} db '{}', 0\n", data_key, asm_string));
-                added_data.insert(data_key.clone());
-            }
+            let cprint = format!("printf({});", p_to_c(&processed_text, &tokens.clone()));
+            println!("cprint : {}", cprint);
 
-            // Prepare the code for printing the string
-            let print_code = format!(
-                "    mov rax, 1\n    mov rdi, 1\n    mov rsi, {}\n    mov rdx, {}\n    syscall\n",
-                data_key,
-                processed_text.len()
-            );
+            // Generate assembly for cprint
+            let print_code = generate_print_asm(&cprint, name, counter, data, added_data);
 
             // Append to the function body or main code
             if inf {
-                if !fnbody.contains(&print_code) {
-                    fnbody.push_str(&print_code);
-                }
+                fnbody.push_str(&print_code);
             } else if !code.contains(&print_code) {
                 code.push_str(&print_code);
             }
@@ -188,7 +183,9 @@ fn parse(
 
             for (i, arg) in args.iter().enumerate() {
                 match arg {
-                    Args::Str(_) => {}
+                    Args::Str(_) => {
+                        call_code.push_str("    ; String argument (text) in rdi\n");
+                    }
                     Args::Float(_) => {
                         if i == 0 {
                             call_code.push_str("    movaps xmm0, [arg_float]\n");
@@ -222,6 +219,49 @@ fn parse(
     }
 }
 
+// Function to generate assembly for the print statements
+fn generate_print_asm(
+    cprint: &str,
+    name: String,
+    counter: i32,
+    data: &mut String,
+    added_data: &mut HashSet<String>,
+) -> String {
+    let mut asm_code = String::new();
+
+    // Process the generated C code for printing
+    let format_string = extract_format_string(cprint);
+    let data_key = format!("{}_{}", name, counter);
+
+    // Prepare the text for .data section
+    if !added_data.contains(&data_key) {
+        data.push_str(&format!("    {} db '{}', 0\n", data_key, format_string));
+        added_data.insert(data_key.clone());
+    }
+
+    // Prepare the assembly code to call the print function
+    asm_code.push_str(&format!(
+        "    mov rax, 1          ; syscall number for sys_write\n\
+         mov rdi, 1          ; file descriptor 1 (stdout)\n\
+         mov rsi, {}\n\
+         mov rdx, {}\n\
+         syscall\n",
+        data_key,
+        format_string.len()
+    ));
+
+    asm_code
+}
+
+// Function to extract the format string from the C print statement
+fn extract_format_string(cprint: &str) -> String {
+    // Here, we assume the format string is within the first set of double quotes
+    let start = cprint.find("\"").unwrap() + 1;
+    let end = cprint.rfind("\"").unwrap();
+    cprint[start..end].to_string()
+}
+
+// Helper function to get function arguments
 fn get_function_args(name: &str, tokens: &[Tokens]) -> Vec<Args> {
     for token in tokens {
         if let Tokens::Func(func) = token {
@@ -230,6 +270,6 @@ fn get_function_args(name: &str, tokens: &[Tokens]) -> Vec<Args> {
             }
         }
     }
-    eprintln!("Error: Function '{}' not found.", name);
-    std::process::exit(1);
+    eprintln!("Error: Function {} not found", name);
+    vec![] // Return empty if not found
 }

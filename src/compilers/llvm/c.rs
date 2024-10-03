@@ -5,23 +5,45 @@ use crate::utils::{
 use std::collections::HashSet;
 
 pub fn to_c(tokens: &Vec<Tokens>) -> String {
-    let imports = String::from("#include <stdio.h>\n#include <math.h>\n\n");
+    let imports = String::from("#include <stdio.h>\n");
     let mut main = String::new();
     let mut funs = String::new();
     funs.push_str(
-        r#"
-int fdi(int a, int b) {
-    return a / b - ((a % b) < 0);
+        r#"int fdi(int a, int b) {
+    if (b == 0) {
+        // Handle error (e.g., return 0 or some error code)
+        return 0;
+    }
+    int result = a / b;
+    // Adjust result if a and b have different signs and there's a remainder
+    if ((a % b != 0) && ((a < 0) != (b < 0))) {
+        result--;
+    }
+    return result;
 }
+
 "#,
     );
 
     // Define floor division for floats
     funs.push_str(
-        r#"
-double fdf(double a, double b) {
-    return floor(a / b);
+        r#"double fdf(double a, double b) {
+    
+    if (b == 0.0) {
+        return 0.0;
+    }
+    
+    double result = a / b;
+    if (result > 0 && result != (int)result) {
+        return (int)result; // Truncates towards zero
+    }
+    if (result < 0 && result != (int)result) {
+        return (int)result - 1;
+    }
+    
+    return result;
 }
+
 "#,
     );
 
@@ -95,6 +117,9 @@ fn process(
                 let pc = format!("    printf({});\n", pc); // Add a newline after printf
                 func.push_str(&pc);
             }
+            Tokens::In(vnm) => {
+                func.push_str(&format!("fgets({},{},stdin);\n", vnm, vnm.len() + 1024));
+            }
             Tokens::FnCall(fc, args) => {
                 func.push_str(&format!("    {}({});\n", fc, args.join(",")));
             }
@@ -113,10 +138,10 @@ fn process(
                 declared_vars.insert(n.clone());
 
                 // Generate variable declaration based on type and mutability
-                let var_declaration = if !mutable {
+                let var_declaration = if *mutable {
                     //println!("mutable var_declr (101 c.rs) => {:?}", v);
                     match v {
-                        Vars::STR(s) => format!("char *{} = \"{}\";\n", n, s),
+                        Vars::STR(s) => format!("char {}[{}] = \"{}\";\n", n, n.len() + 1024, s),
                         Vars::INT(s) => format!("int {} = {};\n", n, s),
                         Vars::F(f) => format!("double {} = {};\n", n, f),
                         _ => String::new(),
