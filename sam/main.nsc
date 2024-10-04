@@ -1,4 +1,4 @@
 fn hi(name : string){
-    println("hi")
+    println("hi {1//1}")
 }
-hi(3)
+hi("joy")

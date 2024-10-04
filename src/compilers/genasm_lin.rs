@@ -270,6 +270,6 @@ fn get_function_args(name: &str, tokens: &[Tokens]) -> Vec<Args> {
             }
         }
     }
-    eprintln!("Error: Function {} not found", name);
+    eprintln!("✘ Error: Function {} not found", name);
     vec![] // Return empty if not found
 }

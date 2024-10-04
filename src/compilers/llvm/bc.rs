@@ -19,7 +19,12 @@ pub fn comp_c(c_code: &String, proj: &str, target: &str, project_name: &str) {
         "c" => build_dir.join(format!("{}.c", project_name)), // C file for 'c' target
         "llvm-ir" => build_dir.join(format!("{}.ll", project_name)),
         _ => {
-            eprintln!("Error: Unsupported build target '{}'.", target);
+            eprintln!(
+                "✘ Whoops! Target '{}' doesn't seem like a thing I can handle.",
+                target
+            );
+            eprintln!("→ Hint: Maybe try 'linux', 'windows', 'c', or 'llvm-ir'?");
+            eprintln!("⚙ [Oops occurred in: comp_c at target matching]");
             exit(1);
         }
     };
@@ -30,15 +35,17 @@ pub fn comp_c(c_code: &String, proj: &str, target: &str, project_name: &str) {
             Ok(mut c_file) => {
                 let c_code = cfmt(c_code);
                 if let Err(_) = c_file.write_all(c_code.as_bytes()) {
-                    eprintln!(
-                        "Error: Unable to write C code to file\nHint: Ensure correct permissions"
-                    );
+                    eprintln!("✘ Eeeek! I tried to write your C code but... it slipped through my fingers.");
+                    eprintln!("→ Hint: Double-check those file permissions before I try again!");
+                    eprintln!("⚙ [Location: comp_c while writing C code to the file]");
                     exit(1);
                 }
-                println!("C file generated at: {:?}", output_file);
+                println!("ℹ Boom! Your C file is ready at: {:?}", output_file);
             }
             Err(_) => {
-                eprintln!("Error: Unable to create C file\nHint: Ensure correct permissions");
+                eprintln!("✘ Uh-oh, I'm blocked! Can't create the C file. File permissions are pesky little things, huh?");
+                eprintln!("→ Hint: File permissions, check 'em out! 🔍");
+                eprintln!("⚙ [Location: comp_c creating C file]");
                 exit(1);
             }
         }
@@ -52,12 +59,16 @@ pub fn comp_c(c_code: &String, proj: &str, target: &str, project_name: &str) {
     match File::create(&c_file_path) {
         Ok(mut c_file) => {
             if let Err(_) = c_file.write_all(c_code.as_bytes()) {
-                eprintln!("Error: Unable to write C code to temp file");
+                eprintln!("✘ Uh-oh! I tried to scribble your C code, but something's not right.");
+                eprintln!("→ Hint: Check if the temp file is allowed to be written on.");
+                eprintln!("⚙ [Location: comp_c writing to temp file]");
                 exit(1);
             }
         }
         Err(_) => {
-            eprintln!("Error: Unable to create temp C file");
+            eprintln!("✘ Aha! Caught in a trap—can't even create the temporary C file.");
+            eprintln!("→ Hint: Permissions? Disk space?");
+            eprintln!("⚙ [Location: comp_c creating temp C file]");
             exit(1);
         }
     }
@@ -105,47 +116,46 @@ pub fn comp_c(c_code: &String, proj: &str, target: &str, project_name: &str) {
                 "-DNDEBUG",                 // Disable assertions
                 "-fstack-protector-strong", // Enable stack protection
                 "-pthread",                 // Link with pthread for multi-threading
-                "-pipe", // Use pipes rather than temporary files for communication between processes (speeds up compilation)
-                "-flto-jobs=4", // Automatically parallelize LTO across available CPUs
-                "-Wl,--threads=4", // Set the number of threads for the linker based on CPU cores
-                "-Wl,--gc-sections", // Garbage collect unused sections for smaller binaries
+                "-pipe",                    // Use pipes for faster communication
+                "-flto-jobs=4",             // Parallelize LTO across CPUs
+                "-Wl,--threads=4",          // Set linker threads to 4
+                "-Wl,--gc-sections",        // Garbage collect unused sections
             ]
         } else {
             vec![
                 c_file_path.to_str().unwrap(),
                 "-o",
                 output_file.to_str().unwrap(),
-                "-O3",
-                "-Wno-format",              // Optimize for maximum speed
-                "-march=native",            // Generate code optimized for the host CPU
-                "-mtune=native",            // Tune code for the host CPU
-                "-static",                  // Ensure fully static linking
-                "-fuse-ld=lld",             // Use LLVM's faster linker
-                "-flto=thin",               // Use Thin LTO for faster link-time optimizations
-                "-finline-functions",       // Aggressively inline functions
-                "-funroll-loops",           // Unroll loops
-                "-fvectorize",              // Automatically vectorize loops
-                "-fslp-vectorize",          // Apply vectorization to straight-line code
-                "-mavx2",                   // Use AVX2 instructions (if supported by CPU)
-                "-mfma",                    // Use FMA instructions for floating-point operations
-                "-ffast-math",              // Enable aggressive floating-point optimizations
-                "-ffinite-math-only",       // Assume no NaNs or infinities
-                "-fno-math-errno",          // Don't set errno for math functions
-                "-fassociative-math",       // Allow reassociation of floating-point operations
-                "-freciprocal-math",        // Use reciprocal approximation for divisions
-                "-fstrict-aliasing",        // Assume strict aliasing rules
-                "-fomit-frame-pointer",     // Omit frame pointer for more registers
-                "-ffunction-sections",      // Place functions in separate sections
-                "-fdata-sections",          // Place data in separate sections
-                "-fmerge-all-constants",    // Merge identical constants
-                "-fopenmp",                 // Enable OpenMP support for parallelism
-                "-DNDEBUG",                 // Disable assertions
+                "-O3", // Optimize for maximum speed
+                "-Wno-format",
+                "-march=native",         // Generate code optimized for the host CPU
+                "-mtune=native",         // Tune code for the host CPU
+                "-static",               // Fully static linking
+                "-fuse-ld=lld",          // Use LLVM's linker
+                "-flto=thin",            // Thin LTO optimizations
+                "-finline-functions",    // Inline functions aggressively
+                "-funroll-loops",        // Unroll loops
+                "-fvectorize",           // Automatically vectorize loops
+                "-fslp-vectorize",       // Straight-line code vectorization
+                "-mavx2",                // Use AVX2 instructions
+                "-mfma",                 // Use FMA instructions
+                "-ffast-math",           // Aggressive floating-point optimizations
+                "-ffinite-math-only",    // No NaNs or infinities
+                "-fno-math-errno",       // Don't set errno for math functions
+                "-fassociative-math",    // Allow reassociation of floating-point ops
+                "-freciprocal-math",     // Approximate reciprocals for divisions
+                "-fstrict-aliasing",     // Assume strict aliasing rules
+                "-fomit-frame-pointer",  // Omit frame pointer for extra registers
+                "-ffunction-sections",   // Separate functions into sections
+                "-fdata-sections",       // Separate data into sections
+                "-fmerge-all-constants", // Merge constants
+                "-DNDEBUG",              // Disable assertions
                 "-fstack-protector-strong", // Enable stack protection
-                "-pthread",                 // Link with pthread for multi-threading
-                "-pipe", // Use pipes for faster communication between compilation stages
-                "-flto-jobs=auto", // Automatically parallelize LTO using all available CPUs
-                "-Wl,/OPT:REF", // Linker optimization: eliminate unreferenced code/data
-                "-Wl,/OPT:ICF", // Identical COMDAT folding to reduce binary size
+                "-pthread",              // Multi-threading support
+                "-pipe",                 // Use pipes
+                "-flto-jobs=auto",       // Parallelize LTO
+                "-Wl,/OPT:REF",          // Linker optimization
+                "-Wl,/OPT:ICF",          // COMDAT folding
             ]
         }
     };
@@ -158,11 +168,13 @@ pub fn comp_c(c_code: &String, proj: &str, target: &str, project_name: &str) {
 
     // Check if compilation succeeded
     if !status.success() {
-        eprintln!("Error: Compilation for {} failed", target);
+        eprintln!("✘ Yikes! Compilation failed for target '{}'.", target);
+        eprintln!("→ Hint: Maybe I forgot something... Check the Clang setup?");
+        eprintln!("⚙ [Location: comp_c executing clang]");
         exit(1);
     } else {
         println!(
-            "Successfully built C code for {}: {:?}",
+            "ℹ Success! C code compiled for target '{}'. Output at: {:?}",
             target, output_file
         );
     }

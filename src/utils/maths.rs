@@ -93,7 +93,6 @@ fn handle_current_var(result_text: &mut String, current_var: &str, vars: &Vec<To
 
 pub fn evaluate_expression(expr: &str, vars: &Vec<Tokens>) -> Result<f64, String> {
     let expr = expr.replace(" ", ""); // Remove spaces
-                                      //println!("expr : {}", expr);
     let mut tokens = tokenize(&expr)?;
     let result = parse_expression(&mut tokens, vars)?;
     Ok(result)
@@ -138,9 +137,9 @@ fn tokenize(expr: &str) -> Result<Vec<String>, String> {
                 '%' => tokens.push("%".to_string()),
                 _ => {
                     return Err(format!(
-                        "🚫 Uh-oh! Syntax Error: I spotted an invalid character '{}' at position {}—it doesn’t belong here! 😬✨\n\
-                        🔍 Let’s keep our code tidy and make sure only the right characters are hanging out!\n\
-                        Remember, every character has its place—let’s find it! 🎉😊",
+                        "✘ Uh-oh! Syntax Error: I spotted an invalid character '{}' at position {}—it doesn’t belong here!\n\
+                        → Reason: Let’s keep our code tidy and make sure only the right characters are hanging out!\n\
+                        →→ Hint: Remember, every character has its place—let’s find it!",
                         c, pos
                     ));
                 }
@@ -189,8 +188,8 @@ fn parse_mul_div(tokens: &mut Vec<String>, vars: &Vec<Tokens>) -> Result<f64, St
                     "*" => value * rhs,
                     "/" => {
                         if rhs == 0.0 {
-                            return Err("🚫 Math Error: Whoa there! You tried to divide by zero—yikes! 🤯💥\n\
-                            Remember, dividing by zero is like trying to find a unicorn in a haystack—it's just not gonna happen! 🦄✨"
+                            return Err("✘ Math Error: Whoa there! You tried to divide by zero—yikes!\n\
+                            → Reason: Remember, dividing by zero is like trying to find a unicorn in a haystack—it's just not gonna happen!"
                             .to_string());
                         }
                         value / rhs
@@ -236,8 +235,8 @@ fn parse_exponentiation(tokens: &mut Vec<String>, vars: &Vec<Tokens>) -> Result<
 
 fn parse_primary(tokens: &mut Vec<String>, vars: &Vec<Tokens>) -> Result<f64, String> {
     if tokens.is_empty() {
-        return Err("🚫 Uh-oh! Syntax Error: Unexpected end of input! 😮 It's like a cliffhanger in a movie—where’s the rest of the story? 🎬✨\n\
-        Don’t leave me hanging! Make sure to wrap things up properly to keep the code flowing smoothly! Let’s complete the script! 🎉😊".to_string());
+        return Err("✘ Uh-oh! Syntax Error: Unexpected end of input! It’s like a cliffhanger in a movie—where’s the rest of the story?\n\
+        → Reason: Don’t leave me hanging! Make sure to wrap things up properly to keep the code flowing smoothly!".to_string());
     }
 
     let token = tokens.remove(0); // Remove token while parsing
@@ -245,20 +244,18 @@ fn parse_primary(tokens: &mut Vec<String>, vars: &Vec<Tokens>) -> Result<f64, St
     if token == "(" {
         let value = parse_expression(tokens, vars)?;
         if tokens.is_empty() || tokens.remove(0) != ")" {
-            return Err("🚫 Oopsie! Syntax Error: Mismatched parentheses! 🤔 It’s like a dance party where the pairs just don’t match up! 🕺💃\n\
-            Make sure every opening parenthesis has a buddy to close it—let’s keep those dances in sync! 🎉😊".to_string());
+            return Err("✘ Oopsie! Syntax Error: Mismatched parentheses! It’s like a dance party where the pairs just don’t match up!\n\
+            → Reason: Make sure every opening parenthesis has a buddy to close it—let’s keep those dances in sync!".to_string());
         }
         Ok(value)
     } else if token.chars().all(|c| c.is_ascii_digit() || c == '.') {
         // Handle numeric literals directly
         token.parse::<f64>().map_err(|e| {
             format!(
-                "🚫 Conversion Error: I couldn’t parse the number '{}'—it’s playing hard to get! 😩\n\
-                🔍 Reason: {}. Let’s make sure it’s in tip-top shape to be converted! 🛠️✨\n\
-                Remember, numbers want to be understood—let’s help them out! 🎉😊",
+                "✘ Conversion Error: I couldn’t parse the number '{}'—it’s playing hard to get!\n\
+                → Reason: {}. Let’s make sure it’s in tip-top shape to be converted!",
                 token, e
             )
-            
         })
     } else {
         for i in vars {
@@ -274,9 +271,9 @@ fn parse_primary(tokens: &mut Vec<String>, vars: &Vec<Tokens>) -> Result<f64, St
             }
         }
         return Err(format!(
-            "🚫 Oopsie! It seems like I tripped over an undefined variable: '{}'. 🤔💥\n\
-            🔍 Hint: Make sure this little guy is declared somewhere before its used in your code—let's not leave it hanging! 🕵️‍♂️✨",
+            "✘ Oopsie! It seems like I tripped over an undefined variable: '{}'.\n\
+            → Reason: Make sure this little guy is declared somewhere before it's used in your code—let's not leave it hanging!",
             token
         ));
-}
+    }
 }

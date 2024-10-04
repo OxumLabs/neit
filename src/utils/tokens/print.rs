@@ -65,11 +65,10 @@ pub fn process_print(num: &mut i32, text: &str, vars: &Vec<Tokens>) -> Tokens {
                                     }
                                 }
                                 Err(e) => {
-                                    // Improved error message with emojis
                                     eprintln!(
-                                        "❌ Uh-oh! I couldn't evaluate the expression '{}'! 😩\n\
+                                        "✘ Error: Failed to evaluate the expression '{}'.\n\
                                          Reason: {}\n\
-                                         🔍 Let's figure this out together—what went wrong? 🤔",
+                                         → Please check the expression and try again.",
                                         current_var, e
                                     );
                                     exit(1);
@@ -183,13 +182,11 @@ pub fn p_to_c(text: &str, _vars: &Vec<Tokens>) -> String {
                         }
                         // Handle case where variable was not found
                         if !var_found {
-                            // Improved error message with emojis
                             eprintln!(
-                                "❌ Whoopsie! I can’t find the variable '{}'! 😕\n\
-                                 🔍 Have you made sure it’s defined somewhere? Let’s check again! 📜",
+                                "✘ Error: Cannot find the variable '{}'!\n\
+                                 → Please ensure it is defined correctly.",
                                 expression
                             );
-
                             exit(1);
                         }
                     }
@@ -219,7 +216,6 @@ pub fn p_to_c(text: &str, _vars: &Vec<Tokens>) -> String {
 
     c_code.push('\"'); // Close the string literal
     for cv in collected_vars.iter_mut() {
-        //println!("cv -> {}", cv);
         if cv.contains("//") {
             let pts: Vec<&str> = cv.split("//").collect();
             let first_value = pts[0].trim();
@@ -229,7 +225,6 @@ pub fn p_to_c(text: &str, _vars: &Vec<Tokens>) -> String {
                 *cv = format!("fdi({}, {})", first_value, pts[1].trim());
             }
         }
-        // index += 1; // Increment index if necessary
     }
     // Now append all the collected variables to the printf statement
     if !collected_vars.is_empty() {

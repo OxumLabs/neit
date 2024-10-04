@@ -31,10 +31,10 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
         {
             if in_function {
                 return Err(format!(
-                    "🚫 Oh no at line {}! I found an unexpected function definition sneaking in while we’re still inside another function! 😬✨\n\
-                    🔍 Hint: Don’t let functions crash the party—close the current function before starting a new one! 🎉\n\
-                    Code:\n   => {}\n\
-                    Let’s keep our code organized and everyone happy! 😊",
+                    "✘ Error: Found an unexpected function definition at line {} while inside another function!\n\
+                     → Please close the current function before starting a new one.\n\
+                     Code:\n   => {}\n\
+                     Let's keep our code organized and avoid confusion!",
                     index, ln
                 ));
             }
@@ -66,11 +66,11 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
                             .any(|tkn| matches!(tkn, Tokens::Func(f) if f.name == func.name))
                         {
                             return Err(format!(
-                                "🚫 Oopsie at line {}! It looks like the function '{}' is already declared—double trouble! 😅✨\n\
-                                🔍 Hint: Each function needs its own unique name; let’s avoid name collisions! 🚦\n\
-                                Code:\n   => {}\n\
-                                Let’s give that function a fresh name and keep the coding party going! 🎉😊",
-                                index, func.name, full_function_code
+                                "✘ Error: The function '{}' is already declared at line {}.\n\
+                                 → Each function needs a unique name to avoid conflicts!\n\
+                                 Code:\n   => {}\n\
+                                 Let's rename that function to keep the coding party going!",
+                                func.name, index, full_function_code
                             ));
                         }
                         tokens.push(Tokens::Func(func));
@@ -98,13 +98,11 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
             && ln.trim().ends_with("{}")
         {
             match process_func(ln.trim(), index, &mut fp_label) {
-                // Trim before processing
                 Ok(f) => tokens.push(Tokens::Func(f)),
                 Err(e) => return Err(e),
             }
         } else if ln.trim().starts_with("print(") && ln.trim().ends_with(")") {
             let mut txt: String = ln[6..ln.len() - 1].trim().to_string(); // Extract println arguments
-                                                                          //let txt = format!(r#""\n{}""#, txt);
             let ptxt = process_print(&mut p_label, &txt, &tokens);
             tokens.push(ptxt);
         } else if ln.starts_with("takein(") {
@@ -145,11 +143,11 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
                     // Validate the number of provided arguments
                     if provided_args.len() != expected_args.len() {
                         return Err(format!(
-                            "🚫 Uh-oh at line {}! It seems that the function '{}' was called with the wrong number of arguments—oopsie daisy! 😳✨\n\
-                            🔍 Hint: I expected {} arguments, but you only gave me {}. Let’s get those numbers to match! 🤔\n\
-                            Code:\n   => {}\n\
-                            Remember, every function loves a full house—let’s keep it happy! 🎉😊",
-                            index, nm.trim(), expected_args.len(), provided_args.len(), ln
+                            "✘ Error: The function '{}' was called at line {} with the wrong number of arguments!\n\
+                             → Expected {} arguments, but received {}.\n\
+                             Code:\n   => {}\n\
+                             Let's make sure every function gets the right amount of love!",
+                            nm.trim(), index, expected_args.len(), provided_args.len(), ln
                         ));
                     }
 
@@ -159,11 +157,11 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
                             Ok(t) => t,
                             Err(e) => {
                                 return Err(format!(
-                                    "🚫 Oh no at line {}! I couldn’t parse the argument '{}'—it seems to be a bit shy! 😳✨\n\
-                                    🔍 Hint: Let’s make sure all arguments are of the correct type (string, int, float) to help them shine! 🌟\n\
-                                    Code:\n   => {}\n\
-                                    Remember, every argument deserves to be understood—let’s give it a helping hand! 🎉😊",
-                                    index, provided, ln
+                                    "✘ Error: Couldn’t parse the argument '{}' at line {}!\n\
+                                     → It might be misconfigured. Check its type!\n\
+                                     Code:\n   => {}\n\
+                                     Let's ensure all arguments are understood!",
+                                    provided, index, ln
                                 ));
                             }
                         };
@@ -181,10 +179,10 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
                             && !(provided_type == "int" && expected_type == "float")
                         {
                             return Err(format!(
-                                "🚫 Oopsie Daisy! At line {}, there’s a mix-up with the argument in the function call '{}'. 🤔💥\n\
-                                🔍 Expected argument type: '{}', but I got a wild '{}' instead! Let’s wrangle those types into shape! 🎩✨\n\
-                                Code:\n   => {}\n\
-                                🛠️ Hint: Check if the argument matches the expected type—let's keep everything in harmony! 🎶",
+                                "✘ Error: At line {}, there’s a mismatch with the argument in the function call '{}'.\n\
+                                 → Expected type: '{}', but received '{}'.\n\
+                                 Code:\n   => {}\n\
+                                 Let's get those types sorted out!",
                                 index,
                                 nm.trim(),
                                 expected_type,
@@ -249,8 +247,8 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
 
                         let provided_args: Vec<String> = args_str
                             .split(',')
-                            .map(|s| s.trim().to_string())
-                            .filter(|s| !s.is_empty())
+                            .map(|s| s.trim().to_string()) // Convert &str to String after trimming
+                            .filter(|s| !s.is_empty()) // Filter out empty strings
                             .collect();
 
                         if let Some(Tokens::Func(f)) = tokens
@@ -262,11 +260,11 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
                             // Validate the number of provided arguments
                             if provided_args.len() != expected_args.len() {
                                 return Err(format!(
-                                    "🚫 Oops-a-daisy at line {}! It seems the function '{}' was called with the wrong number of arguments—yikes! 😱✨\n\
-                                    🔍 Hint: I was expecting {} arguments, but you only sent me {}. Let’s get those numbers to match up! 🤔🔄\n\
-                                    Code:\n   => {}\n\
-                                    Remember, every function loves a full plate—let’s fill it right! 🎉😊",
-                                    index, nm.trim(), expected_args.len(), provided_args.len(), ln
+                                    "✘ Error: The function '{}' was called at line {} with the wrong number of arguments!\n\
+                                     → Expected {} arguments, but received {}.\n\
+                                     Code:\n   => {}\n\
+                                     Let's make sure every function gets the right amount of love!",
+                                    nm.trim(), index, expected_args.len(), provided_args.len(), ln
                                 ));
                             }
 
@@ -278,11 +276,11 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
                                     Ok(t) => t,
                                     Err(e) => {
                                         return Err(format!(
-                                            "🚨 Uh-oh! At line {}, I couldn't make sense of the argument '{}'—it’s like trying to read a secret code! 🤖💫\n\
-                                            {} \n\
-                                            🔍 Hint: Make sure your arguments are of the right type—let's avoid any parsing puzzles! 🧩✨\n\
-                                            Code:\n   => {}",
-                                            index, provided, e, ln
+                                            "✘ Error: Couldn’t parse the argument '{}' at line {}!\n\
+                                             → It might be misconfigured. Check its type!\n\
+                                             Code:\n   => {}\n\
+                                             Let's ensure all arguments are understood!",
+                                            provided, index, ln
                                         ));
                                     }
                                 };
@@ -300,10 +298,10 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
                                     && !(provided_type == "int" && expected_type == "float")
                                 {
                                     return Err(format!(
-                                        "🚫 Whoa there! At line {}, it looks like you called the function '{}' with a bit of a mix-up! 🤔💥\n\
-                                        🔍 Expected argument type: '{}', but I got a wild '{}' instead! Let’s wrangle those types into shape! 🎩✨\n\
-                                        Code:\n   => {}\n\
-                                        🛠️ Hint: Check if the argument can be converted or matches the expected type—let's keep everything in sync! 🎶",
+                                        "✘ Error: At line {}, there’s a mismatch with the argument in the function call '{}'.\n\
+                                         → Expected type: '{}', but received '{}'.\n\
+                                         Code:\n   => {}\n\
+                                         Let's get those types sorted out!",
                                         index,
                                         nm.trim(),
                                         expected_type,
@@ -320,11 +318,9 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
             }
         }
     }
-
     Ok(tokens)
 }
 
-// Updated determine_type function
 fn determine_type(arg: &str, tokens: &Vec<Tokens>) -> Result<&'static str, String> {
     let trimmed = arg.trim(); // Trim the argument
     for t in tokens {
@@ -333,22 +329,16 @@ fn determine_type(arg: &str, tokens: &Vec<Tokens>) -> Result<&'static str, Strin
                 Vars::STR(_) => {
                     if n == arg {
                         return Ok("string");
-                    } else {
-                        continue;
-                    };
+                    }
                 }
                 Vars::INT(_) => {
                     if n == arg {
                         return Ok("int");
-                    } else {
-                        continue;
                     }
                 }
                 Vars::F(_) => {
                     if n == arg {
                         return Ok("float");
-                    } else {
-                        continue;
                     }
                 }
                 _ => {}
@@ -368,9 +358,9 @@ fn determine_type(arg: &str, tokens: &Vec<Tokens>) -> Result<&'static str, Strin
         Ok("float")
     } else {
         return Err(format!(
-            "🚫 Oopsie! It looks like the argument '{}' is throwing a fit — it doesn’t match the expected types (string, int, or float)! 🤔💥\n\
-            🔍 Hint: Make sure your argument is dressed appropriately for the occasion—let’s get that type sorted out! 🎩✨\n\
-            Code:\n   => {}",
+            "✘ Error: The argument '{}' is not matching the expected types (string, int, or float)!\n\
+             → Hint: Ensure your argument is in the right format—let’s get that type sorted out!\n\
+             Code:\n   => {}",
             arg, arg
         ));
     }

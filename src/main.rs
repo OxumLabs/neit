@@ -22,9 +22,9 @@ fn main() {
         Ok(_) => {}
         Err(e) => {
             eprintln!(
-                "🚨 Oopsie! It seems like one or more tools are missing from the toolbox! 🛠️😱\n\
-            -> Let’s get those tools installed so we can get back to work! 🎉✨\n\
-            ERROR: {}",
+                "✘ Oops! It seems like one or more tools are missing from the toolbox!\n\
+                ➔ Let’s get those tools installed so we can get back to work!\n\
+                ERROR: {}",
                 e
             );
             exit(1);
@@ -35,9 +35,9 @@ fn main() {
     // Ensure we have the required command and project path
     if args.len() < 2 {
         eprintln!(
-            "🚫 Oopsie! It looks like you forgot to include a command! 🤔✨\n\
-            📜 Usage: {} <command> [<project_path>]\n\
-            Let’s get that command in there so we can keep the fun going! 🎉🎈",
+            "✘ Oops! It looks like you forgot to include a command!\n\
+            Usage: {} <command> [<project_path>]\n\
+            ➔ Let’s get that command in there so we can keep the fun going!",
             args[0]
         );
 
@@ -52,8 +52,8 @@ fn main() {
             Ok(path) => path.to_string_lossy().into_owned(),
             Err(_) => {
                 eprintln!(
-                    "🚫 Oopsie! I can't seem to find the current directory—it's like it vanished into thin air! 🪄✨\n\
-                    🔍 Let’s check if it’s hiding somewhere or if we need to give it a little nudge! 🤔💨"
+                    "✘ Oops! I can't seem to find the current directory—it's like it vanished!\n\
+                    ➔ Let’s check if it’s hiding somewhere or if we need to give it a little nudge!"
                 );
                 exit(1);
             }
@@ -71,14 +71,14 @@ fn main() {
         "target-list" => display_target_list(),
         _ => {
             eprintln!(
-                "🚫 Oopsie! It looks like the command '{}' is not valid—it's like trying to use a banana as a phone! 📞🍌\n\
-                🔍 Supported commands:\n\
+                "✘ Oops! It looks like the command '{}' is not valid—it's like trying to use a banana as a phone!\n\
+                ➔ Supported commands:\n\
                 - help: Need a hand?\n\
                 - target-list: What’s on the menu?\n\
                 - build: Let’s construct something awesome!\n\
                 - run: Time to get moving!\n\
                 - new: Ready for a fresh start?\n\
-                Let’s stick to these commands and keep the fun rolling! 🎉✨",
+                ➔ Let’s stick to these commands and keep the fun rolling!",
                 cmd
             );
 
@@ -107,9 +107,9 @@ fn build_project(proj: &str) {
         Ok(content) => content,
         Err(e) => {
             eprintln!(
-                "🚫 Uh-oh! I tried to read the 'project.conf' file at '{}' but it seems to be playing hide and seek! 🙈📁\n\
-                🔍 Error: {} \n\
-                Let’s find out what’s going on—maybe it’s just shy? 🤔✨",
+                "✘ Uh-oh! I tried to read the 'project.conf' file at '{}' but it seems to be missing!\n\
+                ➔ Error: {}\n\
+                Let’s find out what’s going on—maybe it’s just hiding?",
                 proj, e
             );
 
@@ -136,8 +136,8 @@ fn build_project(proj: &str) {
     // Ensure the project name is found
     if project_name.is_empty() {
         eprintln!(
-            "🚫 Uh-oh! It seems like I couldn’t find a project name in 'project.conf'—it’s like looking for a needle in a haystack! 🤔🌾\n\
-            🔍 Let’s make sure you’ve got a name in there so we can get this party started! 🎉✨"
+            "✘ Uh-oh! It seems like I couldn’t find a project name in 'project.conf'—it’s like looking for a needle in a haystack!\n\
+            ➔ Let’s make sure you’ve got a name in there so we can get this party started!"
         );
         exit(1);
     }
@@ -147,9 +147,9 @@ fn build_project(proj: &str) {
         Ok(content) => content,
         Err(e) => {
             eprintln!(
-                "🚫 Uh-oh! I tried to read the 'main.nsc' file at '{}' but it seems to have gone on an adventure without me! 🗺️✨\n\
-                🔍 Error: {} \n\
-                Let’s track it down and see what’s going on—maybe it needs a map! 🗺️🔍",
+                "✘ Uh-oh! I tried to read the 'main.nsc' file at '{}' but it seems to be missing!\n\
+                ➔ Error: {}\n\
+                Let’s track it down and see what’s going on—maybe it needs a map!",
                 proj, e
             );
             exit(1);
@@ -170,7 +170,7 @@ fn build_project(proj: &str) {
                         asm_code = genasm_win(&tokens); // Generate Windows ASM
                         println!("\n\nWindows ASM :\n{}\n\n", asm_code);
                     } else {
-                        asm_code = genasm_lin(&tokens); // Generate Windows ASM
+                        asm_code = genasm_lin(&tokens); // Generate Linux ASM
                         println!("\n\nLinux ASM :\n{}\n\n", asm_code);
                     }
                 }
@@ -210,9 +210,9 @@ fn run_project(proj: &str) {
         Ok(content) => content,
         Err(e) => {
             eprintln!(
-                "🚫 Uh-oh! I tried to read the 'main.nsc' file at '{}' but it seems to have gone on an adventure without me! 🗺️✨\n\
-                🔍 Error: {} \n\
-                Let’s track it down and see what’s going on—maybe it needs a map! 🗺️🔍",
+                "✘ Uh-oh! I tried to read the 'main.nsc' file at '{}' but it seems to be missing!\n\
+                ➔ Error: {}\n\
+                Let’s track it down and see what’s going on—maybe it needs a map!",
                 proj, e
             );
             exit(1);
@@ -228,8 +228,8 @@ fn run_project(proj: &str) {
                 "linux" => format!("{}/_.out", proj),
                 _ => {
                     eprintln!(
-                        "🚫 Oopsie! I can't seem to figure out what operating system we're on—it's like trying to find a unicorn in a haystack! 🦄🌾\n\
-                        🔍 If you could use windows , macos or the goat - *LINUX*!, that would be super helpful! Let’s get this sorted out so we can keep the fun going! 🎉✨"
+                        "✘ Oops! I can't seem to figure out what operating system we're on—it's like trying to find a unicorn in a haystack!\n\
+                        ➔ If you could use Windows, macOS, or Linux, that would be super helpful! Let’s get this sorted out!"
                     );
                     exit(1);
                 }
@@ -257,48 +257,54 @@ fn run_project(proj: &str) {
                                 Ok(ok) => {
                                     if ok.success() {
                                         let status = Command::new(outf.clone())
-                                            .stdout(Stdio::inherit()) // Inherit stdout for real-time output
-                                            .stderr(Stdio::inherit()) // Inherit stderr for real-time error reporting
+                                            .stdout(Stdio::inherit())
+                                            .stderr(Stdio::inherit())
                                             .status()
-                                            .expect("🚫 Oopsie! It looks like the executable decided to take a nap instead of running! 😴💤\n\
-                                            Let's wake it up and try again!");
-
-                                        // Wait for the child process to finish
+                                            .unwrap();
                                         if !status.success() {
-                                            eprintln!("Process finished with an error.");
-                                        }
-
-                                        // Clean up temporary files after execution
-                                        if let Err(e) = fs::remove_file(&dtf) {
                                             eprintln!(
-                                                "Warning: Could not delete temp C file '{}': {}",
-                                                dtf, e
+                                                "✘ Oh no! It seems that running the program failed.\n\
+                                                ➔ Let’s check the code and make sure everything is in order!"
                                             );
-                                        }
-                                        if let Err(e) = fs::remove_file(&outf) {
-                                            eprintln!(
-                                                "Warning: Could not delete temp executable '{}': {}",
-                                                outf, e
-                                            );
+                                            exit(1);
                                         }
                                     } else {
-                                        eprintln!("Error: Compilation failed.");
+                                        eprintln!(
+                                            "✘ Oh no! It seems that the compilation failed.\n\
+                                            ➔ Let’s check for any errors in the code and try again!"
+                                        );
+                                        exit(1);
                                     }
                                 }
-                                Err(_) => {
-                                    eprintln!("Error: Failed to run clang or lld!");
+                                Err(e) => {
+                                    eprintln!(
+                                        "✘ Uh-oh! I tried to run the command to compile but it didn’t go through.\n\
+                                        ➔ Error: {}\n\
+                                        Let’s see if we can troubleshoot this together!",
+                                        e
+                                    );
                                     exit(1);
                                 }
                             }
                         }
-                        Err(_) => {
-                            eprintln!("Error: Unable to write to C file.");
+                        Err(e) => {
+                            eprintln!(
+                                "✘ Uh-oh! I tried to write to the temporary C file but it seems to be having issues!\n\
+                                ➔ Error: {}\n\
+                                Let’s check if there’s enough space or if something else is in the way!",
+                                e
+                            );
                             exit(1);
                         }
                     }
                 }
-                Err(_) => {
-                    eprintln!("Error: Unable to create C file.");
+                Err(e) => {
+                    eprintln!(
+                        "✘ Oops! I tried to create the temporary C file but it seems to be stuck!\n\
+                        ➔ Error: {}\n\
+                        Let’s see if we can free it up and carry on!",
+                        e
+                    );
                     exit(1);
                 }
             }
@@ -310,67 +316,112 @@ fn run_project(proj: &str) {
     }
 }
 
-pub fn create_new_project(proj: &str) {
+fn create_new_project(proj: &str) {
     println!("Creating a new project at: {}", proj);
-    let proj_path = Path::new(proj);
 
-    // Check if the project directory already exists
-    if proj_path.exists() {
-        eprintln!("Error: Project directory '{}' already exists.", proj);
-        exit(1);
-    }
-
-    // Create the project directory if it does not exist
-    if let Err(e) = fs::create_dir_all(proj_path) {
+    // Check if the project path already exists
+    if Path::new(proj).exists() {
         eprintln!(
-            "Error: Failed to create project directory '{}': {}",
-            proj, e
+            "✘ Uh-oh! It seems like a project already exists at '{}'.\n\
+            ➔ Let’s choose a different location to start fresh!",
+            proj
         );
         exit(1);
     }
 
-    // Create main.nsc file
-    let main_file_content = "println(\"Hello, world\")\n#The Neit Programming Language";
-    let main_file_path = proj_path.join("main.nsc");
-    if let Err(e) = fs::write(&main_file_path, main_file_content) {
-        eprintln!("Error: Failed to create 'main.nsc' file: {}", e);
-        exit(1);
+    // Create the project directory
+    match fs::create_dir_all(proj) {
+        Ok(_) => {
+            let main_file = format!("{}/main.nsc", proj);
+            let config_file = format!("{}/project.conf", proj);
+
+            // Create the main.nsc file with a basic template
+            match File::create(&main_file) {
+                Ok(mut file) => {
+                    let template = "// This is the main.nsc file for your project\n\n";
+                    match file.write_all(template.as_bytes()) {
+                        Ok(_) => {
+                            println!("Created: {}", main_file);
+                        }
+                        Err(e) => {
+                            eprintln!(
+                                "✘ Oops! I tried to write to the main.nsc file but it seems to be having issues!\n\
+                                ➔ Error: {}\n\
+                                Let’s check if there’s enough space or if something else is in the way!",
+                                e
+                            );
+                            exit(1);
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!(
+                        "✘ Uh-oh! I tried to create the main.nsc file but it seems to be stuck!\n\
+                        ➔ Error: {}\n\
+                        Let’s see if we can free it up and carry on!",
+                        e
+                    );
+                    exit(1);
+                }
+            }
+
+            // Create the project.conf file with a basic template
+            match File::create(&config_file) {
+                Ok(mut file) => {
+                    let template = "Name: MyProject\nBuild: lin_asm, win_asm\n";
+                    match file.write_all(template.as_bytes()) {
+                        Ok(_) => {
+                            println!("Created: {}", config_file);
+                        }
+                        Err(e) => {
+                            eprintln!(
+                                "✘ Oops! I tried to write to the project.conf file but it seems to be having issues!\n\
+                                ➔ Error: {}\n\
+                                Let’s check if there’s enough space or if something else is in the way!",
+                                e
+                            );
+                            exit(1);
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!(
+                        "✘ Uh-oh! I tried to create the project.conf file but it seems to be stuck!\n\
+                        ➔ Error: {}\n\
+                        Let’s see if we can free it up and carry on!",
+                        e
+                    );
+                    exit(1);
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!(
+                "✘ Oops! I tried to create the project directory but it seems to be stuck!\n\
+                ➔ Error: {}\n\
+                Let’s see if we can free it up and carry on!",
+                e
+            );
+            exit(1);
+        }
     }
-
-    // Create project.conf file
-    let project_name = proj_path
-        .file_name()
-        .unwrap_or_else(|| std::ffi::OsStr::new("unknown_project"))
-        .to_string_lossy();
-    let os = std::env::consts::OS;
-
-    let config_content = format!("Name: {}\nAuthor: USER\nBuild: {}\n", project_name, os);
-    let config_file_path = proj_path.join("project.conf");
-    if let Err(e) = fs::write(&config_file_path, config_content) {
-        eprintln!("Error: Failed to create 'project.conf' file: {}", e);
-        exit(1);
-    }
-
-    println!("Project created successfully at: {}", proj);
 }
 
 fn display_help() {
-    println!("🎉 Available Commands:");
-    println!(" - 🛠️ build       : Builds the project (if you're in the project directory, no need to specify the project path).");
-    println!(" - 🏃‍♂️ run         : Runs the project (if you're in the project directory, no need to specify the project path).");
-    println!(" - ✨ new         : Creates a shiny new project in a new folder named after the magical project name you provide! 🌟");
-    println!(" - ❓ help        : Displays this super helpful message, just in case you need a friendly reminder! 🤗");
-    println!(" - 🎯 target-list : Shows available build targets and their purposes—let’s see what we can aim for! 🎯");
-    exit(0);
+    println!("Help: Available Commands:");
+    println!("- build: Am gonna cook the meal and package it for you!");
+    println!("- run: I will get this project to run as you told me to");
+    println!("- new: I will serve you with a fresh new plate of (the name you gonna choose)");
+    println!("- help: C'mon you already ran it..duh!?");
+    println!("- target-list: List available build targets");
 }
 
 fn display_target_list() {
-    println!("🎯 Available Targets:");
-    println!(" - 🦄 llvm-ir     : Generates LLVM intermediate representation—like magic for your code! ✨");
-    println!(" - 🐍 c           : Generates C code—let’s speak the language of the compilers! 💬");
-    println!(
-        " - 🪟 windows     : Compiles for Windows—time to make it shine on the land of Windows! 🌟"
-    );
-    println!(" - 🐧 linux       : Compiles for Linux—let’s rock the open-source world! 🤘");
-    exit(0);
+    println!("Available Build Targets:");
+    println!("- win_asm: I will make windows binary compiled from Windows ASM code for x86_64 ");
+    println!("- lin_asm: I will make Linux binary compiled from a  pure Linux ASM for x86_64");
+    println!("- windows: I will make windows binary compiled using clang");
+    println!("- lin_asm: I will make Linux binary compiled using clang");
+    println!("- llvm-ir : I will put out my llvm-ir code just for you :3 ");
+    println!("- c : I will put out my C code just for you :3");
 }
