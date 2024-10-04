@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 int fdi(int a, int b) {
     if (b == 0) {
         // ✘ Error: Division by zero
@@ -31,12 +32,17 @@ double fdf(double a, double b) {
     return result;
 }
 
-void hi(char *name) {
-    printf("hi %d\n", fdf(1, 1));
-
-}
-
 int main() {
-    hi("joy");
+char name[3337] = "";
+    printf("name ? > ");
+//printf("\n");
+fgets(name, sizeof(name) - 1, stdin);
+for (int i = 0; name[i] != '\0'; i++)
+ {
+ if (name[i] == '\n') 
+{ name[i] = '\0'; 
+} 
+}
+    printf("%s\n", name);
     return 0;
 }

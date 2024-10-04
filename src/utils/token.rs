@@ -114,8 +114,8 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
                 Err(e) => return Err(e),
             }
         } else if ln.trim().starts_with("println(") && ln.trim().ends_with(")") {
-            let mut txt: String = ln[9..ln.len() - 2].trim().to_string(); // Extract println arguments
-            let txt = format!(r#""\n{}""#, txt);
+            let mut txt: String = ln[9..ln.len() - 2].to_string(); // Extract println arguments
+            let txt = format!(r#""{}\n""#, txt);
             let ptxt = process_print(&mut p_label, &txt, &tokens);
             tokens.push(ptxt);
         } else {

@@ -5,7 +5,7 @@ use crate::utils::{
 use std::collections::HashSet;
 
 pub fn to_c(tokens: &Vec<Tokens>) -> String {
-    let imports = String::from("#include <stdio.h>\n");
+    let imports = String::from("#include <stdio.h>\n#include <string.h>\n");
     let mut main = String::new();
     let mut funs = String::new();
 
@@ -118,23 +118,30 @@ fn process(
     for token in tokens {
         match token {
             Tokens::Print(v, _n) => {
+                println!("v : {} |", v);
                 let pc = p_to_c(v, tokens);
                 let pc = format!("    printf({});\n", pc); // Add a newline after printf
                 func.push_str(&pc);
             }
             Tokens::In(vnm) => {
-                func.push_str(&format!("fgets({},{},stdin);\n", vnm, vnm.len() + 1024));
+                // Read input
+                func.push_str(&format!(
+                    "//printf(\"\\n\");\nfgets({}, sizeof({}) - 1, stdin);\n",
+                    vnm, vnm
+                ));
+                // Replace newline character with null terminator
+                func.push_str(&format!(
+                    "for (int i = 0; {}[i] != '\\0'; i++)\n {{\n if ({}[i] == '\\n') \n{{ {}[i] = '\\0'; \n}} \n}}\n",
+                    vnm, vnm, vnm
+                ));
             }
             Tokens::FnCall(fc, args) => {
                 func.push_str(&format!("    {}({});\n", fc, args.join(",")));
             }
             Tokens::Var(v, n, mutable) => {
-                // Skip redeclaring function arguments
                 if arg_vars.contains(n) {
                     continue;
                 }
-
-                // Check if the variable has already been declared
                 if declared_vars.contains(n) {
                     continue; // Skip if already declared
                 }
