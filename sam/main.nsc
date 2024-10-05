@@ -1,2 +1,2 @@
-echo("hi")
-free name to "jay"
+out("hi")
+may z = "joy";

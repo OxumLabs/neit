@@ -1,3 +1,5 @@
+use std::process::exit;
+
 use super::{
     tokens::{func::process_func, input::process_input, print::process_print, var::process_var},
     types::{Args, Tokens, Vars},
@@ -187,12 +189,17 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
             }
 
             if !found_function {
-                return Err(format!(
-                    "✘ What the...? I found something strange at line {}.\n\
+                if ln.ends_with(";") {
+                    eprintln!("Error at line '{}': '{}'. \nAha! There it is, the notorious semicolon! \nDid you think you could just slip it in here and nobody would notice? \nSurprise! We see you, and it’s time to face the music.\nThis language is semicolon-free, so send it back where it belongs!\nLet’s keep our code elegant and simple!", index, ln);
+                    exit(1);
+                } else {
+                    return Err(format!(
+                        "✘ What the...? I found something strange at line {}.\n\
                      → '{}'? Really? You sure about that?\n\
                      Let’s rethink that one, yeah?",
-                    index, ln
-                ));
+                        index, ln
+                    ));
+                }
             }
         }
     }

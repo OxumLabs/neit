@@ -165,6 +165,16 @@ impl Vars {
             }
 
             Err(_e) => {
+                if value.ends_with(";") {
+                    return Err(format!(
+                        "Oh no! A rogue semicolon detected at the end of your value: '{}'\n\
+                        Did you really think you could bring that here? \n\
+                        This is a semicolon-free zone, my friend!\n\
+                        Let’s keep your code classy—remove it before it starts a riot!",
+                        value.trim_end_matches(';') // Display the value without the semicolon
+                    ));
+                }
+
                 return Err(format!(
                     "✘ Error: I tried to make sense of the value '{}' but it just wouldn’t play nice! \n\
                     → It couldn’t be parsed as a valid type.\n\
