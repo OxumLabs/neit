@@ -33,5 +33,7 @@ double fdf(double a, double b) {
 }
 
 int main() {
+    printf("hi\n");
+char name[3337] = "jay";
     return 0;
 }

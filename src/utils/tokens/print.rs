@@ -6,7 +6,7 @@ use crate::utils::{
 };
 
 pub fn process_print(num: &mut i32, text: &str, vars: &Vec<Tokens>) -> Tokens {
-    println!("text : {} |", text);
+    // println!("text : {} |", text);
     *num += 1;
     let mut result_text = String::new();
     let mut inside_string = false;
@@ -102,7 +102,7 @@ pub fn process_print(num: &mut i32, text: &str, vars: &Vec<Tokens>) -> Tokens {
     if !current_var.is_empty() {
         result_text.push_str(&current_var); // This may happen at the end of the string
     }
-    println!("result text : {} |", result_text);
+    //println!("result text : {} |", result_text);
     Tokens::Print(result_text, format!("p{}", num))
 }
 
@@ -219,6 +219,6 @@ pub fn p_to_c(text: &str, _vars: &Vec<Tokens>) -> String {
         c_code.push_str(", ");
         c_code.push_str(&collected_vars.join(", ")); // Join collected variables with commas
     }
-    println!("c_code : {} |", c_code); // Debugging output
+    //println!("c_code : {} |", c_code); // Debugging output
     c_code
 }

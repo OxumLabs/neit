@@ -82,9 +82,10 @@ pub fn process_grammar_file(file_path: &str, usrgrm: &mut Vec<Grammar>) {
     }
 }
 
+#[allow(unused)]
 // Function to process the neit file
 pub fn process_neit_file(file_path: &str, usrgrm: &[Grammar], defengine: &[Grammar]) -> String {
-    let mut nc = String::new();
+    let mut nc = String::new(); // This will store the final processed content
     match File::open(file_path) {
         Ok(mut file) => {
             let mut content = String::new();
@@ -92,39 +93,51 @@ pub fn process_neit_file(file_path: &str, usrgrm: &[Grammar], defengine: &[Gramm
                 eprintln!("Error reading file '{}': {}", file_path, e);
                 std::process::exit(1);
             }
-            let mut modified_content = String::new();
-            let mut current_word = String::new();
-            let mut in_string_mode = false;
 
-            for c in content.chars() {
-                if c == '"' {
-                    in_string_mode = !in_string_mode;
-                    modified_content.push(c);
-                    continue;
-                }
+            let mut processed_lines = Vec::new(); // Store all processed lines here
 
-                if in_string_mode {
-                    modified_content.push(c);
-                } else {
-                    if c.is_whitespace() || c.is_ascii_punctuation() {
-                        if !current_word.is_empty() {
-                            let replaced_word = replace_word(&current_word, usrgrm, defengine);
-                            modified_content.push_str(&replaced_word);
-                            current_word.clear();
-                        }
-                        modified_content.push(c);
+            // Split the content by lines
+            for line in content.split('\n') {
+                let mut modified_line = String::new();
+                let mut current_word = String::new();
+                let mut in_string_mode = false;
+
+                // Now process each character in the current line
+                for c in line.chars() {
+                    if c == '"' {
+                        in_string_mode = !in_string_mode;
+                        modified_line.push(c);
+                        continue;
+                    }
+
+                    if in_string_mode {
+                        modified_line.push(c);
                     } else {
-                        current_word.push(c);
+                        if c.is_whitespace() || c.is_ascii_punctuation() {
+                            if !current_word.is_empty() {
+                                let replaced_word = replace_word(&current_word, usrgrm, defengine);
+                                modified_line.push_str(&replaced_word);
+                                current_word.clear();
+                            }
+                            modified_line.push(c);
+                        } else {
+                            current_word.push(c);
+                        }
                     }
                 }
+
+                // Append any remaining word after processing the line
+                if !current_word.is_empty() {
+                    let replaced_word = replace_word(&current_word, usrgrm, defengine);
+                    modified_line.push_str(&replaced_word);
+                }
+
+                // Store the processed line
+                processed_lines.push(modified_line);
             }
 
-            // Append any remaining word after the loop ends
-            if !current_word.is_empty() {
-                let replaced_word: String = replace_word(&current_word, usrgrm, defengine);
-                modified_content.push_str(&replaced_word);
-            }
-            nc.push_str(&modified_content.as_str());
+            // Join all the processed lines with new line characters
+            nc = processed_lines.join("\n");
         }
         Err(_) => {
             eprintln!("Could not open neit file '{}'", file_path);
@@ -178,6 +191,10 @@ pub fn gen_grm() -> Vec<Grammar> {
         Grammar {
             def: "print".to_string(),
             new: "print".to_string(),
+        },
+        Grammar {
+            def: "=".to_string(),
+            new: "=".to_string(),
         },
     ]
 }

@@ -118,7 +118,7 @@ fn process(
     for token in tokens {
         match token {
             Tokens::Print(v, _n) => {
-                println!("v : {} |", v);
+                //println!("v : {} |", v);
                 let pc = p_to_c(v, tokens);
                 let pc = format!("    printf({});\n", pc); // Add a newline after printf
                 func.push_str(&pc);

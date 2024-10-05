@@ -241,9 +241,9 @@ fn run_project(proj: &str) {
         } else {
             if icm {
                 if cfc.trim().starts_with("input_grammer=") {
-                    println!("igf : {}", cfc);
+                    //println!("igf : {}", cfc);
                     igf = cfc.trim_start_matches("input_grammer=").to_string();
-                    println!("igf : {}", igf);
+                    //println!("igf : {}", igf);
                 } else if cfc.trim().starts_with("use_grammer=") {
                     ugf = cfc.trim_start_matches("use_grammer=").to_string();
                 }
