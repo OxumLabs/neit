@@ -33,16 +33,5 @@ double fdf(double a, double b) {
 }
 
 int main() {
-char name[3337] = "";
-    printf("name ? > ");
-//printf("\n");
-fgets(name, sizeof(name) - 1, stdin);
-for (int i = 0; name[i] != '\0'; i++)
- {
- if (name[i] == '\n') 
-{ name[i] = '\0'; 
-} 
-}
-    printf("%s\n", name);
     return 0;
 }

@@ -7,6 +7,7 @@ use std::{
 };
 
 pub mod compilers;
+pub mod ntune;
 pub mod utils;
 use compilers::{
     compile::{check_tools_installed, compile},
@@ -14,10 +15,12 @@ use compilers::{
     genasm_win::genasm_win,
     llvm::{bc::comp_c, c::to_c},
 };
+use ntune::ntune::{gen_grm, process_grammar_file, process_neit_file, Grammar};
 use utils::{fo::checkproj, token::gentoken};
 
 fn main() {
     let cti = check_tools_installed();
+
     match cti {
         Ok(_) => {}
         Err(e) => {
@@ -195,6 +198,7 @@ fn build_project(proj: &str) {
     }
 }
 
+#[allow(unused)]
 fn run_project(proj: &str) {
     println!("Running project at: {}", proj);
 
@@ -206,7 +210,7 @@ fn run_project(proj: &str) {
 
     // Read the main.nsc file
     let mf = format!("{}/main.nsc", proj);
-    let mc = match read_to_string(&mf) {
+    let mut mc = match read_to_string(&mf) {
         Ok(content) => content,
         Err(e) => {
             eprintln!(
@@ -218,6 +222,44 @@ fn run_project(proj: &str) {
             exit(1);
         }
     };
+    let cf = format!("{}/project.conf", proj);
+    let cc = match read_to_string(&cf) {
+        Ok(cc) => cc,
+        Err(_) => {
+            eprintln!("✘ Uh-oh! I tried to find 'project.conf' file at '{}' but I cant find it!\n➔ Make sure it is there and didn't run away from me?",cf);
+            exit(1)
+        }
+    };
+    let mut icm = false;
+    let mut igf = String::new();
+    let mut ugf = String::new();
+    for cfc in cc.lines() {
+        if cfc.trim().starts_with("[sec-start] grammer") {
+            icm = true;
+        } else if cfc.trim().starts_with("[sec-end] grammer") {
+            icm = false;
+        } else {
+            if icm {
+                if cfc.trim().starts_with("input_grammer=") {
+                    println!("igf : {}", cfc);
+                    igf = cfc.trim_start_matches("input_grammer=").to_string();
+                    println!("igf : {}", igf);
+                } else if cfc.trim().starts_with("use_grammer=") {
+                    ugf = cfc.trim_start_matches("use_grammer=").to_string();
+                }
+            }
+        }
+    }
+    if !igf.is_empty() {
+        //println!("main content :\n {}", mc);
+        let mut usrgrm: Vec<Grammar> = Vec::new();
+        let defgen = gen_grm();
+        process_grammar_file(&format!("{}/{}", proj, igf), &mut usrgrm);
+        let nmc = process_neit_file(&mf, &usrgrm, &defgen);
+        //println!("nmc : {}", nmc);
+        mc = nmc;
+        //println!("main content after parsing :\n {}", mc);
+    }
 
     let cds: Vec<&str> = mc.split("\n").collect();
     match gentoken(cds) {

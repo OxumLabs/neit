@@ -1,4 +1,2 @@
-may name = ""
-print("name ? > ")
-takein(name)
-println("{name}")
+echo("hi")
+gh
