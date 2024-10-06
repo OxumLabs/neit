@@ -1,2 +1,10 @@
-out("hi")
-may z = "joy";
+may z = ""
+
+
+case admin{
+    print("{z}")
+}
+
+case adminn{
+    print("{z}")
+}

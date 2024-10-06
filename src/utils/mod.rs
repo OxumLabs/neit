@@ -1,3 +1,4 @@
+pub mod case;
 pub mod fo;
 pub mod ftokens;
 pub mod maths;

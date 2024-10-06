@@ -91,7 +91,6 @@ fn main() {
 }
 
 #[allow(unused)]
-
 fn build_project(proj: &str) {
     println!("Building the project at: {}", proj);
 
@@ -120,9 +119,11 @@ fn build_project(proj: &str) {
         }
     };
 
-    // Parse the project configuration to get the name and build targets
+    // Parse the project configuration to get the name, build targets, and grammar
     let mut project_name = String::new();
     let mut build_targets = Vec::new();
+    let mut input_grammar_file = String::new();
+    let mut use_grammar_file = String::new();
 
     for line in config_content.lines() {
         if line.starts_with("Name:") {
@@ -133,6 +134,10 @@ fn build_project(proj: &str) {
                 .split(',')
                 .map(|s| s.trim().to_lowercase())
                 .collect();
+        } else if line.starts_with("input_grammer=") {
+            input_grammar_file = line["input_grammer=".len()..].trim().to_string();
+        } else if line.starts_with("use_grammer=") {
+            use_grammar_file = line["use_grammer=".len()..].trim().to_string();
         }
     }
 
@@ -159,8 +164,18 @@ fn build_project(proj: &str) {
         }
     };
 
-    let code: Vec<&str> = main_content.lines().collect();
-    match gentoken(code) {
+    // Handle grammar processing
+    let mut updated_content = main_content;
+
+    if !input_grammar_file.is_empty() {
+        let mut usrgrm: Vec<Grammar> = Vec::new();
+        let defgen = gen_grm();
+        process_grammar_file(&format!("{}/{}", proj, input_grammar_file), &mut usrgrm);
+        updated_content = process_neit_file(&main_file_path, &usrgrm, &defgen);
+    }
+
+    let code: Vec<&str> = updated_content.lines().collect();
+    match gentoken(code, Vec::new(), false) {
         Ok(tokens) => {
             // Process each build target
             for target in build_targets {
@@ -180,13 +195,10 @@ fn build_project(proj: &str) {
 
                 // Compile the generated assembly code, passing the project name
                 if target == "win_asm" {
-                    // Compile for Windows assembly target
                     compile(&asm_code, proj, &target, &project_name);
                 } else if target == "lin_asm" {
-                    // Compile for Linux assembly target
                     compile(&asm_code, proj, &target, &project_name);
                 } else {
-                    // Compile for any other targets
                     comp_c(&asm_code, proj, &target, &project_name);
                 }
             }
@@ -262,8 +274,9 @@ fn run_project(proj: &str) {
     }
 
     let cds: Vec<&str> = mc.split("\n").collect();
-    match gentoken(cds) {
+    match gentoken(cds, Vec::new(), false) {
         Ok(tkns) => {
+            println!("\n\nTokens:\n{:?}\n\n", tkns);
             let dtf = format!("{}/_.c", proj); // Temporary C file
             let outf = match OS {
                 "windows" => format!("{}/_.exe", proj),

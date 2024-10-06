@@ -220,6 +220,7 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
                 }
             }
         } else if ln.is_empty() {
+            continue;
             return Err(format!(
                 "✘ Yikes! Unexpected empty line encountered at line {}.\n\
                  → Hint: Remove empty lines to maintain clarity.\n\

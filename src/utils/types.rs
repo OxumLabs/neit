@@ -1,3 +1,5 @@
+use std::fmt;
+
 use super::maths::evaluate_expression;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
@@ -7,7 +9,56 @@ pub enum Tokens {
     Print(String, String), /* String -> Text to print stored on | rax:1(sys_write) , rsi:text , rdx:size/len_of_text , rdi:1 (1 for stdout)*/
     Var(Vars, String, bool), /* Vars -> Variable Data | String -> Variable Name | bool -> is change-able*/
     Revar(String, String),   /* Name , Value */
-    In(String),              /* String -> Variable name to take input in */
+    In(String),
+    IFun(String, Vec<Tokens>), /* String -> Variable name to take input in */
+    Cond(String, Vec<Tokens>), /* String -> Condition | Vec<Tokens> -> All code to run  */
+}
+
+impl fmt::Display for Tokens {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Tokens::Func(func) => write!(f, "Function: {}\n", func.name),
+            Tokens::FnCall(name, args) => {
+                let args_display = args.join(", ");
+                write!(f, "Function Call: {}({})\n", name, args_display)
+            }
+            Tokens::Print(text, _) => write!(f, "Print: \"{}\"\n", text),
+            Tokens::Var(var_type, name, is_changeable) => {
+                let changeable = if *is_changeable {
+                    "mutable"
+                } else {
+                    "immutable"
+                };
+                write!(
+                    f,
+                    "Variable: {} - {:?} ({} variable)\n",
+                    name, var_type, changeable
+                )
+            }
+            Tokens::Revar(name, value) => write!(f, "Reassign Variable: {} = {}\n", name, value),
+            Tokens::In(value) => write!(f, "Input: {}\n", value),
+            Tokens::IFun(var_name, tokens) => {
+                let tokens_display = tokens
+                    .iter()
+                    .map(|t| format!("{}", t))
+                    .collect::<Vec<_>>()
+                    .join("");
+                write!(
+                    f,
+                    "Input Function: {} with tokens:\n{}",
+                    var_name, tokens_display
+                )
+            }
+            Tokens::Cond(condition, tokens) => {
+                let tokens_display = tokens
+                    .iter()
+                    .map(|t| format!("{}", t))
+                    .collect::<Vec<_>>()
+                    .join("");
+                write!(f, "Condition: {}\nTokens:\n{}", condition, tokens_display)
+            }
+        }
+    }
 }
 
 pub fn get_vars(tokens: &Vec<fvars>) -> Vec<Vars> {

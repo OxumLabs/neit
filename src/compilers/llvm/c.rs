@@ -124,15 +124,13 @@ fn process(
                 func.push_str(&pc);
             }
             Tokens::In(vnm) => {
-                // Read input
                 func.push_str(&format!(
                     "//printf(\"\\n\");\nfgets({}, sizeof({}) - 1, stdin);\n",
                     vnm, vnm
                 ));
-                // Replace newline character with null terminator
                 func.push_str(&format!(
-                    "for (int i = 0; {}[i] != '\\0'; i++)\n {{\n if ({}[i] == '\\n') \n{{ {}[i] = '\\0'; \n}} \n}}\n",
-                    vnm, vnm, vnm
+                    "char *newline = strchr({}, '\\n');\nif (newline) *newline = '\\0';\n",
+                    vnm
                 ));
             }
             Tokens::FnCall(fc, args) => {

@@ -1,0 +1,4 @@
+{
+    "window.title": "${dirty}${activeFolderMedium}${activeEditorShort}",
+    "accessibility.hideAccessibleView": false
+}

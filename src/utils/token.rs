@@ -1,21 +1,33 @@
-use std::process::exit;
+use crate::utils::case::process_case;
 
 use super::{
     tokens::{func::process_func, input::process_input, print::process_print, var::process_var},
     types::{Args, Tokens, Vars},
 };
+use colored::*; // Import the colored crate
 
 #[allow(unused, irrefutable_let_patterns)]
-pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
-    let mut index = 0;
-    let mut tokens: Vec<Tokens> = Vec::new();
+pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<Tokens>, String> {
+    println!(
+        "from case? {} | tokens? {}",
+        fc,
+        casetkns
+            .iter()
+            .map(|i| format!("{}", i)) // Format each token
+            .collect::<Vec<_>>() // Collect formatted tokens into a Vec
+            .join(", ") // Join them with a comma separator
+    );
+
+    let mut index: i64 = 0;
+    let mut tokens: Vec<Tokens> = casetkns;
+    let mut ct: Vec<Tokens> = Vec::new();
     let mut in_function = false;
     let mut function_body = Vec::new();
     let mut brace_depth = 0;
     let mut p_label = 0;
     let mut fp_label = 364;
 
-    for mut ln in code {
+    for mut ln in code.clone() {
         if let Some(pos) = ln.find('#') {
             ln = ln[..pos].trim(); // Remove comments
         }
@@ -32,11 +44,11 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
         {
             if in_function {
                 return Err(format!(
-                    "✘ Oh no, rookie move! Found another function at line {} while you're still inside one.\n\
+                    "{} Oh no, rookie move! Found another function at line {} while you're still inside one.\n\
                      → First finish what you started before moving on!\n\
                      Code:\n   => {}\n\
                      Seriously, let’s close that function off before we get ahead of ourselves, okay?",
-                    index, ln
+                    "✘".red(), index, ln
                 ));
             }
 
@@ -58,57 +70,133 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
 
             if brace_depth == 0 {
                 let full_function_code = function_body.join("\n");
-                match process_func(&full_function_code, index, &mut fp_label) {
+                match process_func(
+                    &full_function_code,
+                    index.try_into().unwrap(),
+                    &mut fp_label,
+                ) {
                     Ok(func) => {
                         if tokens
                             .iter()
                             .any(|tkn| matches!(tkn, Tokens::Func(f) if f.name == func.name))
                         {
                             return Err(format!(
-                                "✘ Yikes! The function '{}' is already declared at line {}. Rookie mistake, am I right?\n\
+                                "{} Yikes! The function '{}' is already declared at line {}. Rookie mistake, am I right?\n\
                                  → Ever heard of unique names? Let's give that function a fresh one!\n\
                                  Code:\n   => {}\n\
                                  Keep it unique, champ!",
-                                func.name, index, full_function_code
+                                "✘".red(), func.name, index, full_function_code
                             ));
                         }
-                        tokens.push(Tokens::Func(func));
+                        if !fc {
+                            tokens.push(Tokens::Func(func));
+                        } else {
+                            ct.push(Tokens::Func(func));
+                        }
                         in_function = false;
                         function_body.clear();
                     }
                     Err(e) => return Err(e),
                 }
             }
+        } else if ln.starts_with("case ") && ln.ends_with("{") {
+            let cname = ln[5..].trim_end_matches("}");
+            // Initialize a vector to collect case lines
+            let mut case_lines = Vec::new(); // Start with the case declaration
+            let mut brace_depth = 1; // We've already seen one opening brace
+            let mut inner_index = index + 1; // Start from the next line after the case declaration
+
+            // Collect lines until the brace depth returns to zero
+            while inner_index < code.len().try_into().unwrap() {
+                let next_line = code[inner_index as usize].trim();
+
+                // Check for empty lines
+                if next_line.is_empty() {
+                    inner_index += 1;
+                    continue;
+                }
+
+                // Count braces
+                brace_depth += next_line.matches('{').count();
+                brace_depth -= next_line.matches('}').count();
+
+                // Collect the line
+                case_lines.push(next_line.to_string());
+
+                // If brace depth is zero, we found the end of the case block
+                if brace_depth == 0 {
+                    break;
+                }
+
+                inner_index += 1; // Move to the next line
+            }
+
+            // Now we can call process_case with the collected case code
+            let case_result = process_case(ln, case_lines, &mut index, true);
+            (if let Err(e) = case_result {
+                return Err(e);
+            });
+            tokens.push(Tokens::IFun(cname.to_string(), case_result.unwrap()));
+
+            // Update the main index to continue processing after the case block
+            index = inner_index; // Update the index to the position after the last collected line
         } else if (ln.trim().starts_with("may") && !ln.trim().starts_with("may whole"))
             && ln.contains('=')
         {
             let vr = process_var(ln.trim(), &tokens, true);
             match vr {
-                Ok(vr) => tokens.push(Tokens::Var(vr.0, vr.1, true)),
+                Ok(vr) => {
+                    if fc {
+                        ct.push(Tokens::Var(vr.0, vr.1, true)); // Add to ct if fc is true
+                    } else {
+                        tokens.push(Tokens::Var(vr.0, vr.1, true)); // Add to tokens if fc is false
+                    }
+                }
+
                 Err(e) => return Err(e),
             }
         } else if ln.trim().starts_with("must ") {
             let vr = process_var(ln.trim(), &tokens, false);
             match vr {
-                Ok(vr) => tokens.push(Tokens::Var(vr.0, vr.1, false)),
+                Ok(vr) => {
+                    if fc {
+                        ct.push(Tokens::Var(vr.0, vr.1, false)); // Add to ct if fc is true
+                    } else {
+                        tokens.push(Tokens::Var(vr.0, vr.1, false)); // Add to tokens if fc is false
+                    }
+                }
                 Err(e) => return Err(e),
             }
         } else if (ln.trim().starts_with("fn") || ln.trim().starts_with("pub fn"))
             && ln.trim().ends_with("{}")
         {
-            match process_func(ln.trim(), index, &mut fp_label) {
-                Ok(f) => tokens.push(Tokens::Func(f)),
+            match process_func(ln.trim(), index.try_into().unwrap(), &mut fp_label) {
+                Ok(f) => {
+                    if !fc {
+                        tokens.push(Tokens::Func(f))
+                    } else {
+                        ct.push(Tokens::Func(f));
+                    }
+                }
                 Err(e) => return Err(e),
             }
         } else if ln.trim().starts_with("print(") && ln.trim().ends_with(")") {
             let mut txt: String = ln[6..ln.len() - 1].trim().to_string(); // Extract println arguments
             let ptxt = process_print(&mut p_label, &txt, &tokens);
-            tokens.push(ptxt);
+            if !fc {
+                tokens.push(ptxt);
+            } else {
+                ct.push(ptxt);
+            }
         } else if ln.starts_with("takein(") {
             let tkn = process_input(&ln, &tokens);
             match tkn {
                 Ok(tkn) => {
-                    tokens.push(tkn);
+                    if !fc {
+                        tokens.push(tkn);
+                    } else {
+                        ct.push(tkn);
+                    }
                 }
                 Err(e) => return Err(e),
             }
@@ -116,7 +204,11 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
             let mut txt: String = ln[9..ln.len() - 2].to_string(); // Extract println arguments
             let txt = format!(r#""{}\n""#, txt);
             let ptxt = process_print(&mut p_label, &txt, &tokens);
-            tokens.push(ptxt);
+            if !fc {
+                tokens.push(ptxt);
+            } else {
+                ct.push(ptxt);
+            }
         } else {
             let args: Vec<&str> = ln.trim().split('(').collect(); // Split on parentheses
             let mut found_function = false;
@@ -141,26 +233,27 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
 
                     if provided_args.len() != expected_args.len() {
                         return Err(format!(
-                            "✘ Oops! Looks like you called the function '{}' at line {} with the wrong number of arguments.\n\
+                            "{} Oops! Looks like you called the function '{}' at line {} with the wrong number of arguments.\n\
                              → Expected {}, but you gave me {}. Rookie mistake, right?\n\
                              Code:\n   => {}\n\
                              Let’s fix that up, shall we?",
-                            nm.trim(), index, expected_args.len(), provided_args.len(), ln
+                            "✘".red(), nm.trim(), index, expected_args.len(), provided_args.len(), ln
                         ));
                     }
 
                     for (provided, expected) in provided_args.iter().zip(expected_args.iter()) {
-                        let provided_type = match determine_type(provided, &tokens) {
-                            Ok(t) => t,
-                            Err(_) => {
-                                return Err(format!(
-                                    "✘ Are you kidding me? I can't even parse '{}' at line {}.\n\
+                        let provided_type =
+                            match determine_type(provided, &tokens) {
+                                Ok(t) => t,
+                                Err(_) => {
+                                    return Err(format!(
+                                    "{} Are you kidding me? I can't even parse '{}' at line {}.\n\
                                  → Double check that argument—I'm begging you!\n\
                                  Code:\n   => {}",
-                                    provided, index, ln
+                                    "✘".red(), provided, index, ln
                                 ))
-                            }
-                        };
+                                }
+                            };
 
                         let expected_type = match expected {
                             Args::Str(_) => "string",
@@ -169,44 +262,53 @@ pub fn gentoken(code: Vec<&str>) -> Result<Vec<Tokens>, String> {
                             _ => "unknown",
                         };
 
-                        if provided_type != expected_type
-                            && !(provided_type == "float" && expected_type == "int")
-                            && !(provided_type == "int" && expected_type == "float")
-                        {
+                        if provided_type != expected_type {
                             return Err(format!(
-                                "✘ Uh-oh, mismatch alert at line {}! You called '{}' with the wrong argument types.\n\
-                                 → Expected '{}', but you gave me '{}'. Come on, you can do better!\n\
+                                "{} Oh no! The argument '{}' doesn't match the expected type '{}'. Line {}:\n\
                                  Code:\n   => {}\n\
-                                 Let's try that again, shall we?",
-                                index, nm.trim(), expected_type, provided_type, ln
+                                 Let's get our types sorted out, shall we?",
+                                "✘".red(), provided, expected_type, index, ln
                             ));
                         }
                     }
 
-                    tokens.push(Tokens::FnCall(nm.trim().to_string(), provided_args));
-                    found_function = true;
+                    if !fc {
+                        tokens.push(Tokens::FnCall(f.clone().name, provided_args));
+                    // Push to tokens
+                    } else {
+                        ct.push(Tokens::FnCall(f.clone().name, provided_args)); // Push to ct
+                    }
+
+                    found_function = true; // Indicate that a function call was found
                 }
             }
 
             if !found_function {
-                if ln.ends_with(";") {
-                    eprintln!("Error at line '{}': '{}'. \nAha! There it is, the notorious semicolon! \nDid you think you could just slip it in here and nobody would notice? \nSurprise! We see you, and it’s time to face the music.\nThis language is semicolon-free, so send it back where it belongs!\nLet’s keep our code elegant and simple!", index, ln);
-                    exit(1);
-                } else {
-                    return Err(format!(
-                        "✘ What the...? I found something strange at line {}.\n\
-                     → '{}'? Really? You sure about that?\n\
-                     Let’s rethink that one, yeah?",
-                        index, ln
-                    ));
+                if ln.chars().all(|c| c == '}') {
+                    continue;
                 }
+                return Err(format!(
+                    "{} So, about that line {}... I couldn't quite figure out what you meant.\n\
+                     → Make sure to double-check your syntax.\n\
+                     Code:\n   => {}\n\
+                     It's a bit of a head-scratcher, I know.",
+                    "✘".red(),
+                    index,
+                    ln
+                ));
             }
         }
     }
-    Ok(tokens)
+
+    if fc {
+        return Ok(ct);
+    }
+    Ok(tokens) // Return the generated tokens
 }
 
-fn determine_type(arg: &str, tokens: &Vec<Tokens>) -> Result<&'static str, String> {
+/// A function to process case statements separately.
+
+pub fn determine_type(arg: &str, tokens: &Vec<Tokens>) -> Result<&'static str, String> {
     let trimmed = arg.trim(); // Trim the argument
     for t in tokens {
         match t {

@@ -16,3 +16,4 @@ incremental = false     # Disable incremental compilation to maximize optimizati
 rpath = false           # Do not include runtime path information
 
 [dependencies]
+colored = "2.1.0"

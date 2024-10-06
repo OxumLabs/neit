@@ -151,7 +151,7 @@ fn is_tool_installed(tool: &str) -> bool {
 fn prompt_install(tool: &str) -> io::Result<()> {
     let os_type = std::env::consts::OS;
 
-    println!("✘ {} is not installed.", tool);
+    println!("✘ {} has been hidding pretty well ,  I am not able to find it\nCan you make sure It is installed and on system path?", tool);
 
     if tool == "nasm" {
         if os_type == "windows" {
@@ -167,13 +167,14 @@ fn prompt_install(tool: &str) -> io::Result<()> {
                 "→ Hint: To install Clang on Windows, visit: https://github.com/llvm/llvm-project/releases"
             );
         } else if os_type == "linux" {
-            println!("→ Hint: For Linux: sudo apt install clang (for Ubuntu/Debian) or similar.");
+            println!(
+                "→ Hint: For Linux: sudo apt install clang lld (for Ubuntu/Debian) or similar."
+            );
         }
     }
 
     println!("\nPress ENTER to exit.");
     let mut i = String::new();
     stdin().read_line(&mut i).unwrap();
-
-    Ok(())
+    exit(1);
 }

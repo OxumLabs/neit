@@ -33,7 +33,8 @@ double fdf(double a, double b) {
 }
 
 int main() {
-    printf("hi\n");
-char z[3334] = "joy";
+char z[3334] = "";
+    printf("%s", z);
+    printf("%s", z);
     return 0;
 }
