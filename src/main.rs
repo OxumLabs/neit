@@ -134,10 +134,10 @@ fn build_project(proj: &str) {
                 .split(',')
                 .map(|s| s.trim().to_lowercase())
                 .collect();
-        } else if line.starts_with("input_grammer=") {
-            input_grammar_file = line["input_grammer=".len()..].trim().to_string();
-        } else if line.starts_with("use_grammer=") {
-            use_grammar_file = line["use_grammer=".len()..].trim().to_string();
+        } else if line.starts_with("input_grammar=") {
+            input_grammar_file = line["input_grammar=".len()..].trim().to_string();
+        } else if line.starts_with("use_grammar=") {
+            use_grammar_file = line["use_grammar=".len()..].trim().to_string();
         }
     }
 
@@ -246,18 +246,18 @@ fn run_project(proj: &str) {
     let mut igf = String::new();
     let mut ugf = String::new();
     for cfc in cc.lines() {
-        if cfc.trim().starts_with("[sec-start] grammer") {
+        if cfc.trim().starts_with("[sec-start] grammar") {
             icm = true;
-        } else if cfc.trim().starts_with("[sec-end] grammer") {
+        } else if cfc.trim().starts_with("[sec-end] grammar") {
             icm = false;
         } else {
             if icm {
-                if cfc.trim().starts_with("input_grammer=") {
+                if cfc.trim().starts_with("input_grammar=") {
                     //println!("igf : {}", cfc);
-                    igf = cfc.trim_start_matches("input_grammer=").to_string();
+                    igf = cfc.trim_start_matches("input_grammar=").to_string();
                     //println!("igf : {}", igf);
-                } else if cfc.trim().starts_with("use_grammer=") {
-                    ugf = cfc.trim_start_matches("use_grammer=").to_string();
+                } else if cfc.trim().starts_with("use_grammar=") {
+                    ugf = cfc.trim_start_matches("use_grammar=").to_string();
                 }
             }
         }
