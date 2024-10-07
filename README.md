@@ -43,8 +43,7 @@ Whether you’re a coding novice or a seasoned pro, Neit is here to help you mak
 
 ---
 
-| ![Video](ngrs.gif) |
-| :----------------: |
+[![Watch the video](https://vumbnail.com/1017124728.jpg)](https://vimeo.com/1017124728)
 
 ---
 
