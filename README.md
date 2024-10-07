@@ -5,7 +5,11 @@
 <div align="center">
 </div>
 
+<div align="center">
+
 # Your Neit Programming Language
+
+</div>
 
 ### [Visit the Neit Website](https://oxumlabs.github.io/nsite)
 
