@@ -1,5 +1,8 @@
 <div align="center">
-![Logo](logo.png)
+    <img src="logo.png" alt="Logo" style="width: 40%;" />
+</div>
+
+<div align="center">
 </div>
 
 # Your Neit Programming Language
