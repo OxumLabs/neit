@@ -43,18 +43,8 @@ Whether you’re a coding novice or a seasoned pro, Neit is here to help you mak
 
 ---
 
-<div align="center">
-    <video id="myVideo" autoplay loop muted style="max-width: 100%; height: auto;">
-        <source src="ngrs.mp4" type="video/mp4">
-        Your browser does not support the video tag.
-    </video>
-</div>
-
-<script>
-    // Get the video element by its ID
-    const video = document.getElementById('myVideo');
-    video.playbackRate = 2; // Set the playback speed to 2x
-</script>
+| ![Video](ngrs.gif) |
+| :----------------: |
 
 ---
 
