@@ -43,7 +43,9 @@ Whether you’re a coding novice or a seasoned pro, Neit is here to help you mak
 
 ---
 
-[![Watch the video](https://vumbnail.com/1017124728.jpg)](https://vimeo.com/1017124728)
+###### Watch a quick video?
+
+[![Watch the video](https://img.youtube.com/vi/SO-IZHkWgOA/hqdefault.jpg)](https://youtu.be/SO-IZHkWgOA)
 
 ---
 
