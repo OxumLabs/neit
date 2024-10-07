@@ -1,10 +1,6 @@
-may z = ""
-
-
-case admin{
-    print("{z}")
+cell breathe(name : string){
+    report("{name} is breathing!")
 }
-
-case adminn{
-    print("{z}")
-}
+meristematic name equivalence ""
+data(name)
+breathe(name)

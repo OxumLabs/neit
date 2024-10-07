@@ -144,6 +144,7 @@ pub fn process_neit_file(file_path: &str, usrgrm: &[Grammar], defengine: &[Gramm
 // Helper function to replace a word if it matches grammar definitions
 fn replace_word(word: &str, usrgrm: &[Grammar], defengine: &[Grammar]) -> String {
     for mapping in usrgrm.iter().chain(defengine.iter()) {
+        println!("word : {} | mapping : {:?}", word, mapping);
         if word == mapping.new {
             return mapping.def.clone();
         }
