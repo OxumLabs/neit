@@ -8,16 +8,6 @@ use colored::*; // Import the colored crate
 
 #[allow(unused, irrefutable_let_patterns)]
 pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<Tokens>, String> {
-    println!(
-        "from case? {} | tokens? {}",
-        fc,
-        casetkns
-            .iter()
-            .map(|i| format!("{}", i)) // Format each token
-            .collect::<Vec<_>>() // Collect formatted tokens into a Vec
-            .join(", ") // Join them with a comma separator
-    );
-
     let mut index: i64 = 0;
     let mut tokens: Vec<Tokens> = casetkns;
     let mut ct: Vec<Tokens> = Vec::new();
@@ -26,6 +16,9 @@ pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<
     let mut brace_depth = 0;
     let mut p_label = 0;
     let mut fp_label = 364;
+    let mut incase = false;
+    let mut cbody: Vec<&str> = Vec::new();
+    let mut cname = String::new();
 
     for mut ln in code.clone() {
         if let Some(pos) = ln.find('#') {
@@ -33,6 +26,24 @@ pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<
         }
         index += 1;
         ln = ln.trim(); // Trim whitespace from the line
+        if incase {
+            brace_depth += ln.matches("{").count();
+            brace_depth -= ln.matches("}").count();
+            if brace_depth == 0 {
+                incase = false;
+                let pc = process_case(ln, cbody.clone(), &mut index, &tokens, true);
+                match pc {
+                    Ok(k) => {
+                        tokens.push(Tokens::IFun(cname.clone(), k.clone()));
+                        println!("k : {:?}\ntokens : \n{:?}", k, tokens);
+                    }
+                    Err(e) => return Err(e),
+                }
+                println!("cbody : {:?}", cbody);
+            }
+
+            cbody.push(ln);
+        }
 
         if ln.is_empty() {
             continue; // Skip empty lines
@@ -100,62 +111,19 @@ pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<
                 }
             }
         } else if ln.starts_with("case ") && ln.ends_with("{") {
-            let cname = ln[5..].trim_end_matches("}");
-            // Initialize a vector to collect case lines
-            let mut case_lines = Vec::new(); // Start with the case declaration
-            let mut brace_depth = 1; // We've already seen one opening brace
-            let mut inner_index = index + 1; // Start from the next line after the case declaration
-
-            // Collect lines until the brace depth returns to zero
-            while inner_index < code.len().try_into().unwrap() {
-                let next_line = code[inner_index as usize].trim();
-
-                // Check for empty lines
-                if next_line.is_empty() {
-                    inner_index += 1;
-                    continue;
-                }
-
-                // Count braces
-                brace_depth += next_line.matches('{').count();
-                brace_depth -= next_line.matches('}').count();
-
-                // Collect the line
-                case_lines.push(next_line.to_string());
-
-                // If brace depth is zero, we found the end of the case block
-                if brace_depth == 0 {
-                    break;
-                }
-
-                inner_index += 1; // Move to the next line
+            let cnamee = ln[5..].trim_end_matches("{");
+            if !cname.chars().all(|c| c.is_alphabetic() || c == '_') {
+                return Err(format!(
+                    "Error at line '{}' in main file\n{} names can only contain alphabets and '_' tho you gave me '{}'\nMaybe fix this and then we can continue?",
+                    index,
+                    "case",
+                    cname
+                ));
             }
-
-            // Now we can call process_case with the collected case code
-            let case_result = process_case(ln, case_lines, &mut index, true);
-            (if let Err(e) = case_result {
-                return Err(e);
-            });
-            tokens.push(Tokens::IFun(cname.to_string(), case_result.unwrap()));
-
-            // Update the main index to continue processing after the case block
-            index = inner_index; // Update the index to the position after the last collected line
-        } else if (ln.trim().starts_with("may") && !ln.trim().starts_with("may whole"))
-            && ln.contains('=')
-        {
-            let vr = process_var(ln.trim(), &tokens, true);
-            match vr {
-                Ok(vr) => {
-                    if fc {
-                        ct.push(Tokens::Var(vr.0, vr.1, true)); // Add to ct if fc is true
-                    } else {
-                        tokens.push(Tokens::Var(vr.0, vr.1, true)); // Add to tokens if fc is false
-                    }
-                }
-
-                Err(e) => return Err(e),
-            }
-        } else if ln.trim().starts_with("must ") {
+            cname = cnamee.to_string();
+            brace_depth += 1;
+            incase = true;
+        } else if ln.trim().starts_with("must ") && !incase {
             let vr = process_var(ln.trim(), &tokens, false);
             match vr {
                 Ok(vr) => {
@@ -180,7 +148,7 @@ pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<
                 }
                 Err(e) => return Err(e),
             }
-        } else if ln.trim().starts_with("print(") && ln.trim().ends_with(")") {
+        } else if ln.trim().starts_with("print(") && ln.trim().ends_with(")") && !incase {
             let mut txt: String = ln[6..ln.len() - 1].trim().to_string(); // Extract println arguments
             let ptxt = process_print(&mut p_label, &txt, &tokens);
             if !fc {
@@ -188,7 +156,7 @@ pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<
             } else {
                 ct.push(ptxt);
             }
-        } else if ln.starts_with("takein(") {
+        } else if ln.starts_with("takein(") && !incase {
             let tkn = process_input(&ln, &tokens);
             match tkn {
                 Ok(tkn) => {
@@ -200,7 +168,7 @@ pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<
                 }
                 Err(e) => return Err(e),
             }
-        } else if ln.trim().starts_with("println(") && ln.trim().ends_with(")") {
+        } else if ln.trim().starts_with("println(") && ln.trim().ends_with(")") && !incase {
             let mut txt: String = ln[9..ln.len() - 2].to_string(); // Extract println arguments
             let txt = format!(r#""{}\n""#, txt);
             let ptxt = process_print(&mut p_label, &txt, &tokens);
@@ -209,7 +177,7 @@ pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<
             } else {
                 ct.push(ptxt);
             }
-        } else {
+        } else if !incase {
             let args: Vec<&str> = ln.trim().split('(').collect(); // Split on parentheses
             let mut found_function = false;
 

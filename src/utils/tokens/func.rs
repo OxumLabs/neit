@@ -1,4 +1,5 @@
 use crate::utils::{
+    case::process_case,
     ftokens::parse_single_line,
     types::{fvars, Args, Tokens, FN},
 };
@@ -17,6 +18,10 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
     let lines: Vec<&str> = ln.trim().split("\n").collect();
     let mut lv: Vec<fvars> = Vec::new();
 
+    let mut incase = false;
+    let mut cbody: Vec<&str> = Vec::new();
+    let mut cname = String::new();
+    let mut brace_depth = 0;
     // Helper function to parse arguments
     fn parse_arguments(
         arg_str: &str,
@@ -98,7 +103,37 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
 
     for ln in lines {
         let ln = ln.trim();
-        if ln.starts_with("pub fn ") && ln.ends_with("{}") {
+        if incase {
+            brace_depth += ln.matches("{").count();
+            brace_depth -= ln.matches("}").count();
+            if brace_depth == 0 {
+                incase = false;
+                let pc = process_case(ln, cbody.clone(), &mut (index as i64), &fnbody, true);
+                match pc {
+                    Ok(k) => {
+                        fnbody.push(Tokens::IFun(cname.clone(), k.clone()));
+                        println!("k : {:?}\ntokens : \n{:?}", k, fnbody);
+                    }
+                    Err(e) => return Err(e),
+                }
+                println!("cbody : {:?}", cbody);
+            }
+
+            cbody.push(ln);
+        } else if ln.starts_with("case ") && ln.ends_with("{") {
+            let cnamee = ln[5..].trim_end_matches("{");
+            if !cname.chars().all(|c| c.is_alphabetic() || c == '_') {
+                return Err(format!(
+                    "Error at line '{}' in main file\n{} names can only contain alphabets and '_' tho you gave me '{}'\nMaybe fix this and then we can continue?",
+                    index,
+                    "case",
+                    cname
+                ));
+            }
+            cname = cnamee.to_string();
+            brace_depth += 1;
+            incase = true;
+        } else if ln.starts_with("pub fn ") && ln.ends_with("{}") {
             let pts: Vec<&str> = ln[7..].split("(").collect();
             if pts.len() != 2 {
                 return Err(format!(
@@ -245,5 +280,6 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
     }
 
     functions.local_vars = lv;
+    println!("funcs : \n{:?}", functions);
     Ok(functions)
 }

@@ -32,9 +32,10 @@ double fdf(double a, double b) {
     return result;
 }
 
+void hi(char *name) {
+
+}
+
 int main() {
-char z[3334] = "";
-    printf("%s", z);
-    printf("%s", z);
     return 0;
 }

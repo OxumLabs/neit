@@ -1,6 +1,5 @@
-cell breathe(name : string){
-    report("{name} is breathing!")
+fn hi(name : string){
+    case hi{
+        println("hi {name}")
+    }
 }
-meristematic name equivalence ""
-data(name)
-breathe(name)
