@@ -59,6 +59,7 @@ pub fn process_var(
     let expected_keyword = if is_whole { "may " } else { "must " };
 
     // Check if the line starts with the expected keyword
+    println!("key word : {}", expected_keyword);
     if !trimmed_code.starts_with(expected_keyword) {
         return Err(format!(
             "✘ Oops! I found an invalid keyword in line '{}'.\n\

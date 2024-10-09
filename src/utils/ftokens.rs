@@ -46,12 +46,13 @@ pub fn parse_single_line(
         let tkn = process_input(&line, &vars);
         match tkn {
             Ok(tkn) => {
-                vars.push(tkn);
+                //vars.push(tkn.clone());
+                return Ok(tkn);
             }
             Err(e) => return Err(e),
         }
     } else if line.starts_with("may ") && line.contains("=") {
-        let vr = process_var(line, vars, false);
+        let vr = process_var(line, vars, true);
         match vr {
             Ok(vr) => {
                 lv.push(fvars {
@@ -64,7 +65,7 @@ pub fn parse_single_line(
             Err(e) => return Err(e),
         }
     } else if line.starts_with("must ") {
-        let vr = process_var(line, vars, true);
+        let vr = process_var(line, vars, false);
         match vr {
             Ok(vr) => {
                 lv.push(fvars {
@@ -72,7 +73,7 @@ pub fn parse_single_line(
                     n: vr.clone().1,
                 });
                 vars.push(Tokens::Var(vr.clone().0, vr.clone().1, false));
-                return Ok(Tokens::Var(vr.0, vr.1, true));
+                return Ok(Tokens::Var(vr.0, vr.1, false));
             }
             Err(e) => return Err(e),
         }

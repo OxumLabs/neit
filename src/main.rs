@@ -276,6 +276,7 @@ fn run_project(proj: &str) {
     let cds: Vec<&str> = mc.split("\n").collect();
     match gentoken(cds, Vec::new(), false) {
         Ok(tkns) => {
+            println!("\n\ni got tokens:\n{:?}\n\n", tkns);
             let dtf = format!("{}/_.c", proj); // Temporary C file
             let outf = match OS {
                 "windows" => format!("{}/_.exe", proj),

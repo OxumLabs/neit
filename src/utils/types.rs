@@ -9,9 +9,9 @@ pub enum Tokens {
     Print(String, String), /* String -> Text to print stored on | rax:1(sys_write) , rsi:text , rdx:size/len_of_text , rdi:1 (1 for stdout)*/
     Var(Vars, String, bool), /* Vars -> Variable Data | String -> Variable Name | bool -> is change-able*/
     Revar(String, String),   /* Name , Value */
-    In(String),
-    IFun(String, Vec<Tokens>), /* String -> Variable name to take input in */
-    Cond(String, Vec<Tokens>), /* String -> Condition | Vec<Tokens> -> All code to run  */
+    In(String),              /* String -> Variable name to take input in */
+    IFun(String, Vec<Tokens>),
+    Cond(Vec<String>), /* Vec<String> -> Conditions and case to call*/
 }
 
 impl fmt::Display for Tokens {
@@ -49,13 +49,9 @@ impl fmt::Display for Tokens {
                     var_name, tokens_display
                 )
             }
-            Tokens::Cond(condition, tokens) => {
-                let tokens_display = tokens
-                    .iter()
-                    .map(|t| format!("{}", t))
-                    .collect::<Vec<_>>()
-                    .join("");
-                write!(f, "Condition: {}\nTokens:\n{}", condition, tokens_display)
+            Tokens::Cond(conds) => {
+                let conds = conds.join("\n     ");
+                write!(f, "Conds:\n{}", conds)
             }
         }
     }

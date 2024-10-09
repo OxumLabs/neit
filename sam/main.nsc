@@ -1,5 +1,11 @@
-fn hi(name : string){
-    case hi{
-        println("hi {name}")
-    }
+may name = "joy"
+may z = 0
+takein(name)
+println("{name}")
+fn m(){
+    must n = 0
+    may z = "00"
+    takein(z)
+    println("{z}")
 }
+m()

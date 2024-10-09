@@ -7,6 +7,7 @@ pub fn process_case(
     ogtkns: &Vec<Tokens>,
     _fc: bool,
 ) -> Result<Vec<Tokens>, String> {
+    println!("codes in case : \n{:?}", code);
     let ctkns = gentoken(code, ogtkns.to_vec(), true);
     match ctkns {
         Ok(ctkns) => {
