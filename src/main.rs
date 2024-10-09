@@ -6,9 +6,11 @@ use std::{
     process::{exit, Command, Stdio},
 };
 
+pub mod cli;
 pub mod compilers;
 pub mod ntune;
 pub mod utils;
+use cli::cli;
 use compilers::{
     compile::{check_tools_installed, compile},
     genasm_lin::genasm_lin,
@@ -37,14 +39,15 @@ fn main() {
 
     // Ensure we have the required command and project path
     if args.len() < 2 {
-        eprintln!(
-            "✘ Oops! It looks like you forgot to include a command!\n\
-            Usage: {} <command> [<project_path>]\n\
-            ➔ Let’s get that command in there so we can keep the fun going!",
-            args[0]
-        );
+        cli();
+        // eprintln!(
+        //     "✘ Oops! It looks like you forgot to include a command!\n\
+        //     Usage: {} <command> [<project_path>]\n\
+        //     ➔ Let’s get that command in there so we can keep the fun going!",
+        //     args[0]
+        // );
 
-        exit(1);
+        // exit(1);
     }
 
     // Determine the project path

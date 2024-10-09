@@ -5,6 +5,7 @@ use std::{
     path::Path,
     process::{exit, Command},
 };
+
 #[allow(clippy::redundant_pattern_matching)]
 #[allow(unused_assignments)]
 pub fn comp_c(c_code: &String, proj: &str, target: &str, project_name: &str) {
@@ -160,32 +161,66 @@ pub fn comp_c(c_code: &String, proj: &str, target: &str, project_name: &str) {
         }
     };
 
-    // Execute the clang command
-    let status = Command::new("clang")
-        .args(clang_args)
-        .status()
-        .expect("Failed to execute `clang` command");
+    // Attempt to execute clang command
+    let clang_status = Command::new("clang").args(&clang_args).status();
 
-    // Check if compilation succeeded
-    if !status.success() {
-        eprintln!("✘ Yikes! Compilation failed for target '{}'.", target);
-        eprintln!("→ Hint: Maybe I forgot something... Check the Clang setup?");
-        eprintln!("⚙ [Location: comp_c executing clang]");
-        exit(1);
-    } else {
-        println!(
-            "ℹ Success! C code compiled for target '{}'. Output at: {:?}",
-            target, output_file
-        );
+    // Check if clang was successful
+    match clang_status {
+        Ok(status) if status.success() => {
+            println!(
+                "ℹ Success! C code compiled for target '{}'. Output at: {:?}",
+                target, output_file
+            );
+        }
+        Ok(_) => {
+            // If clang failed, try gcc
+            eprintln!("✘ Clang compilation failed, trying GCC...");
+
+            // Define GCC arguments based on target
+            let gcc_args = if target == "llvm-ir" {
+                vec![
+                    c_file_path.to_str().unwrap(),
+                    "-S", // Output as assembly
+                    "-o",
+                    output_file.to_str().unwrap(),
+                ]
+            } else {
+                vec![
+                    c_file_path.to_str().unwrap(),
+                    "-o",
+                    output_file.to_str().unwrap(),
+                    "-O3", // Optimize for maximum speed
+                ]
+            };
+
+            // Execute gcc command
+            let gcc_status = Command::new("gcc").args(&gcc_args).status();
+
+            // Check if gcc was successful
+            match gcc_status {
+                Ok(status) if status.success() => {
+                    println!(
+                        "ℹ Success! C code compiled for target '{}' using GCC. Output at: {:?}",
+                        target, output_file
+                    );
+                }
+                Ok(_) => {
+                    eprintln!("✘ Both Clang and GCC failed to compile the C code.");
+                    exit(1);
+                }
+                Err(e) => {
+                    eprintln!("✘ An error occurred while executing GCC: {}", e);
+                    exit(1);
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("✘ An error occurred while executing Clang: {}", e);
+            exit(1);
+        }
     }
-
-    // Clean up the temporary C file
-    fs::remove_file(c_file_path).expect("Failed to delete temporary C file");
 }
 
-/* ------------------------------------------- */
-/* FORMAT C CODE */
-/* ------------------------------------------- */
 pub fn cfmt(code: &str) -> String {
     let mut formatted_code = String::new();
     let mut indent_level = 0;

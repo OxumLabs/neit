@@ -29,6 +29,6 @@ cp ./target/x86_64-pc-windows-gnu/release/neit.exe bin/windows/neit.exe
 
 
 # Include Visual C++ Redistributable if required
-cp ./vc_redist.x64.exe ./bin/windows
+
 # Final output message
 echo "Built for windows and linux"
