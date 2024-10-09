@@ -174,6 +174,8 @@ pub fn comp_c(c_code: &String, proj: &str, target: &str, project_name: &str) {
         }
         Ok(_) => {
             // If clang failed, try gcc
+        }
+        Err(_e) => {
             eprintln!("✘ Clang compilation failed, trying GCC...");
 
             // Define GCC arguments based on target
@@ -213,10 +215,6 @@ pub fn comp_c(c_code: &String, proj: &str, target: &str, project_name: &str) {
                     exit(1);
                 }
             }
-        }
-        Err(e) => {
-            eprintln!("✘ An error occurred while executing Clang: {}", e);
-            //exit(1);
         }
     }
 }
