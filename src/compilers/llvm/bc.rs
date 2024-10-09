@@ -216,7 +216,7 @@ pub fn comp_c(c_code: &String, proj: &str, target: &str, project_name: &str) {
         }
         Err(e) => {
             eprintln!("✘ An error occurred while executing Clang: {}", e);
-            exit(1);
+            //exit(1);
         }
     }
 }
