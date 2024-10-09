@@ -40,14 +40,14 @@ fn main() {
     // Ensure we have the required command and project path
     if args.len() < 2 {
         cli();
-        // eprintln!(
-        //     "✘ Oops! It looks like you forgot to include a command!\n\
-        //     Usage: {} <command> [<project_path>]\n\
-        //     ➔ Let’s get that command in there so we can keep the fun going!",
-        //     args[0]
-        // );
+        eprintln!(
+            "✘ Oops! It looks like you forgot to include a command!\n\
+            Usage: {} <command> [<project_path>]\n\
+            ➔ Let’s get that command in there so we can keep the fun going!",
+            args[0]
+        );
 
-        // exit(1);
+        exit(1);
     }
 
     // Determine the project path
@@ -237,17 +237,20 @@ fn run_project(proj: &str) {
             exit(1);
         }
     };
+
     let cf = format!("{}/project.conf", proj);
     let cc = match read_to_string(&cf) {
         Ok(cc) => cc,
         Err(_) => {
-            eprintln!("✘ Uh-oh! I tried to find 'project.conf' file at '{}' but I cant find it!\n➔ Make sure it is there and didn't run away from me?",cf);
-            exit(1)
+            eprintln!("✘ Uh-oh! I tried to find 'project.conf' file at '{}' but I can't find it!\n➔ Make sure it is there and didn't run away from me?", cf);
+            exit(1);
         }
     };
+
     let mut icm = false;
     let mut igf = String::new();
     let mut ugf = String::new();
+
     for cfc in cc.lines() {
         if cfc.trim().starts_with("[sec-start] grammar") {
             icm = true;
@@ -256,30 +259,25 @@ fn run_project(proj: &str) {
         } else {
             if icm {
                 if cfc.trim().starts_with("input_grammar=") {
-                    //println!("igf : {}", cfc);
                     igf = cfc.trim_start_matches("input_grammar=").to_string();
-                    //println!("igf : {}", igf);
                 } else if cfc.trim().starts_with("use_grammar=") {
                     ugf = cfc.trim_start_matches("use_grammar=").to_string();
                 }
             }
         }
     }
+
     if !igf.is_empty() {
-        //println!("main content :\n {}", mc);
         let mut usrgrm: Vec<Grammar> = Vec::new();
         let defgen = gen_grm();
         process_grammar_file(&format!("{}/{}", proj, igf), &mut usrgrm);
         let nmc = process_neit_file(&mf, &usrgrm, &defgen);
-        //println!("nmc : {}", nmc);
         mc = nmc;
-        //println!("main content after parsing :\n {}", mc);
     }
 
     let cds: Vec<&str> = mc.split("\n").collect();
     match gentoken(cds, Vec::new(), false) {
         Ok(tkns) => {
-            //println!("\n\ni got tokens:\n{:?}\n\n", tkns);
             let dtf = format!("{}/_.c", proj); // Temporary C file
             let outf = match OS {
                 "windows" => format!("{}/_.exe", proj),
@@ -301,48 +299,30 @@ fn run_project(proj: &str) {
                     // Write C code to the temporary C file
                     match dtcf.write_all(c.as_bytes()) {
                         Ok(_) => {
-                            // Compile the C file into an executable
-                            let cargs = vec![
-                                dtf.clone().to_string(),
-                                "-o".to_string(),
-                                outf.clone(),
-                                "-fuse-ld=lld".to_string(),
-                                "-Wno-format".to_string(),
-                            ];
-                            let cmd = Command::new("clang").args(cargs).status();
-
-                            match cmd {
-                                Ok(ok) => {
-                                    if ok.success() {
-                                        let status = Command::new(outf.clone())
-                                            .stdout(Stdio::inherit())
-                                            .stderr(Stdio::inherit())
-                                            .status()
-                                            .unwrap();
-                                        if !status.success() {
-                                            eprintln!(
-                                                "✘ Oh no! It seems that running the program failed.\n\
-                                                ➔ Let’s check the code and make sure everything is in order!"
-                                            );
-                                            exit(1);
-                                        }
-                                    } else {
-                                        eprintln!(
-                                            "✘ Oh no! It seems that the compilation failed.\n\
-                                            ➔ Let’s check for any errors in the code and try again!"
-                                        );
-                                        exit(1);
-                                    }
-                                }
-                                Err(e) => {
+                            // Compile the C file into an executable using clang first
+                            if !compile_with_clang(&dtf, &outf) {
+                                // If clang fails, fallback to gcc
+                                if !compile_with_gcc(&dtf, &outf) {
                                     eprintln!(
-                                        "✘ Uh-oh! I tried to run the command to compile but it didn’t go through.\n\
-                                        ➔ Error: {}\n\
-                                        Let’s see if we can troubleshoot this together!",
-                                        e
+                                        "✘ Oh no! Both clang and gcc failed to compile the C code.\n\
+                                        ➔ Let’s check for any errors in the code and try again!"
                                     );
                                     exit(1);
                                 }
+                            }
+
+                            // Run the compiled executable
+                            let status = Command::new(outf.clone())
+                                .stdout(Stdio::inherit())
+                                .stderr(Stdio::inherit())
+                                .status()
+                                .unwrap();
+                            if !status.success() {
+                                eprintln!(
+                                    "✘ Oh no! It seems that running the program failed.\n\
+                                    ➔ Let’s check the code and make sure everything is in order!"
+                                );
+                                exit(1);
                             }
                         }
                         Err(e) => {
@@ -374,6 +354,61 @@ fn run_project(proj: &str) {
     }
 }
 
+// Function to compile C code using clang
+fn compile_with_clang(c_file: &str, output_file: &str) -> bool {
+    let cargs = vec![
+        c_file.to_string(),
+        "-o".to_string(),
+        output_file.to_string(),
+        "-fuse-ld=lld".to_string(),
+        "-Wno-format".to_string(),
+    ];
+
+    match Command::new("clang").args(cargs).status() {
+        Ok(status) => {
+            if status.success() {
+                println!("Successfully compiled with clang.");
+                return true;
+            } else {
+                eprintln!("✘ Clang compilation failed. Checking gcc as a fallback...");
+                return false; // Clang failed, fall back to gcc
+            }
+        }
+        Err(e) => {
+            eprintln!(
+                "✘ Failed to run clang: {}\n\
+                ➔ Attempting to compile with gcc...",
+                e
+            );
+            return false; // Clang failed, fall back to gcc
+        }
+    }
+}
+
+// Function to compile C code using gcc
+fn compile_with_gcc(c_file: &str, output_file: &str) -> bool {
+    let cargs = vec![
+        c_file.to_string(),
+        "-o".to_string(),
+        output_file.to_string(),
+    ];
+
+    match Command::new("gcc").args(cargs).status() {
+        Ok(status) => {
+            if status.success() {
+                println!("Successfully compiled with gcc.");
+                return true;
+            } else {
+                eprintln!("✘ GCC compilation failed.");
+                return false;
+            }
+        }
+        Err(e) => {
+            eprintln!("✘ Failed to run gcc: {}", e);
+            return false;
+        }
+    }
+}
 fn create_new_project(proj: &str) {
     println!("Creating a new project at: {}", proj);
 

@@ -1,4 +1,5 @@
 use std::{
+    env::consts::OS,
     fs::{self, File},
     io::{self, stdin, Write},
     path::Path,
@@ -135,37 +136,65 @@ fn compile_windows(asm_file_path: &str, output_file: &Path) {
 }
 
 pub fn check_tools_installed() -> io::Result<()> {
-    // if !is_tool_installed("nasm") {
-    //     prompt_install("nasm")?;
-    // }
-    if !is_tool_installed("clang") {
-        prompt_install("clang")?;
+    let clang_installed = is_tool_installed("clang");
+    let gcc_installed = is_tool_installed("gcc");
+
+    match (clang_installed, gcc_installed) {
+        (false, false) => {
+            println!("✘ Neither clang nor gcc is installed. Please install at least one of them.");
+            if OS == "windows" {
+                prompt_install("g");
+            } else {
+                prompt_install("clang");
+            }
+
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Neither clang nor gcc is installed.",
+            ));
+        }
+        (false, true) => {
+            println!(
+                " Clang is not installed. GCC is available, but it's recommended to install Clang."
+            );
+            return Ok(()); // Return Ok because GCC is installed
+        }
+        (true, false) => {
+            return Ok(()); // Return Ok because Clang is installed
+        }
+        (true, true) => {
+            println!(" Both clang and gcc are installed. All good!");
+            return Ok(()); // Both are installed, return Ok
+        }
     }
-    Ok(())
 }
 
 fn is_tool_installed(tool: &str) -> bool {
     Command::new(tool).output().is_ok()
 }
 
-fn prompt_install(tool: &str) -> io::Result<()> {
+fn prompt_install(tool: &str) {
     let os_type = std::env::consts::OS;
 
-    println!("✘ {} has been hidding pretty well ,  I am not able to find it\nCan you make sure It is installed and on system path?", tool);
+    println!("✘ {} has been hiding pretty well; I am not able to find it. Can you make sure it is installed and on the system path?", tool);
 
     if tool == "nasm" {
         if os_type == "windows" {
-            println!(
-                "→ Hint: To install NASM on Windows, visit: https://www.nasm.us/pub/nasm/releasebuilds/"
-            );
+            println!("→ Hint: To install NASM on Windows, visit: https://www.nasm.us/pub/nasm/releasebuilds/");
         } else if os_type == "linux" {
             println!("→ Hint: For Linux: sudo apt install nasm (for Ubuntu/Debian) or similar for other distros.");
         }
     } else if tool == "clang" {
         if os_type == "windows" {
+            println!("→ Hint: To install Clang on Windows, visit: https://github.com/llvm/llvm-project/releases");
+        } else if os_type == "linux" {
             println!(
-                "→ Hint: To install Clang on Windows, visit: https://github.com/llvm/llvm-project/releases"
+                "→ Hint: For Linux: sudo apt install clang lld (for Ubuntu/Debian) or similar."
             );
+        }
+    } else if tool == "gcc" {
+        if os_type == "windows" {
+            println!("→ Hint: To install tdm-gcc on Windows, visit: https://github.com/jmeubank/tdm-gcc/releases/download/v10.3.0-tdm64-2/tdm64-gcc-10.3.0-2.exe");
         } else if os_type == "linux" {
             println!(
                 "→ Hint: For Linux: sudo apt install clang lld (for Ubuntu/Debian) or similar."
