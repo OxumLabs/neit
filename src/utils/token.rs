@@ -23,7 +23,7 @@ pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<
     let mut ifbody: Vec<String> = Vec::new();
 
     for mut ln in code.clone() {
-        println!("ln : {:?} | inif : {:?} | incase : {:?}", ln, inif, incase);
+        //println!("ln : {:?} | inif : {:?} | incase : {:?}", ln, inif, incase);
         ln = ln.trim(); // Trim whitespace from the line
         if let Some(pos) = ln.find('#') {
             ln = ln[..pos].trim(); // Remove comments
@@ -36,7 +36,7 @@ pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<
         } else if inif {
             if ln != "}" {
                 let pts: Vec<&str> = ln.split(":").collect();
-                if pts.len() != 2 {
+                if pts.len() != 2 && !ln.trim().is_empty() {
                     return Err(format!("Error at line '{}'\nConditions given to 'if' shall have 2 parts separated by ':'\nfirst part is conditions nd second is case to call\nhere you gave me this : {}\nwhat is this? fix this right now!",index,ln));
                 }
                 ifbody.push(ln.to_string());
@@ -62,11 +62,11 @@ pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<
                         } else {
                             tokens.push(Tokens::IFun(cname.clone(), k.clone()));
                         }
-                        println!("k : {:?}\ntokens : \n{:?}", k, tokens);
+                        //println!("k : {:?}\ntokens : \n{:?}", k, tokens);
                     }
                     Err(e) => return Err(e),
                 }
-                println!("cbody : {:?}", cbody);
+                //println!("cbody : {:?}", cbody);
             }
 
             cbody.push(ln);
@@ -307,7 +307,7 @@ pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<
             }
         }
     }
-    println!("ct :\n{:?}\ntokens : \n{:?}", ct, tokens);
+    //println!("ct :\n{:?}\ntokens : \n{:?}", ct, tokens);
     if fc {
         return Ok(ct);
     } else {

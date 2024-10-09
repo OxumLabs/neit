@@ -2,7 +2,7 @@ use crate::utils::{
     tokens::print::p_to_c,
     types::{Args, Tokens, Vars},
 };
-use std::collections::HashSet;
+use std::{collections::HashSet, process::exit};
 
 use super::bc::cfmt;
 
@@ -73,7 +73,7 @@ double fdf(double a, double b) {
         .filter(|token| !matches!(token, Tokens::Func(_)))
         .collect();
 
-    println!("non func tkns:\n{:?}", non_function_tokens);
+    //println!("non func tkns:\n{:?}", non_function_tokens);
 
     // Process non-function tokens in global scope
     process(
@@ -115,10 +115,14 @@ fn process(
             Tokens::Cond(conds) => {
                 let mut condc = String::new();
                 let mut else_block = String::new();
-                let mut last_condition = false;
+                let mut last_condition_found = false;
 
                 let mut addc = String::new();
                 for (i, s) in conds.iter().enumerate() {
+                    addc.clear();
+                    if s.trim().is_empty() {
+                        continue;
+                    }
                     let pts: Vec<&str> = s.split(":").collect();
                     if pts.len() != 2 {
                         eprintln!("Error! The Condition '{}' is invalid", s);
@@ -128,19 +132,38 @@ fn process(
                     let cond = pts[0].trim();
                     let code = pts[1].trim();
 
+                    // Check for the 'last' condition
                     if cond == "last" {
-                        last_condition = true;
-                        else_block.push_str(format!("    {}\n", code).as_str());
-                        continue;
+                        if last_condition_found {
+                            eprintln!("Error! Multiple 'last' conditions found.");
+                            exit(1); // Skip this condition
+                        }
+                        last_condition_found = true;
+
+                        // Process the last condition
+                        for t in tokens {
+                            match t {
+                                Tokens::IFun(n, c) => {
+                                    if n == code {
+                                        process(&mut addc, arg_vars, true, c, declared_vars);
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                        // Store the else block content
+                        else_block.push_str(&format!("    {}\n", addc));
+                        continue; // Skip the rest of the processing for 'last'
                     }
 
+                    // For the first condition, add 'if', otherwise 'else if'
                     if i == 0 {
-                        condc.push_str(format!("if ({}) {{\n", cond).as_str());
+                        condc.push_str(&format!("if ({}) {{\n", cond));
                     } else {
-                        condc.push_str(format!("else if ({}) {{\n", cond).as_str());
+                        condc.push_str(&format!("else if ({}) {{\n", cond));
                     }
 
-                    // Pass `true` for iff when processing inside a condition
+                    // Process the tokens for the current condition
                     for t in tokens {
                         match t {
                             Tokens::IFun(n, c) => {
@@ -151,14 +174,23 @@ fn process(
                             _ => {}
                         }
                     }
+
+                    // Add the code block for this condition
+                    condc.push_str(&addc);
+                    condc.push_str("}\n"); // Close the current condition block
                 }
 
-                if last_condition {
-                    condc.push_str(format!("else {{\n").as_str());
+                // After processing all conditions, add the else block if a last condition was found
+                if last_condition_found {
+                    condc.push_str("else {\n");
+                    condc.push_str(&else_block);
+                    condc.push_str("}\n");
                 }
-                condc.push_str(format!("\n{}\n}}", addc).as_str());
+
+                // Finalize the generated code
                 func.push_str(&condc);
             }
+
             Tokens::Print(v, _n) => {
                 let pc = p_to_c(v, tokens);
                 func.push_str(format!("    printf({});\n", pc).as_str());

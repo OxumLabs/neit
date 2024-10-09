@@ -34,7 +34,7 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
         let args = arg_str.split(",").map(str::trim);
         for i in args {
             let pts: Vec<&str> = i.split(":").map(str::trim).collect();
-            if pts.len() != 2 {
+            if pts.len() != 2 && !ln.trim().is_empty() {
                 return Err(format!(
                     "✘ Yikes! Invalid argument declaration at line {}.\n\
                      → Hint: Arguments should be in the format 'name:type'.\n\
@@ -112,11 +112,11 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
                 match pc {
                     Ok(k) => {
                         fnbody.push(Tokens::IFun(cname.clone(), k.clone()));
-                        println!("k : {:?}\ntokens : \n{:?}", k, fnbody);
+                        //println!("k : {:?}\ntokens : \n{:?}", k, fnbody);
                     }
                     Err(e) => return Err(e),
                 }
-                println!("cbody : {:?}", cbody);
+                // println!("cbody : {:?}", cbody);
             }
 
             cbody.push(ln);

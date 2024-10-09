@@ -1,11 +1,15 @@
-may name = "joy"
-may z = 0
-takein(name)
-println("{name}")
-fn m(){
-    must n = 0
-    may z = "00"
-    takein(z)
-    println("{z}")
+must name = "joy"
+if{
+    strcmp(name,"joy"),0 : admin
+    strcmp(name,"bilal"),0 : admin
+    last : admin
+    strcmp(name,"buj"),0 : admin
+    last : admin
+
+
+
+
 }
-m()
+case admin{
+    println("hello sir")
+}
