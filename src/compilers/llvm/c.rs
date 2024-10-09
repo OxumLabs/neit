@@ -101,7 +101,7 @@ fn process(
     tokens: &Vec<Tokens>,
     declared_vars: &mut HashSet<String>,
 ) {
-    let mut nli = 0;
+    //let mut nli = 0;
     for token in tokens {
         match token {
             Tokens::IFun(_name, _code) => {
@@ -117,46 +117,52 @@ fn process(
                 let mut else_block = String::new();
                 let mut last_condition_found = false;
 
-                let mut addc = String::new();
+                let mut addc = String::new(); // To store the code for each condition
                 for (i, s) in conds.iter().enumerate() {
-                    addc.clear();
+                    addc.clear(); // Clear addc for each new condition
+
+                    // Skip empty conditions
                     if s.trim().is_empty() {
                         continue;
                     }
+
+                    // Split condition into the condition part and the code part
                     let pts: Vec<&str> = s.split(":").collect();
                     if pts.len() != 2 {
                         eprintln!("Error! The Condition '{}' is invalid", s);
                         continue;
                     }
 
-                    let cond = pts[0].trim();
-                    let code = pts[1].trim();
+                    let cond = pts[0].trim(); // The condition part
+                    let code = pts[1].trim(); // The code part
 
                     // Check for the 'last' condition
                     if cond == "last" {
+                        println!("in last condition");
                         if last_condition_found {
                             eprintln!("Error! Multiple 'last' conditions found.");
-                            exit(1); // Skip this condition
+                            exit(1); // Exit if multiple 'last' conditions are found
                         }
                         last_condition_found = true;
 
-                        // Process the last condition
+                        // Only process tokens related to this 'last' condition
                         for t in tokens {
-                            match t {
-                                Tokens::IFun(n, c) => {
-                                    if n == code {
-                                        process(&mut addc, arg_vars, true, c, declared_vars);
-                                    }
+                            println!("las cond token match : {:?}", t);
+                            if let Tokens::IFun(n, c) = t {
+                                if n == code {
+                                    println!("\ntoken matched last cond : {:?}", t);
+                                    // Clear addc before processing to avoid carrying code from other conditions
+                                    addc.clear();
+                                    process(&mut addc, arg_vars, true, c, declared_vars);
+                                    // Store the code for the 'last' condition in the else block
+                                    else_block.push_str(&format!("    {}\n", addc));
                                 }
-                                _ => {}
                             }
                         }
-                        // Store the else block content
-                        else_block.push_str(&format!("    {}\n", addc));
                         continue; // Skip the rest of the processing for 'last'
                     }
 
-                    // For the first condition, add 'if', otherwise 'else if'
+                    // For the first condition, use 'if', otherwise 'else if'
                     if i == 0 {
                         condc.push_str(&format!("if ({}) {{\n", cond));
                     } else {
@@ -165,22 +171,19 @@ fn process(
 
                     // Process the tokens for the current condition
                     for t in tokens {
-                        match t {
-                            Tokens::IFun(n, c) => {
-                                if n == code {
-                                    process(&mut addc, arg_vars, true, c, declared_vars);
-                                }
+                        if let Tokens::IFun(n, c) = t {
+                            if n == code {
+                                addc.clear(); // Clear addc before processing the current condition
+                                process(&mut addc, arg_vars, true, c, declared_vars);
+                                condc.push_str(&addc);
                             }
-                            _ => {}
                         }
                     }
 
-                    // Add the code block for this condition
-                    condc.push_str(&addc);
-                    condc.push_str("}\n"); // Close the current condition block
+                    condc.push_str("}\n"); // Close the condition block
                 }
 
-                // After processing all conditions, add the else block if a last condition was found
+                // If a 'last' condition was found, append the else block
                 if last_condition_found {
                     condc.push_str("else {\n");
                     condc.push_str(&else_block);
@@ -198,11 +201,11 @@ fn process(
             Tokens::In(vnm) => {
                 func.push_str(&format!("fgets({}, sizeof({}) - 1, stdin);\n", vnm, vnm));
                 func.push_str(&format!(
-                    "char *newline{} = strchr({}, '\\n');\nif (newline{}) *newline{} = '\\0';\n",
-                    nli, vnm, nli, nli
+                    "for (int i = 0; {}[i] != '\\0'; i++) {{\nif ({}[i] == '\\n') {}[i] = '\\0';\n}}\n",
+                    vnm, vnm, vnm
                 ));
-                nli += 1;
             }
+
             Tokens::FnCall(fc, args) => {
                 func.push_str(&format!("    {}({});\n", fc, args.join(",")));
             }

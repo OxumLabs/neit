@@ -19,22 +19,32 @@ double fdf(double a, double b) {
     return (result > 0 && result != (int)result) ? (int)result : (result < 0 && result != (int)result) ? (int)result - 1 : result;
 }
 
-void m() {
-    const int n = 0;
-    char z[334] = "00";
-    fgets(z, sizeof(z) - 1, stdin);
-    char *newline0 = strchr(z, '\n');
-    if (newline0) *newline0 = '\0';
-    printf("%s\n", z);
-    
-}
-
 int main() {
-    char name[337] = "joy";
+    char name[337] = "";
+    printf("Hello and welcome to OxumLabs!\n");
+    printf("username > ");
     fgets(name, sizeof(name) - 1, stdin);
-    char *newline0 = strchr(name, '\n');
-    if (newline0) *newline0 = '\0';
-    printf("%s\n", name);
-    m();
+    for (int i = 0; name[i] != '\0'; i++) {
+        if (name[i] == '\n') name[i] = '\0';
+    }
+    printf("name is %s\n", name);
+    if (strcmp(name, "buj")== 0) {
+        printf("Hello  %s , shall I fetch the Neit Git repository?\n", name);
+    }
+    else if (strcmp(name, "bilal")== 0) {
+        printf("Hello  %s , shall I fetch the Neit Git repository?\n", name);
+    }
+    else if (strcmp(name, "buj")==0) {
+        printf("Hello  %s , shall I fetch the Neit Git repository?\n", name);
+    }
+    else if (strcmp(name, "joy")==0) {
+        printf("Hello  %s , shall I fetch the Neit Git repository?\n", name);
+    }
+    else {
+        printf("Hello  %s , shall I fetch the Neit Git repository?\n", name);
+        printf("Hello %s, shall I download and run Neit?\n", name);
+        
+    }
+    printf("Thank you for using OxumLabs!\n");
     return 0;
 }

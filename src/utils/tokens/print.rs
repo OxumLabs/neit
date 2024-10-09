@@ -108,7 +108,7 @@ pub fn process_print(num: &mut i32, text: &str, vars: &Vec<Tokens>) -> Tokens {
 
 pub fn p_to_c(text: &str, _vars: &Vec<Tokens>) -> String {
     let mut c_code = String::new();
-    c_code.push('\"'); // Start the C string literal
+    c_code.push_str("\""); // Start the printf statement with printf
     let mut collected_vars = Vec::new();
     let mut inside_var = false;
     let mut var_name = String::new();
@@ -125,16 +125,16 @@ pub fn p_to_c(text: &str, _vars: &Vec<Tokens>) -> String {
                     let var = parts[0];
                     let fmt = parts[1];
 
-                    // Add the appropriate format specifier to the c_code
-                    match fmt {
-                        "s" => c_code.push_str("%s"),
-                        "d" => c_code.push_str("%d"),
-                        "f" => c_code.push_str("%f"),
-                        _ => {}
-                    }
-
                     // Collect the variable name for the argument list
                     collected_vars.push(var.to_string());
+
+                    // Add the appropriate format specifier to the literal text
+                    match fmt {
+                        "s" => literal_text.push_str("%s"),
+                        "d" => literal_text.push_str("%d"),
+                        "f" => literal_text.push_str("%f"),
+                        _ => {}
+                    }
                 }
                 var_name.clear(); // Clear variable name for next usage
             } else {
@@ -159,7 +159,7 @@ pub fn p_to_c(text: &str, _vars: &Vec<Tokens>) -> String {
                     || expression.contains("-")
                 {
                     // It's an expression; add it directly without formatting
-                    c_code.push_str(&expression);
+                    literal_text.push_str(&expression);
                 } else {
                     // It's a variable; we need to format it
                     let mut var_found = false;
@@ -168,9 +168,15 @@ pub fn p_to_c(text: &str, _vars: &Vec<Tokens>) -> String {
                             if *n == expression {
                                 var_found = true;
                                 match v_type {
-                                    Vars::STR(_) => c_code.push_str(&format!("|{}~s|", n)),
-                                    Vars::INT(_) => c_code.push_str(&format!("|{}~d|", n)),
-                                    Vars::F(_) => c_code.push_str(&format!("|{}~f|", n)),
+                                    Vars::STR(_) => {
+                                        literal_text.push_str(&format!("|{}~s|", n));
+                                    }
+                                    Vars::INT(_) => {
+                                        literal_text.push_str(&format!("|{}~d|", n));
+                                    }
+                                    Vars::F(_) => {
+                                        literal_text.push_str(&format!("|{}~f|", n));
+                                    }
                                     _ => {}
                                 }
                                 break;
@@ -199,8 +205,6 @@ pub fn p_to_c(text: &str, _vars: &Vec<Tokens>) -> String {
         c_code.push_str(&literal_text);
     }
 
-    c_code.push('\"'); // Close the C string literal
-
     // Process collected variables for formatting
     for cv in collected_vars.iter_mut() {
         if cv.contains("//") {
@@ -216,9 +220,12 @@ pub fn p_to_c(text: &str, _vars: &Vec<Tokens>) -> String {
 
     // Append all the collected variables to the printf statement
     if !collected_vars.is_empty() {
-        c_code.push_str(", ");
+        c_code.push_str("\", ");
         c_code.push_str(&collected_vars.join(", ")); // Join collected variables with commas
+    } else {
+        c_code.push_str("\"");
     }
-    //println!("c_code : {} |", c_code); // Debugging output
+
+    c_code.push_str(""); // Close the printf statement
     c_code
 }

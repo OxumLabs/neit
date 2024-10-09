@@ -1,15 +1,22 @@
-must name = "joy"
+may name = ""
+println("Hello and welcome to OxumLabs!")
+print("username > ")
+takein(name)
+println("name is {name}")
 if{
-    strcmp(name,"joy"),0 : admin
-    strcmp(name,"bilal"),0 : admin
-    last : admin
-    strcmp(name,"buj"),0 : admin
-    last : admin
-
-
-
-
+    strcmp(name, "buj")== 0 : admin
+    strcmp(name, "bilal")== 0 : admin
+    strcmp(name, "buj")==0 : admin
+    strcmp(name, "joy")==0 : admin
+    last : wtv
 }
+
 case admin{
-    println("hello sir")
+    println("Hello  {name} , shall I fetch the Neit Git repository?")
 }
+
+case wtv{
+    println("Hello {name}, shall I download and run Neit?")
+}
+
+println("Thank you for using OxumLabs!")
