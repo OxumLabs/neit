@@ -41,7 +41,6 @@ int main() {
         printf("Hello  %s , shall I fetch the Neit Git repository?\n", name);
     }
     else {
-        printf("Hello  %s , shall I fetch the Neit Git repository?\n", name);
         printf("Hello %s, shall I download and run Neit?\n", name);
         
     }

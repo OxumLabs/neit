@@ -138,7 +138,7 @@ fn process(
 
                     // Check for the 'last' condition
                     if cond == "last" {
-                        println!("in last condition");
+                        //println!("in last condition");
                         if last_condition_found {
                             eprintln!("Error! Multiple 'last' conditions found.");
                             exit(1); // Exit if multiple 'last' conditions are found
@@ -147,10 +147,10 @@ fn process(
 
                         // Only process tokens related to this 'last' condition
                         for t in tokens {
-                            println!("las cond token match : {:?}", t);
+                            //println!("las cond token match : {:?}", t);
                             if let Tokens::IFun(n, c) = t {
                                 if n == code {
-                                    println!("\ntoken matched last cond : {:?}", t);
+                                    //println!("\ntoken matched last cond : {:?}", t);
                                     // Clear addc before processing to avoid carrying code from other conditions
                                     addc.clear();
                                     process(&mut addc, arg_vars, true, c, declared_vars);

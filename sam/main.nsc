@@ -18,5 +18,8 @@ case admin{
 case wtv{
     println("Hello {name}, shall I download and run Neit?")
 }
+case wtvv{
+    println("Heello {name}, shall I download and run Neit?")
+}
 
 println("Thank you for using OxumLabs!")

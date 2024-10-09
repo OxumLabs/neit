@@ -39,9 +39,11 @@ pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<
                 if pts.len() != 2 && !ln.trim().is_empty() {
                     return Err(format!("Error at line '{}'\nConditions given to 'if' shall have 2 parts separated by ':'\nfirst part is conditions nd second is case to call\nhere you gave me this : {}\nwhat is this? fix this right now!",index,ln));
                 }
+
                 ifbody.push(ln.to_string());
             } else {
                 inif = false;
+                println!("ifbod : \n{:?}", ifbody);
                 let iftkn = Tokens::Cond(ifbody.clone());
                 if fc {
                     ct.push(iftkn);
@@ -54,7 +56,9 @@ pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<
             brace_depth -= ln.matches("}").count();
             if brace_depth == 0 {
                 incase = false;
+                // println!("cname : {}\ncbody : {:?}", cname, cbody);
                 let pc = process_case(ln, cbody.clone(), &mut index, &tokens, true);
+                cbody.clear();
                 match pc {
                     Ok(k) => {
                         if fc {
@@ -67,9 +71,9 @@ pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<
                     Err(e) => return Err(e),
                 }
                 //println!("cbody : {:?}", cbody);
+            } else {
+                cbody.push(ln);
             }
-
-            cbody.push(ln);
         }
 
         if ln.is_empty() {
