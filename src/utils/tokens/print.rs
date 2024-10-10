@@ -70,13 +70,13 @@ pub fn process_print(num: &mut i32, text: &str, vars: &Vec<Tokens>) -> Tokens {
                                 }
                                 Err(e) => {
                                     eprintln!(
-                                        "✘ Error: Expression Evaluation Failed\n\n\
-                                        Failed to evaluate the expression '{}'.\n\n\
-                                        ➔ Reason: {}\n\n\
-                                        Here are some steps to help you troubleshoot:\n\
-                                            1. Review the syntax of the expression for any errors or typos.\n\
-                                            2. Ensure that all variables used in the expression are defined and accessible.\n\
-                                            3. Check for any logical issues that may prevent the expression from being evaluated correctly.\n\n\
+                                        "✘ Error: Expression Evaluation Failed\n\
+                                        Expression: '{}'\n\
+                                        ➔ Reason: {}\n\
+                                        Steps to troubleshoot:\n\
+                                        1. Review the syntax for errors or typos.\n\
+                                        2. Ensure all variables are defined and accessible.\n\
+                                        3. Check for logical issues affecting evaluation.\n\
                                         → Please check the expression and try again.",
                                         current_var, e
                                     );
@@ -226,12 +226,12 @@ pub fn p_to_c(text: &str, _vars: &Vec<Tokens>) -> String {
                     // Handle case where variable was not found
                     if !var_found {
                         eprintln!(
-                            "✘ Error: Variable Not Found\n\n\
-                            Cannot find the variable '{}'.\n\n\
-                            ➔ Ensure the variable is defined correctly and is in scope.\n\
-                            ➔ Check for any typos in the variable name.\n\
-                            ➔ If the variable is defined in another block or function, make sure it is accessible.\n\n\
-                            → Please review the variable declaration and try again.",
+                            "✘ Error: Variable Not Found\n\
+                            Cannot find the variable '{}'.\n\
+                            ➔ Ensure it's defined correctly and in scope.\n\
+                            ➔ Check for typos in the variable name.\n\
+                            ➔ If defined in another block or function, ensure accessibility.\n\
+                            → Please review the declaration and try again.",
                             expression
                         );
 

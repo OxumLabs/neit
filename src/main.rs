@@ -250,13 +250,13 @@ fn run_project(proj: &str) {
         Ok(content) => content,
         Err(e) => {
             eprintln!(
-                "✘ Error: 'main.nsc' File Not Found\n\n\
-                Uh-oh! I tried to read the 'main.nsc' file at '{}' but it appears to be missing.\n\n\
-                ➔ Detailed Error: {}\n\n\
+                "✘ Error: 'main.nsc' File Not Found\n
+                Uh-oh! I tried to read the 'main.nsc' file at '{}' but it appears to be missing.\n
+                ➔ Detailed Error: {}\n
                 Here are some steps to help you troubleshoot:\n\
-                1. Verify that the 'main.nsc' file exists at the specified path.\n\
-                2. Check your file permissions to ensure you can access it.\n\
-                3. If the file was moved or deleted, you might need to restore it from a backup or create a new one.\n\n\
+                1. Verify that the 'main.nsc' file exists at the specified path.
+                2. Check your file permissions to ensure you can access it.
+                3. If the file was moved or deleted, you might need to restore it from a backup or create a new one.
                 Let’s track it down and see what’s going on—maybe it just needs a map!",mf,e
             );
 

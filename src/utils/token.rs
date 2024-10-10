@@ -4,7 +4,6 @@ use super::{
     tokens::{func::process_func, input::process_input, print::process_print, var::process_var},
     types::{Args, Tokens, Vars},
 };
-use colored::*; // Import the colored crate
 
 #[allow(unused, irrefutable_let_patterns)]
 pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<Tokens>, String> {
@@ -37,7 +36,13 @@ pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<
             if ln != "}" {
                 let pts: Vec<&str> = ln.split(":").collect();
                 if pts.len() != 2 && !ln.trim().is_empty() {
-                    return Err(format!("Error at line '{}'\nConditions given to 'if' shall have 2 parts separated by ':'\nfirst part is conditions nd second is case to call\nhere you gave me this : {}\nwhat is this? fix this right now!",index,ln));
+                    return Err(format!(
+                        "Error at line '{}':\n\
+                        An 'if' statement must have 2 parts separated by ':'.\n\
+                        You provided: {}\n\
+                        Please fix this!",
+                        index, ln
+                    ));
                 }
 
                 ifbody.push(ln.to_string());
@@ -86,21 +91,19 @@ pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<
         {
             if in_function {
                 return Err(format!(
-                    "{} Error: Nested Function Detected!\n\n\
-                    It looks like you're trying to define a new function at line {} while you're still inside an open function.\n\
-                    This can cause unexpected behavior since functions cannot overlap.\n\
-                    Here's what happened:\n\n\
-                    → At line {}, you attempted to start another function definition.\n\
-                    → But you haven't properly closed the previous function.\n\n\
-                    What you should do:\n\
-                    1. Complete the function you started earlier.\n\
-                    2. Ensure each function has a clear start and end with matching braces ('{{' and '}}').\n\n\
+                    "{} Error: Nested Function Detected!\n\
+                    You're trying to define a new function at line {} while still inside another function.\n\
+                    What happened:\n\
+                    → At line {}, you started a new function without closing the previous one.\n\
+                    What to do:\n\
+                    1. Complete the current function definition.\n\
+                    2. Ensure each function has matching braces ('{{' and '}}').\n\
                     Code snippet causing the issue:\n\
                     ----------------------------\n\
                     {}\n\
-                    ----------------------------\n\n\
-                    Please close the current function properly before beginning a new one.",
-                    "✘".red(), index, index, ln
+                    ----------------------------\n\
+                    Please close the current function before starting a new one!",
+                    "✘", index, index, ln
                 ));
             }
 
@@ -133,21 +136,19 @@ pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<
                             .any(|tkn| matches!(tkn, Tokens::Func(f) if f.name == func.name))
                         {
                             return Err(format!(
-                                "{} Error: Function Name Already Declared!\n\n\
-                                The function '{}' was already declared at line {}. Function names must be unique within the same scope.\n\
-                                Re-declaring a function with the same name can lead to unexpected behavior and confusion when referencing the correct function.\n\n\
-                                Here's what happened:\n\n\
-                                → At line {}, you tried to declare the function '{}', but a function with this name already exists.\n\
-                                → Each function should have a unique and descriptive name.\n\n\
-                                What you should do:\n\
+                                "{} Error: Function Name Already Declared!\n\
+                                The function '{}' was declared at line {}. Function names must be unique within the same scope.\n\
+                                What happened:\n\
+                                → At line {}, you tried to declare the function '{}', but it already exists.\n\
+                                What to do:\n\
                                 1. Choose a unique name for the new function.\n\
-                                2. Ensure that the name is descriptive and relevant to its purpose.\n\n\
+                                2. Ensure the name is descriptive and relevant.\n\
                                 Code snippet causing the issue:\n\
                                 ----------------------------\n\
                                 {}\n\
-                                ----------------------------\n\n\
-                                Let’s keep it unique and avoid naming collisions!",
-                                "✘".red(), func.name, index, index, func.name, full_function_code
+                                ----------------------------\n\
+                                Let’s keep it unique!",
+                                "✘", func.name, index, index, func.name, full_function_code
                             ));
                         }
                         if !fc {
@@ -165,14 +166,13 @@ pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<
             let cnamee = ln[5..].trim_end_matches("{");
             if !cname.chars().all(|c| c.is_alphabetic() || c == '_') {
                 return Err(format!(
-                    "Error: Invalid Case Name at Line {} in Main File\n\n\
-                    It looks like the case name '{}' contains invalid characters.\n\
-                    Case names can only contain alphabetic characters (A-Z, a-z) and underscores ('_').\n\
-                    You've provided: '{}', which doesn't meet these criteria.\n\n\
-                    Here's what you need to do:\n\
+                    "Error: Invalid Case Name at Line {} in Main File\n\
+                    Case name '{}' contains invalid characters. Only alphabetic characters (A-Z, a-z) and underscores ('_') are allowed.\n\
+                    Provided: '{}'.\n\
+                    What to do:\n\
                     1. Ensure the case name consists only of letters and underscores.\n\
-                    2. Avoid using numbers, special characters, or spaces.\n\n\
-                    Once you've corrected the case name, we can proceed!\n",
+                    2. Avoid numbers, special characters, or spaces.\n\
+                    Once corrected, we can proceed!",
                     index, cname, cname
                 ));
             }
@@ -270,24 +270,29 @@ pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<
 
                     if provided_args.len() != expected_args.len() {
                         return Err(format!(
-                            "{} Error: Incorrect Number of Arguments at Line {}\n\n\
-                            The function '{}' was called with the wrong number of arguments.\n\
+                            "{} Error: Incorrect Number of Arguments at Line {}\n\
+                            Function '{}' called with the wrong number of arguments.\n\
                             → Expected: {} arguments\n\
-                            → Provided: {}\n\n\
-                            Each function must be called with the correct number of arguments based on its definition.\n\n\
-                            Here's what happened:\n\n\
-                            → At line {}, you attempted to call the function '{}'.\n\
-                            → The function expects {} arguments, but you provided {}.\n\n\
-                            What you should do:\n\
-                            1. Check the function definition and ensure you're passing the right number of arguments.\n\
-                            2. Add or remove arguments as needed to match the expected number.\n\n\
-                            Code snippet causing the issue:\n\
+                            → Provided: {}\n\
+                            → Line {}: Attempted to call '{}'. Expected {}, but got {}.\n\
+                            Suggestions:\n\
+                            1. Check the function definition for the correct number of arguments.\n\
+                            2. Adjust the call to match the expected number.\n\
+                            Code:\n\
                             ----------------------------\n\
                             {}\n\
-                            ----------------------------\n\n\
-                            Let’s fix this and keep the code clean!",
-                            "✘".red(), index, nm.trim(), expected_args.len(), provided_args.len(), index, nm.trim(), 
-                            expected_args.len(), provided_args.len(), ln
+                            ----------------------------\n\
+                            Let’s fix this!",
+                            "✘",
+                            index,
+                            nm.trim(),
+                            expected_args.len(),
+                            provided_args.len(),
+                            index,
+                            nm.trim(),
+                            expected_args.len(),
+                            provided_args.len(),
+                            ln
                         ));
                     }
 
@@ -296,21 +301,19 @@ pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<
                             Ok(t) => t,
                             Err(_) => {
                                 return Err(format!(
-                                        "{} Error: Unable to Parse Argument at Line {}\n\n\
-                                        I'm having trouble parsing the argument '{}'. It seems there's something wrong with its format or structure.\n\n\
-                                        What you should do:\n\n\
-                                        → At line {}, the argument '{}' couldn't be processed.\n\
-                                        → Double-check the syntax, data type, or any special characters in the argument.\n\n\
-                                        Suggestions:\n\
-                                        1. Ensure the argument matches the expected type and format.\n\
-                                        2. Watch for typos, invalid characters, or misplaced punctuation.\n\n\
-                                        Code snippet causing the issue:\n\
-                                        ----------------------------\n\
-                                        {}\n\
-                                        ----------------------------\n\n\
-                                        Let’s fix that argument and try again!",
-                                        "✘".red(), index, provided, index, provided, ln
-                                    ));
+                                    "{} Error: Unable to Parse Argument at Line {}\n\
+                                    Trouble parsing argument '{}'.\n\
+                                    → Line {}: Argument '{}' couldn’t be processed.\n\
+                                    Suggestions:\n\
+                                    1. Check syntax, data type, and special characters.\n\
+                                    2. Look for typos or misplaced punctuation.\n\
+                                    Code:\n\
+                                    ----------------------------\n\
+                                    {}\n\
+                                    ----------------------------\n\
+                                    Let’s fix that argument!",
+                                    "✘", index, provided, index, provided, ln
+                                ));
                             }
                         };
 
@@ -323,21 +326,26 @@ pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<
 
                         if provided_type != expected_type {
                             return Err(format!(
-                                "{} Error: Argument Type Mismatch at Line {}\n\n\
-                                The argument '{}' doesn't match the expected type '{}'. This type inconsistency could lead to errors in your program's behavior.\n\n\
-                                Here's what happened:\n\n\
-                                → At line {}, the argument '{}' was provided.\n\
-                                → The function or expression expects an argument of type '{}', but the given argument doesn't match that.\n\n\
-                                What you should do:\n\
-                                1. Ensure the argument type aligns with what the function or expression expects.\n\
-                                2. If necessary, cast or convert the argument to the appropriate type.\n\
-                                3. Double-check the function signature or definition to confirm the expected type.\n\n\
-                                Code snippet causing the issue:\n\
+                                "{} Error: Argument Type Mismatch at Line {}\n\
+                                Argument '{}' doesn’t match expected type '{}'.\n\
+                                → Line {}: Provided: '{}', Expected: '{}'.\n\
+                                Suggestions:\n\
+                                1. Ensure argument type aligns with expectations.\n\
+                                2. Cast or convert if necessary.\n\
+                                3. Check function signature.\n\
+                                Code:\n\
                                 ----------------------------\n\
                                 {}\n\
-                                ----------------------------\n\n\
-                                Let's sort out those types and keep the code flowing!",
-                                "✘".red(), index, provided, expected_type, index, provided, expected_type, ln
+                                ----------------------------\n\
+                                Let’s sort out those types!",
+                                "✘",
+                                index,
+                                provided,
+                                expected_type,
+                                index,
+                                provided,
+                                expected_type,
+                                ln
                             ));
                         }
                     }
@@ -356,19 +364,30 @@ pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<
             if !found_function {
                 if ln.chars().all(|c| c == '}') {
                     continue;
+                } else if ln.ends_with(";") {
+                    return Err(format!(
+                        "{} Error: Syntax Conundrum at Line {}\n\
+                        It seems you’ve ended your line with a semicolon! Here’s what to check:\n\
+                        → Line {}:\n\
+                        → {}\n\
+                        Suggestions:\n\
+                        1. Did you mean to end your statement? Maybe you intended to continue?\n\
+                        2. Is this a single statement or something more? Reflect on your semicolon’s role.\n\
+                        3. Watch for typos or formatting errors that might mislead me!\n\
+                        Just a nudge to help you along! You’ve got this!",
+                        "!", index, index, ln
+                    ));
                 }
                 return Err(format!(
-                    "{} Error: Syntax Issue at Line {}\n\n\
-                    I encountered a problem parsing your code at line {}. It seems there might be a syntax error that’s preventing me from understanding what you intended.\n\n\
-                    Here’s what you should check:\n\n\
-                    → At line {}, the code is as follows:\n\
-                    → {}\n\n\
-                    Suggestions for resolution:\n\
-                    1. Carefully review your syntax for any missing punctuation or incorrect keywords.\n\
-                    2. Ensure that all opening brackets, parentheses, and quotes have matching closing counterparts.\n\
-                    3. Look for any typos or unconventional formatting that could confuse the parser.\n\n\
-                    I know it can be a bit of a head-scratcher, but with a quick review, we can get this sorted out!",
-                    "✘".red(), index, index,index, ln
+                    "{} Error: Syntax Issue at Line {}\n\
+                    There seems to be a syntax error at line {}:\n\
+                    → {}\n\
+                    Suggestions:\n\
+                    1. Check for missing punctuation or keywords.\n\
+                    2. Ensure all brackets and quotes are matched.\n\
+                    3. Look for typos or unusual formatting.\n\
+                    A quick review can help us resolve this!",
+                    "✘", index, index, ln
                 ));
             }
         }

@@ -15,13 +15,14 @@ pub fn process_case(
         }
         Err(e) => {
             return Err(format!(
-            "✘ Error: Issue Inside Case Block\n\n\
-            Something went wrong inside the case block: {}\n\n\
-            ➔ What Happened: This error suggests there was an unexpected issue when executing the case logic. \n\
-            ➔ Suggested Action: Review the case conditions and ensure that they are correctly implemented. \n\
-            ➔ Hint: Make sure the expressions inside the case block are valid and that there are no syntax errors.\n\n\
-            Let’s debug this and get it sorted out!"
-        , e));
+                "✘ Error: Issue Inside Case Block\n\
+                Error encountered in case block: {}\n\
+                ➔ Reason: An unexpected issue occurred during case execution.\n\
+                ➔ Suggested Action: Review your case conditions for correctness.\n\
+                ➔ Hint: Ensure expressions inside the case block are valid and free from syntax errors.\n\
+                Let’s debug this to get it sorted out!",
+                e
+            ));
         }
     }
 }

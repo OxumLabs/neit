@@ -14,6 +14,3 @@ debug = true           # Do not include debug information in the release build
 overflow-checks = false # Disable overflow checks (this can improve performance but sacrifices safety)
 incremental = false     # Disable incremental compilation to maximize optimization
 rpath = false           # Do not include runtime path information
-
-[dependencies]
-colored = "2.1.0"

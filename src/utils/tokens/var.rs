@@ -150,26 +150,25 @@ pub fn process_var(
     // Validate variable name is not a C keyword
     if C_KEYWORDS.contains(&var_name) {
         return Err(format!(
-            "✘ Error: Invalid Variable Name\n\n\
-            Oh no! I see an invalid variable name: '{}'.\n\n\
-            ➔ What Happened: The name you chose for your variable is a reserved C keyword. These keywords have special meanings in the language and cannot be used as variable names.\n\
-            ➔ Suggested Action: To fix this, try modifying the variable name to avoid using any C keywords.\n\
-            ➔ Hint: A good practice is to add a letter, number, or underscore ('_') to make it unique.\n\n\
-            ➔ Example: Instead of using a keyword like 'char', consider naming it 'char_variable = 42'.\n\n\
-            Let's ensure our variable names are unique and valid to keep your code error-free!"
-        , var_name
+            "✘ Error: Invalid Variable Name\n\
+            Oh no! I see an invalid variable name: '{}'.\n\
+            ➔ Issue: This name is a reserved C keyword and cannot be used.\n\
+            ➔ Suggested Action: Change the variable name to avoid keywords. Consider adding a letter, number, or underscore ('_') for uniqueness.\n\
+            ➔ Example: Instead of using 'char', use 'char_variable = 42'.\n\
+            Let's ensure our variable names are unique and valid!",
+            var_name
         ));
     }
 
     // Validate variable name contains only valid characters
     if !var_name.chars().all(|c| c.is_alphanumeric() || c == '_') {
         return Err(format!(
-            "✘ Error: Invalid Variable Name Found\n\n\
-            Uh-oh! I found an invalid variable name '{}' in line '{}'.\n\n\
-            ➔ Reason: Your variable name can only consist of alphanumeric characters or underscores—no funny business allowed!\n\
-            ➔ Hint: Let's ensure it follows the naming conventions! Keep it classy!\n\n\
-            ➔ Example: You could use something like '{}valid_name = 42'. Simple and elegant!\n\n\
-            Remember, names matter—let's give your variable a fabulous identity!",
+            "✘ Error: Invalid Variable Name Found\n\
+            Invalid variable name '{}' at line '{}'.\n\
+            ➔ Reason: Names can only use alphanumeric characters or underscores—no special characters!\n\
+            ➔ Hint: Follow naming conventions for clarity.\n\
+            ➔ Example: Use something like '{}valid_name = 42'.\n\
+            Let's give your variable a valid identity!",
             var_name, trimmed_code, expected_keyword
         ));
     }
@@ -177,13 +176,12 @@ pub fn process_var(
     // Validate variable value is not empty
     if var_value.is_empty() {
         return Err(format!(
-            "✘ Error: Empty Variable Value Found\n\n\
-            Oops! I’ve spotted an empty variable value in line '{}'.\n\n\
-            ➔ What Happened: The variable assignment is missing a value! This means there’s nothing after the '=' sign.\n\
-            ➔ Suggested Action: You need to provide a valid value for the variable so that it can be used in your code.\n\
-            ➔ Hint: Make sure to provide a valid value right after the '=' sign.\n\n\
-            ➔ Example: Instead of leaving it empty, try something like '{}my_var = 42'. It’s simple and effective!\n\n\
-            Remember, every variable deserves a value—let’s make it happen and keep your code running smoothly!",
+            "✘ Error: Empty Variable Value Found\n\
+            Empty variable value detected at line '{}'.\n\
+            ➔ Reason: The assignment is missing a value after the '=' sign!\n\
+            ➔ Suggested Action: Provide a valid value for the variable.\n\
+            ➔ Example: Instead of leaving it empty, use '{}my_var = 42'.\n\
+            Every variable deserves a value—let's fix this to keep your code running smoothly!",
             trimmed_code, expected_keyword
         ));
     }

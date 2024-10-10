@@ -1,6 +1,7 @@
 use crate::utils::{
     case::process_case,
     ftokens::parse_single_line,
+    tokens::var::C_KEYWORDS,
     types::{fvars, Args, Tokens, FN},
 };
 
@@ -36,10 +37,9 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
             let pts: Vec<&str> = i.split(":").map(str::trim).collect();
             if pts.len() != 2 && !ln.trim().is_empty() {
                 return Err(format!(
-                    "✘ Error: Invalid Argument Declaration\n\n\
-                    Yikes! Invalid argument declaration at line {}.\n\n\
-                    ➔ Hint: Arguments should be in the format 'name:type'.\n\
-                    ➔ Example: A valid declaration would look like 'myArg:int' or 'count:float'.\n\n\
+                    "✘ Error: Invalid Argument Declaration\n\
+                    Invalid argument declaration at line {}.\n\
+                    ➔ Hint: Use the format 'name:type' (e.g., 'myArg:int').\n\
                     ⚙ [Code: {}]",
                     index as i32, ln
                 ));
@@ -47,12 +47,21 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
             let (name, t) = (pts[0], pts[1]);
             if name.is_empty() {
                 return Err(format!(
-                    "✘ Error: Missing Argument Name\n\n\
-                    Yikes! Argument name is missing at line {}.\n\n\
-                    ➔ Hint: Please provide a valid argument name to ensure proper function declaration.\n\
-                    ➔ Example: An argument should look like 'argName:int' or 'paramName:string'.\n\n\
+                    "✘ Error: Missing Argument Name\n\
+                    Argument name is missing at line {}.\n\
+                    ➔ Hint: Provide a valid argument name (e.g., 'argName:int').\n\
                     ⚙ [Code: {}]",
                     index as i32, ln
+                ));
+            }
+            if C_KEYWORDS.contains(&name) {
+                return Err(format!(
+                    "✘ Error:  Invalid Argument Name '{}' at {}\n\
+                    Oops! This name is a reserved C keyword. \n\
+                    ➔ Reason: Keywords have special meanings and cannot be used as variable names. \n\
+                    ➔ Suggested Action: Change the variable name to avoid conflicts. \n\
+                    ➔ Example: Instead of 'char', use 'char_var'.",
+                    name,index
                 ));
             }
             match t.to_lowercase().as_str() {
@@ -94,17 +103,10 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
                 }
                 _ => {
                     return Err(format!(
-                        "✘ Error: Unrecognized Argument Type\n\n\
-                        Yikes! I found an unrecognized argument type '{}' at line {}.\n\n\
-                        ➔ What Happened: This means that the type you used is not one of the recognized types in the language.\n\
-                        ➔ Supported Types: You can use the following types:\n\
-                            - 'string': Used for text values, like \"Hello, World!\"\n\
-                            - 'int': Used for whole numbers, like 42 or -10.\n\
-                            - 'float': Used for decimal numbers, like 3.14 or -0.5.\n\n\
-                        ➔ Example: If you intended to declare a variable, it should look like this:\n\
-                            - For a string: 'name:string'\n\
-                            - For an integer: 'age:int'\n\
-                            - For a float: 'price:float'\n\n\
+                        "✘ Error: Unrecognized Argument Type\n\
+                        Found unrecognized type '{}' at line {}.\n\
+                        ➔ Supported Types: 'string', 'int', 'float'.\n\
+                        ➔ Example: Declare as 'name:string', 'age:int', or 'price:float'.\n\
                         ⚙ [Code: {}]",
                         t, index, ln
                     ));
@@ -154,23 +156,29 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
             let pts: Vec<&str> = ln[7..].split("(").collect();
             if pts.len() != 2 {
                 return Err(format!(
-                    "✘ Error: Incorrect Function Declaration Format\n\n\
-                    Yikes! I noticed that the function declaration format is incorrect at line {}.\n\n\
-                    ➔ What Happened: This means that the way you declared your function doesn't follow the expected structure.\n\
-                    ➔ Correct Format: Make sure your function is declared like this:\n\
-                        'pub fn functionName(arg1:type, arg2:type)'\n\
-                        - 'pub': This means the function is public and can be accessed from other parts of the program.\n\
-                        - 'fn': This keyword indicates that you are declaring a function.\n\
-                        - 'functionName': Replace this with the name you want to give your function.\n\
-                        - 'arg1:type, arg2:type': List your arguments in parentheses, with each argument followed by its type. You can have multiple arguments separated by commas.\n\n\
-                    ➔ Example: A valid declaration would look like:\n\
-                        'pub fn add(x:int, y:int)'\n\
-                    This declares a function named 'add' that takes two integers.\n\n\
+                    "✘ Error: Incorrect Function Declaration Format\n\
+                    Found an incorrect function declaration at line {}.\n\
+                    ➔ Correct Format: 'pub fn functionName(arg1:type, arg2:type)'.\n\
+                    - 'pub': Public access.\n\
+                    - 'fn': Indicates a function.\n\
+                    - 'functionName': Your function's name.\n\
+                    - 'arg1:type, arg2:type': Arguments with types, separated by commas.\n\
+                    ➔ Example: 'pub fn add(x:int, y:int)' declares a function 'add' taking two integers.\n\
                     ⚙ [Code: {}]",
-                    index as i32, ln
+                    index, ln
                 ));
             }
             let (name, mut arg) = (pts[0].trim(), pts[1].trim_end_matches("){}"));
+            if C_KEYWORDS.contains(&name) {
+                return Err(format!(
+                    "✘ Error:  Invalid Function Name '{}' at line {}\n\
+                    Oops! This name is a reserved C keyword. \n\
+                    ➔ Reason: Keywords have special meanings and cannot be used as variable names. \n\
+                    ➔ Suggested Action: Change the variable name to avoid conflicts. \n\
+                    ➔ Example: Instead of 'char', use 'char_var'.",
+                    name,index
+                ));
+            }
             functions.name = name.to_string();
             functions.is_global = true;
             if !arg.trim().is_empty() {
@@ -182,22 +190,29 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
             let pts: Vec<&str> = ln[3..].split("(").collect();
             if pts.len() != 2 {
                 return Err(format!(
-                    "✘ Error: Incorrect Function Declaration Format\n\n\
-                    Yikes! I found an issue with the function declaration format at line {}.\n\n\
-                    ➔ What Happened: This means that the way you wrote your function declaration doesn't match the expected format.\n\
-                    ➔ Correct Format: Ensure your function is declared like this:\n\
-                        'fn functionName(arg1:type, arg2:type)'\n\
-                        - 'fn': This keyword indicates that you are declaring a function.\n\
-                        - 'functionName': Replace this with the name you want for your function.\n\
-                        - 'arg1:type, arg2:type': List your arguments inside parentheses, where each argument has a name followed by its type. You can have multiple arguments separated by commas.\n\n\
-                    ➔ Example: A valid declaration would look like:\n\
-                        'fn add(x:int, y:int)'\n\
-                    This declares a function named 'add' that takes two integer arguments.\n\n\
+                    "✘ Error: Incorrect Function Declaration Format\n\
+                    Found an issue with the function declaration at line {}.\n\
+                    ➔ What Happened: The function declaration doesn't match the expected format.\n\
+                    ➔ Correct Format: 'fn functionName(arg1:type, arg2:type)'.\n\
+                    - 'fn': Indicates a function.\n\
+                    - 'functionName': Your function's name.\n\
+                    - 'arg1:type, arg2:type': Arguments in parentheses with names followed by types, separated by commas.\n\
+                    ➔ Example: 'fn add(x:int, y:int)' declares a function 'add' taking two integers.\n\
                     ⚙ [Code: {}]",
-                    index as i32, ln
+                    index, ln
                 ));
             }
             let (name, mut arg) = (pts[0].trim(), pts[1].trim_end_matches("){}"));
+            if C_KEYWORDS.contains(&name) {
+                return Err(format!(
+                    "✘ Error:  Invalid Function Name Name '{}'\n\
+                    Oops! This name is a reserved C keyword. \n\
+                    ➔ Reason: Keywords have special meanings and cannot be used as variable names. \n\
+                    ➔ Suggested Action: Change the variable name to avoid conflicts. \n\
+                    ➔ Example: Instead of 'char', use 'char_var'.",
+                    name
+                ));
+            }
             functions.name = name.to_string();
             functions.is_global = false;
             if !arg.trim().is_empty() {
@@ -206,20 +221,16 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
         } else if ln.starts_with("fn ") && ln.ends_with("{") {
             if inf {
                 return Err(format!(
-                    "✘ Error: Nested Function Definitions Not Allowed\n\n\
-                    Yikes! I found a nested function definition at line {}.\n\n\
-                    ➔ What Happened: This means that you tried to define a new function inside another function, which is not permitted.\n\
-                    ➔ Solution: Make sure to close the previous function before you start defining a new one. Each function should be separate and properly defined.\n\n\
-                    ➔ Example: Here’s how you can correctly define functions:\n\
-                        1. Define the first function:\n\
-                            'fn outerFunction() {{\n\
-                                // Code for the outer function\n\
-                            }}'\n\
-                        2. Then, define a separate function:\n\
-                            'fn anotherFunction() {{\n\
-                                // Code for the second function\n\
-                            }}'\n\
-                    ➔ Remember: Functions should not be nested within each other!\n\n\
+                    "✘ Error: Nested Function Definitions Not Allowed\n\
+                    Found a nested function definition at line {}.\n\
+                    ➔ What Happened: You tried to define a function inside another function, which is not allowed.\n\
+                    ➔ Solution: Close the previous function before starting a new one. Functions must be separate and properly defined.\n\
+                    ➔ Example:\n\
+                        1. First function:\n\
+                            'fn outerFunction() {{ /* Code */ }}'\n\
+                        2. Second function:\n\
+                            'fn anotherFunction() {{ /* Code */ }}'\n\
+                    ➔ Remember: Functions cannot be nested!\n\
                     ⚙ [Code: {}]",
                     index, ln
                 ));
@@ -227,23 +238,33 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
             let pts: Vec<&str> = ln[3..].split("(").collect();
             if pts.len() != 2 {
                 return Err(format!(
-                    "✘ Error: Incorrect Function Declaration Format\n\n\
-                    Yikes! I found an issue with the function declaration format at line {}.\n\n\
-                    ➔ What Happened: The way you wrote your function declaration doesn't match the expected format.\n\
-                    ➔ Correct Format: Ensure your function is declared like this:\n\
+                    "✘ Error: Incorrect Function Declaration Format\n\
+                    Found an issue with the function declaration format at line {}.\n\
+                    ➔ What Happened: The function declaration doesn't match the expected format.\n\
+                    ➔ Correct Format: Declare your function like this:\n\
                         'fn functionName(arg1:type){{'\n\
-                        - 'fn': This keyword indicates that you are declaring a function.\n\
-                        - 'functionName': Replace this with the name you want for your function.\n\
-                        - 'arg1:type': This is where you specify the argument name followed by its type.\n\
-                        - '{{': Don’t forget to open the function body with a curly brace!\n\n\
-                    ➔ Example: A valid declaration would look like:\n\
+                        - 'fn': Keyword for declaring a function.\n\
+                        - 'functionName': Name of your function.\n\
+                        - 'arg1:type': Argument name followed by its type.\n\
+                        - '{{': Open the function body with a curly brace!\n\
+                    ➔ Example: A valid declaration:\n\
                         'fn add(x:int){{'\n\
-                    This declares a function named 'add' that takes one integer argument and opens its body.\n\n\
+                    This defines a function 'add' that takes one integer argument and opens its body.\n\
                     ⚙ [Code: {}]",
                     index as i32, ln
                 ));
             }
             let (name, mut arg) = (pts[0].trim(), pts[1].trim_end_matches("){"));
+            if C_KEYWORDS.contains(&name) {
+                return Err(format!(
+                    "✘ Error:  Invalid Function Name Name '{}' at line '{}'\n\
+                    Oops! This name is a reserved C keyword. \n\
+                    ➔ Reason: Keywords have special meanings and cannot be used as variable names. \n\
+                    ➔ Suggested Action: Change the variable name to avoid conflicts. \n\
+                    ➔ Example: Instead of 'char', use 'char_var'.",
+                    name,index
+                ));
+            }
             functions.name = name.to_string();
             functions.is_global = false;
 
@@ -254,20 +275,20 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
         } else if ln.starts_with("pub fn ") && ln.ends_with("{") {
             if inf {
                 return Err(format!(
-                    "✘ Error: Nested Function Definitions Not Allowed\n\n\
-                    Yikes! I found a nested function definition at line {}.\n\n\
-                    ➔ What Happened: You attempted to define a new function inside another function. This is not allowed in the current programming rules.\n\
-                    ➔ Solution: To fix this, you need to close the previous function before starting a new one. Each function must be defined separately and clearly.\n\n\
-                    ➔ Example of Correct Function Definitions:\n\
+                    "✘ Error: Nested Function Definitions Not Allowed\n\
+                    Found a nested function definition at line {}.\n\
+                    ➔ What Happened: You tried to define a new function inside another function, which is not allowed.\n\
+                    ➔ Solution: Close the previous function before starting a new one. Each function must be defined separately.\n\
+                    ➔ Example of Correct Definitions:\n\
                         1. Define the first function:\n\
                             'fn outerFunction() {{\n\
                                 // Code for the outer function\n\
                             }}'\n\
-                        2. Then, define a separate function:\n\
+                        2. Then define another:\n\
                             'fn anotherFunction() {{\n\
                                 // Code for the second function\n\
                             }}'\n\
-                    ➔ Remember: Always close a function before defining another to keep your code organized!\n\n\
+                    ➔ Remember: Close a function before defining another for better organization!\n\
                     ⚙ [Code: {}]",
                     index, ln
                 ));
@@ -275,24 +296,34 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
             let pts: Vec<&str> = ln[7..].split("(").collect();
             if pts.len() != 2 {
                 return Err(format!(
-                    "✘ Error: Incorrect Function Declaration Format\n\n\
-                    Yikes! There’s a problem with the function declaration format at line {}.\n\n\
-                    ➔ What Happened: The way you wrote your function declaration doesn’t match the expected format.\n\
-                    ➔ Correct Format: Make sure your function is declared like this:\n\
+                    "✘ Error: Incorrect Function Declaration Format\n\
+                    Yikes! There's a problem with the function declaration at line {}.\n\
+                    ➔ What Happened: The function declaration doesn't match the expected format.\n\
+                    ➔ Correct Format: Ensure your function is declared like this:\n\
                         'pub fn functionName(arg1:type){{'\n\
-                        - 'pub': This keyword indicates that the function is public and can be accessed from other parts of the program.\n\
-                        - 'fn': This keyword signifies that you are declaring a function.\n\
-                        - 'functionName': Replace this with the name you want for your function.\n\
-                        - 'arg1:type': This is where you specify the argument name followed by its type.\n\
-                        - '{{': Don’t forget to open the function body with a curly brace!\n\n\
-                    ➔ Example: A valid declaration might look like:\n\
+                        - 'pub': Indicates the function is public.\n\
+                        - 'fn': Signifies that you're declaring a function.\n\
+                        - 'functionName': Replace this with your desired function name.\n\
+                        - 'arg1:type': Specify the argument name followed by its type.\n\
+                        - '{{': Open the function body with a curly brace!\n\
+                    ➔ Example: A valid declaration might be:\n\
                         'pub fn add(x:int){{'\n\
-                    This declares a public function named 'add' that takes one integer argument and opens its body.\n\n\
+                    This declares a public function named 'add' that takes one integer argument.\n\
                     ⚙ [Code: {}]",
                     index as i32, ln
                 ));
             }
             let (name, mut arg) = (pts[0].trim(), pts[1].trim_end_matches("){"));
+            if C_KEYWORDS.contains(&name) {
+                return Err(format!(
+                    "✘ Error:  Invalid Function Name Name '{}' at line '{}'\n\
+                    Oops! This name is a reserved C keyword. \n\
+                    ➔ Reason: Keywords have special meanings and cannot be used as variable names. \n\
+                    ➔ Suggested Action: Change the variable name to avoid conflicts. \n\
+                    ➔ Example: Instead of 'char', use 'char_var'.",
+                    name,index
+                ));
+            }
             functions.name = name.to_string();
             functions.is_global = true;
             if !arg.trim().is_empty() {
@@ -353,16 +384,10 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
             ));
         } else {
             return Err(format!(
-                "✘ Error: Unrecognized Line Format Detected\n\n\
-                Yikes! I found an unrecognized line format at line {}.\n\n\
-                ➔ What Happened: The line may not conform to the expected syntax for function declarations or code blocks. This can occur due to missing keywords, incorrect punctuation, or other syntax errors.\n\
-                ➔ Suggested Action: Please review the line carefully and ensure that it follows the proper syntax rules for function declarations or the body of your code. Common things to check include:\n\
-                    - Ensure the correct use of keywords like 'fn' for function declarations.\n\
-                    - Check that parentheses and curly braces are used properly.\n\
-                    - Make sure the structure of your function or statement matches what is expected.\n\n\
-                ➔ Here’s the specific line that caused the issue:\n\
-                ⚙ [Code: {}]\n\
-                Let’s fix that format and keep your code running smoothly!",
+                "✘ Error: Unrecognized Line Format at Line {}\n\
+                ➔ Issue: The line doesn't match the expected syntax for declarations or code blocks. Check for missing keywords or punctuation.\n\
+                ➔ Action: Review the line for proper syntax: use 'fn' for functions, ensure parentheses and braces are correct, and match the expected structure.\n\
+                ⚙ [Code: {}] Fix the format to keep your code running smoothly!",
                 index, ln
             ));
         }
@@ -370,14 +395,10 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
 
     if inf {
         return Err(format!(
-            "✘ Error: Open Function Body Detected\n\n\
-            Yikes! I found an open function body that is not properly closed.\n\n\
-            ➔ What Happened: It seems you have started a function but haven't provided a closing brace '}}'. This means the function is left open, which can lead to confusion and potential errors in your code.\n\
-            ➔ Suggested Action: Please check your code and ensure that every function you declare has a matching closing brace. Here are a few things to verify:\n\
-                - Make sure every '{{' has a corresponding '}}'.\n\
-                - If you’ve nested functions, ensure that each inner function is closed before closing the outer one.\n\
-                - It might help to use consistent indentation to easily spot where functions open and close.\n\n\
-            Let’s tidy up the function closures to keep your code clean and organized!"
+            "✘ Error: Open Function Body Detected\n\
+            ➔ Issue: An open function body lacks a closing brace '}}'. This can cause confusion and errors in your code.\n\
+            ➔ Action: Ensure every function has a matching closing brace. Verify that every '{{' has a corresponding '}}', and if functions are nested, close each inner function before the outer one. Consistent indentation can help track function boundaries.\n\
+            Let's tidy up the function closures for cleaner code!"
         ));
     }
 

@@ -13,13 +13,10 @@ pub fn process_input(ln: &str, vars: &[Tokens]) -> Result<Tokens, String> {
                     // Check if the variable is mutable
                     if !is_mutable {
                         return Err(format!(
-                            "✘ Error: Attempt to Modify Static Variable Detected\n\n\
-                            Oops! You’re trying to modify the static variable '{}'.\n\n\
-                            ➔ What Happened: Static variables are immutable by default, which means their values cannot be changed after they are initialized.\n\
-                            ➔ Suggested Action: If you need a variable that can change its value, consider using a mutable variable instead. You can declare a mutable variable using the following format:\n\
-                                ⚙ Example: Use 'may {} = <value>' to define a mutable variable.\n\
-                            Let’s correct this and use the appropriate variable type to avoid this error!",
-                            name, name
+                            "✘ Error: Attempt to Modify Static Variable Detected\n\
+                            ➔ Issue: You’re trying to modify the static variable '{}', which is immutable by default.\n\
+                            ➔ Action: To change a variable's value, use a mutable variable. Declare it like this: 'let mut {} = <value>'.\n\
+                            Let's correct this and use the appropriate variable type!",name,name
                         ));
                     }
 
@@ -30,8 +27,8 @@ pub fn process_input(ln: &str, vars: &[Tokens]) -> Result<Tokens, String> {
                         }
                         _ => {
                             return Err(format!(
-                                "✘ Error: Type Mismatch Detected\n\n\
-                                Oops! You expected a string for '{}', but instead received a {}.\n\n\
+                                "✘ Error: Type Mismatch Detected\n
+                                Oops! You expected a string for '{}', but instead received a {}.\n
                                 ➔ What Happened: The value you provided does not match the expected type. Here’s the breakdown:\n\
                                     - Expected Type: String\n\
                                     - Received Type: {}\n\
