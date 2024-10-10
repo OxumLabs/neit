@@ -48,7 +48,7 @@ pub fn comp_c(c_code: &String, proj: &str, target: &str, project_name: &str) {
             }
             Err(_) => {
                 eprintln!("✘ Uh-oh, I'm blocked! Can't create the C file. File permissions are pesky little things, huh?");
-                eprintln!("→ Hint: File permissions, check 'em out! 🔍");
+                eprintln!("→ Hint: File permissions, check 'em out!");
                 eprintln!("⚙ [Location: comp_c creating C file]");
                 exit(1);
             }
@@ -171,7 +171,7 @@ pub fn comp_c(c_code: &String, proj: &str, target: &str, project_name: &str) {
     match clang_status {
         Ok(status) if status.success() => {
             println!(
-                "ℹ Success! C code compiled for target '{}'. Output at: {:?}",
+                "ℹ Success! Neit code compiled for target '{}'. Output at: {:?}",
                 target, output_file
             );
         }

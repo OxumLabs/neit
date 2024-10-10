@@ -1,5 +1,1 @@
-pub fn hi(){
-    may z = 910
-    must y = z // 2
-    may x = y // 2
-}
+print("hello")

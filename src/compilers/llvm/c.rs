@@ -13,36 +13,10 @@ pub fn to_c(tokens: &Vec<Tokens>) -> String {
     let imports = String::from("#include <stdio.h>\n#include <string.h>\n");
     let mut main = String::new();
     let mut funs = String::new();
+    funs.push_str("int fdi(int a, int b);\n");
+    funs.push_str("double fdf(double a, double b);\n");
 
     // Add function definitions
-    if unsafe { UCMI } {
-        funs.push_str(
-            r#"int fdi(int a, int b) {
-    if (b == 0) {
-        return 0; // Error: Division by zero
-    }
-    int result = a / b;
-    if ((a % b != 0) && ((a < 0) != (b < 0))) {
-        result--;
-    }
-    return result;
-}
-"#,
-        );
-    }
-    if unsafe { UCMF } {
-        funs.push_str(r#"
-double fdf(double a, double b) {
-    if (b == 0.0) {
-        return 0.0; // Error: Division by zero in float
-    }
-    double result = a / b;
-    return (result > 0 && result != (int)result) ? (int)result : (result < 0 && result != (int)result) ? (int)result - 1 : result;
-}
-
-"#,
-    );
-    }
 
     let mut declared_vars: HashSet<String> = HashSet::new();
 
@@ -93,11 +67,41 @@ double fdf(double a, double b) {
         &non_function_tokens.iter().cloned().cloned().collect(),
         &mut declared_vars,
     );
+    //unsafe { println!("UCMI : {} | UCMF : {}", UCMI, UCMF) };
+    if unsafe { UCMI } {
+        funs.push_str(
+            r#"int fdi(int a, int b) {
+    if (b == 0) {
+        return 0; // Error: Division by zero
+    }
+    int result = a / b;
+    if ((a % b != 0) && ((a < 0) != (b < 0))) {
+        result--;
+    }
+    return result;
+}
+"#,
+        );
+    }
+    if unsafe { UCMF } {
+        funs.push_str(r#"
+double fdf(double a, double b) {
+    if (b == 0.0) {
+        return 0.0; // Error: Division by zero in float
+    }
+    double result = a / b;
+    return (result > 0 && result != (int)result) ? (int)result : (result < 0 && result != (int)result) ? (int)result - 1 : result;
+}
+
+"#,
+    );
+    }
 
     main.push_str("    return 0;\n}\n"); // Close main function
 
     // Combine all parts into final C code
     let mut c_code = imports;
+
     c_code.push_str(&funs);
     c_code.push_str(&main);
     c_code = cfmt(&c_code);

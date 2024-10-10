@@ -123,12 +123,45 @@ pub fn p_to_c(text: &str, _vars: &Vec<Tokens>) -> String {
     let mut var_name = String::new();
     let mut literal_text = String::new();
 
+    // Helper function to build nested calls
+    fn build_nested_calls(parts: Vec<&str>) -> String {
+        if parts.is_empty() {
+            return String::new();
+        }
+
+        let first_value = parts[0].trim();
+        let mut result = String::new();
+
+        // Check if first_value is valid for parsing
+        if let Ok(_) = first_value.parse::<f64>() {
+            result.push_str(&format!("fdf({}", first_value));
+            unsafe { UCMF = true };
+        } else {
+            result.push_str(&format!("fdi({}", first_value));
+            unsafe { UCMI = true };
+        }
+
+        // Recursively build nested calls for the remaining parts
+        for (i, &part) in parts[1..].iter().enumerate() {
+            // Check if this is the last part
+            if i == parts.len() - 2 {
+                result.push_str(&format!(", {}", part.trim()));
+                result.push(')'); // Close the initial fdf/fdi call
+                break; // Exit after adding the last part
+            } else {
+                // Create a nested call for this part
+                let nested_call = build_nested_calls(vec![part.trim()]);
+                result.push_str(&format!(", {}", nested_call));
+            }
+        }
+        result
+    }
+
     // Iterate over each character in the input text
     for c in text.chars() {
         if inside_var {
             if c == '|' {
                 inside_var = false; // End of variable
-                                    // Split on '~' to get variable name and format
                 let parts: Vec<&str> = var_name.split('~').collect();
                 if parts.len() == 2 {
                     let var = parts[0];
@@ -162,15 +195,13 @@ pub fn p_to_c(text: &str, _vars: &Vec<Tokens>) -> String {
             inside_var = false; // End of an expression
             if !var_name.is_empty() {
                 let expression = var_name.clone();
-                if expression.contains("/")
-                    || expression.contains("*")
-                    || expression.contains("+")
-                    || expression.contains("-")
-                {
-                    // It's an expression; add it directly without formatting
-                    literal_text.push_str(&expression);
+                if expression.contains("//") {
+                    // Split on "//" for nested function calls
+                    let pts: Vec<&str> = expression.split("//").collect();
+                    let nested_call = build_nested_calls(pts);
+                    literal_text.push_str(&nested_call);
                 } else {
-                    // It's a variable; we need to format it
+                    // Existing logic for handling single variables
                     let mut var_found = false;
                     for v in _vars.iter() {
                         if let Tokens::Var(v_type, n, _) = v {
@@ -220,17 +251,17 @@ pub fn p_to_c(text: &str, _vars: &Vec<Tokens>) -> String {
     }
 
     // Process collected variables for formatting
+    // Process collected variables for formatting
     for cv in collected_vars.iter_mut() {
         if cv.contains("//") {
             let pts: Vec<&str> = cv.split("//").collect();
-            let first_value = pts[0].trim();
-            if let Ok(_) = first_value.parse::<f64>() {
-                *cv = format!("fdf({}, {})", first_value, pts[1].trim());
-                unsafe { UCMF = true };
-            } else {
-                *cv = format!("fdi({}, {})", first_value, pts[1].trim());
-                unsafe { UCMI = true };
-            }
+            let nested_call = build_nested_calls(pts.clone());
+            let closing_parentheses_count = pts.len() - 1;
+            *cv = format!(
+                "{}{}",
+                nested_call,
+                ")".repeat(closing_parentheses_count - 1)
+            );
         }
     }
 
