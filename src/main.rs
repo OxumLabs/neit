@@ -79,11 +79,11 @@ fn main() {
             eprintln!(
                 "✘ Oops! It looks like the command '{}' is not valid—it's like trying to use a banana as a phone!\n\
                 ➔ Supported commands:\n\
-                - help: Need a hand?\n\
-                - target-list: What’s on the menu?\n\
-                - build: Let’s construct something awesome!\n\
-                - run: Time to get moving!\n\
-                - new: Ready for a fresh start?\n\
+                    - help: Need a hand?\n\
+                    - target-list: What’s on the menu?\n\
+                    - build: Let’s construct something awesome!\n\
+                    - run: Time to get moving!\n\
+                    - new: Ready for a fresh start?\n\
                 ➔ Let’s stick to these commands and keep the fun rolling!",
                 cmd
             );
@@ -112,9 +112,14 @@ fn build_project(proj: &str) {
         Ok(content) => content,
         Err(e) => {
             eprintln!(
-                "✘ Uh-oh! I tried to read the 'project.conf' file at '{}' but it seems to be missing!\n\
-                ➔ Error: {}\n\
-                Let’s find out what’s going on—maybe it’s just hiding?",
+                "✘ Error: Missing Configuration File\n\n\
+                Uh-oh! I attempted to read the 'project.conf' file at '{}' but it appears to be missing or inaccessible.\n\n\
+                ➔ Detailed Error: {}\n\n\
+                Here's what you can do:\n\
+                1. Check if the file exists at the specified path.\n\
+                2. Ensure you have the necessary permissions to access the file.\n\
+                3. If the file was moved or deleted, consider restoring it from a backup.\n\n\
+                Let’s figure this out together—maybe it’s just hiding!",
                 proj, e
             );
 
@@ -147,9 +152,15 @@ fn build_project(proj: &str) {
     // Ensure the project name is found
     if project_name.is_empty() {
         eprintln!(
-            "✘ Uh-oh! It seems like I couldn’t find a project name in 'project.conf'—it’s like looking for a needle in a haystack!\n\
-            ➔ Let’s make sure you’ve got a name in there so we can get this party started!"
+            "✘ Error: Missing Project Name in Configuration\n\n\
+            Uh-oh! I couldn't find a project name in 'project.conf'. It's like looking for a needle in a haystack!\n\n\
+            ➔ Here's what you can do:\n\
+            1. Open the 'project.conf' file and ensure that a project name is specified.\n\
+            2. The project name should be clearly defined—check for any typos or formatting issues.\n\
+            3. If the file is empty, consider adding a project name to get things rolling.\n\n\
+            Let’s make sure you’ve got a name in there so we can get this party started!"
         );
+
         exit(1);
     }
 
@@ -158,11 +169,16 @@ fn build_project(proj: &str) {
         Ok(content) => content,
         Err(e) => {
             eprintln!(
-                "✘ Uh-oh! I tried to read the 'main.nsc' file at '{}' but it seems to be missing!\n\
-                ➔ Error: {}\n\
-                Let’s track it down and see what’s going on—maybe it needs a map!",
-                proj, e
+                "✘ Error: Missing 'main.nsc' File\n\n\
+                Uh-oh! I attempted to read the 'main.nsc' file at '{}' but it appears to be missing or inaccessible.\n\n\
+                ➔ Detailed Error: {}\n\n\
+                Here's how to troubleshoot:\n\
+                1. Check if the 'main.nsc' file exists at the specified path.\n\
+                2. Ensure that you have the necessary permissions to access this file.\n\
+                3. If the file has been moved or deleted, consider restoring it from a backup or recreating it.\n\n\
+                Let’s track it down and see what’s going on—maybe it just needs a map!",main_file_path,e
             );
+
             exit(1);
         }
     };
@@ -229,11 +245,16 @@ fn run_project(proj: &str) {
         Ok(content) => content,
         Err(e) => {
             eprintln!(
-                "✘ Uh-oh! I tried to read the 'main.nsc' file at '{}' but it seems to be missing!\n\
-                ➔ Error: {}\n\
-                Let’s track it down and see what’s going on—maybe it needs a map!",
-                proj, e
+                "✘ Error: 'main.nsc' File Not Found\n\n\
+                Uh-oh! I tried to read the 'main.nsc' file at '{}' but it appears to be missing.\n\n\
+                ➔ Detailed Error: {}\n\n\
+                Here are some steps to help you troubleshoot:\n\
+                1. Verify that the 'main.nsc' file exists at the specified path.\n\
+                2. Check your file permissions to ensure you can access it.\n\
+                3. If the file was moved or deleted, you might need to restore it from a backup or create a new one.\n\n\
+                Let’s track it down and see what’s going on—maybe it just needs a map!",mf,e
             );
+
             exit(1);
         }
     };
@@ -284,9 +305,18 @@ fn run_project(proj: &str) {
                 "linux" => format!("{}/_.out", proj),
                 _ => {
                     eprintln!(
-                        "✘ Oops! I can't seem to figure out what operating system we're on—it's like trying to find a unicorn in a haystack!\n\
-                        ➔ If you could use Windows, macOS, or Linux, that would be super helpful! Let’s get this sorted out!"
+                        "✘ Error: Unable to Determine Operating System\n\n\
+                        Oops! I can't seem to figure out what operating system we're on—it's like trying to find a unicorn in a haystack!\n\n\
+                        ➔ Please ensure you are using a supported operating system:\n\
+                            1. Windows\n\
+                            2. macOS\n\
+                            3. Linux\n\n\
+                        Here’s how you can help:\n\
+                            - Verify your operating system version and compatibility.\n\
+                            - If you are running an unsupported OS, consider switching to one of the supported systems.\n\n\
+                        Let’s get this sorted out so we can proceed smoothly!"
                     );
+
                     exit(1);
                 }
             };
@@ -304,9 +334,15 @@ fn run_project(proj: &str) {
                                 // If clang fails, fallback to gcc
                                 if !compile_with_gcc(&dtf, &outf) {
                                     eprintln!(
-                                        "✘ Oh no! Both clang and gcc failed to compile the C code.\n\
-                                        ➔ Let’s check for any errors in the code and try again!"
+                                        "✘ Error: Compilation Failed\n\n\
+                                        Oh no! Both clang and gcc failed to compile the C code.\n\n\
+                                        ➔ Here’s what you can do:\n\
+                                            1. Review the error messages from the compilation output for any clues.\n\
+                                            2. Check your C code for syntax errors or unsupported features.\n\
+                                            3. Ensure that all necessary libraries and headers are included.\n\n\
+                                        Let’s check for any errors in the code and try again!"
                                     );
+
                                     exit(1);
                                 }
                             }
@@ -319,19 +355,27 @@ fn run_project(proj: &str) {
                                 .unwrap();
                             if !status.success() {
                                 eprintln!(
-                                    "✘ Oh no! It seems that running the program failed.\n\
-                                    ➔ Let’s check the code and make sure everything is in order!"
+                                    "✘ Error: Program Execution Failed\n\n\
+                                    Oh no! It seems that running the program has failed.\n\n\
+                                    ➔ Here’s what you can do:\n\
+                                        1. Review the code for any logical errors or runtime exceptions.\n\
+                                        2. Ensure all necessary dependencies are correctly installed and configured.\n\
+                                        3. Check for any unhandled cases that might lead to a crash.\n\n\
+                                    Let’s check the code and make sure everything is in order!"
                                 );
+
                                 exit(1);
                             }
                         }
                         Err(e) => {
                             eprintln!(
-                                "✘ Uh-oh! I tried to write to the temporary C file but it seems to be having issues!\n\
+                                "✘ Error: Unable to Write to Temporary C File\n\n\
+                                Uh-oh! I tried to write to the temporary C file but it seems to be having issues!\n\n\
                                 ➔ Error: {}\n\
                                 Let’s check if there’s enough space or if something else is in the way!",
                                 e
                             );
+
                             exit(1);
                         }
                     }

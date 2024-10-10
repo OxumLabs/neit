@@ -13,9 +13,12 @@ pub fn process_input(ln: &str, vars: &[Tokens]) -> Result<Tokens, String> {
                     // Check if the variable is mutable
                     if !is_mutable {
                         return Err(format!(
-                            "✘ Error: Trying to modify the static variable '{}'.\n\
-                             → Note: Static variables are immutable by default.\n\
-                             ⚙ Suggestion: Use 'may {} = <value>' for mutable variables.",
+                            "✘ Error: Attempt to Modify Static Variable Detected\n\n\
+                            Oops! You’re trying to modify the static variable '{}'.\n\n\
+                            ➔ What Happened: Static variables are immutable by default, which means their values cannot be changed after they are initialized.\n\
+                            ➔ Suggested Action: If you need a variable that can change its value, consider using a mutable variable instead. You can declare a mutable variable using the following format:\n\
+                                ⚙ Example: Use 'may {} = <value>' to define a mutable variable.\n\
+                            Let’s correct this and use the appropriate variable type to avoid this error!",
                             name, name
                         ));
                     }
@@ -27,9 +30,22 @@ pub fn process_input(ln: &str, vars: &[Tokens]) -> Result<Tokens, String> {
                         }
                         _ => {
                             return Err(format!(
-                                "✘ Error: Expected a string for '{}', but received a {}.\n\
-                                 ⚙ Note: Make sure the type is correct.",
+                                "✘ Error: Type Mismatch Detected\n\n\
+                                Oops! You expected a string for '{}', but instead received a {}.\n\n\
+                                ➔ What Happened: The value you provided does not match the expected type. Here’s the breakdown:\n\
+                                    - Expected Type: String\n\
+                                    - Received Type: {}\n\
+                                ⚙ Suggested Action: Please ensure that the variable is a string. If you intended to provide a different type, here are some tips:\n\
+                                    - For an integer, make sure it’s a whole number (e.g., 5).\n\
+                                    - For a float, ensure it includes a decimal point (e.g., 3.14).\n\
+                                    - If you need a string, it should be wrapped in quotes (e.g., \"example\").\n\
+                                Let’s get the types sorted out to avoid this confusion!",
                                 name,
+                                match var_type {
+                                    Vars::INT(_) => "integer",
+                                    Vars::F(_) => "float",
+                                    _ => "unknown type",
+                                },
                                 match var_type {
                                     Vars::INT(_) => "integer",
                                     Vars::F(_) => "float",
@@ -46,8 +62,15 @@ pub fn process_input(ln: &str, vars: &[Tokens]) -> Result<Tokens, String> {
 
     // Return an error if the variable was not found
     Err(format!(
-        "✘ Error: Variable '{}' not found.\n\
-         → Note: Check if it was declared correctly.",
-        vrname
+        "✘ Error: Variable Not Found\n\n\
+        Oops! The variable '{}' could not be found in your code.\n\n\
+        ➔ What Happened: This usually means that the variable was not declared, or it may be misspelled.\n\
+        ➔ Suggested Action: Here are a few things you can check:\n\
+            - Ensure that the variable is declared before you try to use it. For example:\n\
+                ⚙ Example: 'may {} = value;'\n\
+            - Check for any spelling errors. Even a small typo can lead to this error!\n\
+            - Make sure that the variable is in the correct scope. If it’s declared inside a function, it won’t be accessible outside.\n\
+        Let’s make sure that all your variables are properly declared and accessible!",
+        vrname,vrname
     ))
 }

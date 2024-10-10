@@ -132,11 +132,13 @@ pub fn parse_single_line(
 
         if provided_args.len() != expected_args.len() {
             return Err(format!(
-                "✘ Uh-oh at line {}! It seems the function '{}' was called with the wrong number of arguments!\n\
-                → Reason: I expected {} arguments, but you only gave me {}!\n\
-                →→ Hint: Let’s make sure they match up!\n\
+                "✘ Error: Incorrect Number of Arguments for Function Call\n\n\
+                Uh-oh at line {}! It seems the function '{}' was called with the wrong number of arguments!\n\n\
+                ➔ Reason: I expected {} arguments, but you only provided {}.\n\
+                ➔ Suggested Action: Ensure that the number of arguments you pass matches what the function expects.\n\
+                ➔ Hint: Check the function definition to see how many arguments it requires and adjust your call accordingly.\n\n\
                 Code:\n   => {}\n\
-                Remember, every function loves to have its correct number of arguments—let's keep it happy!",
+                Remember, every function loves to receive the correct number of arguments—let's keep it happy!",
                 line_number,
                 nm,
                 expected_args.len(),
@@ -150,11 +152,17 @@ pub fn parse_single_line(
                 Ok(t) => t,
                 Err(e) => {
                     return Err(format!(
-                        "🚨 Uh-oh! At line {}, I couldn't make sense of the argument '{}'—it just doesn’t compute!\n\
-                        {} \n\
-                        →→ Hint: Double-check that your arguments are of the right type—let’s keep everything in harmony!\n\
+                        "✘ Error: Invalid Argument at Line {}\n\n\
+                        Uh-oh! At line {}, I couldn't make sense of the argument '{}'. It just doesn’t compute!\n\n\
+                        ➔ Reason: {} \n\
+                        ➔ Suggested Action: Make sure that your arguments match the expected types for this function. \n\
+                        ➔ Hint: Double-check that you're passing the right type of data—whether it’s an integer, string, or float. Let’s keep everything in harmony!\n\n\
                         Code:\n   => {}",
-                        line_number, provided, e, line
+                        line_number,
+                        line_number,
+                        provided,
+                        e,
+                        line
                     ));
                 }
             };
@@ -168,11 +176,17 @@ pub fn parse_single_line(
 
             if provided_type != expected_type {
                 return Err(format!(
-                    "✘ Whoopsie! At line {}, there’s a mix-up with the argument in the function call '{}'.\n\
-                    → Reason: I was expecting a '{}' but got a '{}' instead!\n\
-                    →→ Hint: Let’s get our types in sync!\n\
+                    "✘ Error: Argument Type Mismatch at Line {}\n\n\
+                    Whoopsie! At line {}, there’s a mix-up with the argument in the function call '{}'.\n\n\
+                    ➔ Reason: I was expecting a '{}' type, but instead, I received a '{}' type!\n\
+                    ➔ Suggested Action: Let’s ensure that the argument you provide matches the expected type. Double-check that your function call has the correct data type!\n\n\
                     Code:\n   => {}",
-                    line_number, nm, expected_type, provided_type, line
+                    line_number,
+                    line_number,
+                    nm,
+                    expected_type,
+                    provided_type,
+                    line
                 ));
             }
         }
@@ -181,11 +195,14 @@ pub fn parse_single_line(
     }
 
     Err(format!(
-        "✘ Yikes! At line {}, I couldn’t parse the provided line—it’s a bit jumbled!\n\
-        → Reason: Let’s make sure the code syntax is spot on!\n\
-        →→ Hint: Remember, a clean code line is a happy code line! Let’s tidy it up!\n\
+        "✘ Error: Unable to Parse at Line {}\n\n\
+        Yikes! At line {}, I couldn’t parse the provided line—it’s a bit jumbled!\n\n\
+        ➔ Reason: The syntax of your code might not be correct. Let's ensure it follows the expected format!\n\
+        ➔ Suggested Action: A clean code line is a happy code line! Take a moment to review your syntax and make sure all components are in order.\n\n\
         Code:\n   => {}",
-        line_number, line
+        line_number,
+        line_number,
+        line
     ))
 }
 

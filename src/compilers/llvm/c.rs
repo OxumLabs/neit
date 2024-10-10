@@ -129,7 +129,14 @@ fn process(
                     // Split condition into the condition part and the code part
                     let pts: Vec<&str> = s.split(":").collect();
                     if pts.len() != 2 {
-                        eprintln!("Error! The Condition '{}' is invalid", s);
+                        eprintln!(
+                            "✘ Error: Invalid Condition Format\n\n\
+                            The condition '{}' is invalid. It should contain exactly one ':' character.\n\n\
+                            ➔ Ensure the condition follows the format 'key:value'.\n\
+                            ➔ Check for any extra colons or missing values on either side.\n\
+                            ➔ Review the input and try again!"
+                            , s
+                        );
                         continue;
                     }
 

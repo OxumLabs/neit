@@ -41,7 +41,10 @@ pub fn comp_c(c_code: &String, proj: &str, target: &str, project_name: &str) {
                     eprintln!("⚙ [Location: comp_c while writing C code to the file]");
                     exit(1);
                 }
-                println!("ℹ Boom! Your C file is ready at: {:?}", output_file);
+                println!(
+                    "ℹ Boom! Your Neit has pukeed out C file which is ready at: {:?}",
+                    output_file
+                );
             }
             Err(_) => {
                 eprintln!("✘ Uh-oh, I'm blocked! Can't create the C file. File permissions are pesky little things, huh?");
@@ -202,7 +205,7 @@ pub fn comp_c(c_code: &String, proj: &str, target: &str, project_name: &str) {
             match gcc_status {
                 Ok(status) if status.success() => {
                     println!(
-                        "ℹ Success! C code compiled for target '{}' using GCC. Output at: {:?}",
+                        "ℹ Success! Neit code compiled for target '{}' using GCC. Output at: {:?}",
                         target, output_file
                     );
                 }
