@@ -1,25 +1,5 @@
-may name = ""
-println("Hello and welcome to OxumLabs!")
-print("username > ")
-takein(name)
-println("name is {name}")
-if{
-    strcmp(name, "buj")== 0 : admin
-    strcmp(name, "bilal")== 0 : admin
-    strcmp(name, "buj")==0 : admin
-    strcmp(name, "joy")==0 : admin
-    last : wtv
+pub fn hi(){
+    may z = 910
+    must y = z // 2
+    may x = y // 2
 }
-
-case admin{
-    println("Hello  {name} , shall I fetch the Neit Git repository?")
-}
-
-case wtv{
-    println("Hello {name}, shall I download and run Neit?")
-}
-case wtvv{
-    println("Heello {name}, shall I download and run Neit?")
-}
-
-println("Thank you for using OxumLabs!")

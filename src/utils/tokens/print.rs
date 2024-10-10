@@ -1,8 +1,11 @@
 use std::process::exit;
 
-use crate::utils::{
-    maths::evaluate_expression,
-    types::{Tokens, Vars},
+use crate::{
+    utils::{
+        maths::evaluate_expression,
+        types::{Tokens, Vars},
+    },
+    UCMF, UCMI,
 };
 
 pub fn process_print(num: &mut i32, text: &str, vars: &Vec<Tokens>) -> Tokens {
@@ -223,8 +226,10 @@ pub fn p_to_c(text: &str, _vars: &Vec<Tokens>) -> String {
             let first_value = pts[0].trim();
             if let Ok(_) = first_value.parse::<f64>() {
                 *cv = format!("fdf({}, {})", first_value, pts[1].trim());
+                unsafe { UCMF = true };
             } else {
                 *cv = format!("fdi({}, {})", first_value, pts[1].trim());
+                unsafe { UCMI = true };
             }
         }
     }

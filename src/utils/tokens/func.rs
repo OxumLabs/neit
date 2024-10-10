@@ -1,6 +1,7 @@
 use crate::utils::{
     case::process_case,
     ftokens::parse_single_line,
+    tokens::var::C_KEYWORDS,
     types::{fvars, Args, Tokens, FN},
 };
 
@@ -293,6 +294,18 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
                 ));
             }
             let (name, mut arg) = (pts[0].trim(), pts[1].trim_end_matches("){"));
+            if C_KEYWORDS.contains(&name) {
+                return Err(format!(
+                    "✘ Error: Invalid Variable Name\n\n\
+                    Oh no! I see an invalid variable name: '{}'.\n\n\
+                    ➔ What Happened: The name you chose for your variable is a reserved C keyword. These keywords have special meanings in the language and cannot be used as variable names.\n\
+                    ➔ Suggested Action: To fix this, try modifying the variable name to avoid using any C keywords.\n\
+                    ➔ Hint: A good practice is to add a letter, number, or underscore ('_') to make it unique.\n\n\
+                    ➔ Example: Instead of using a keyword like 'char', consider naming it 'char_variable = 42'.\n\n\
+                    Let's ensure our variable names are unique and valid to keep your code error-free!"
+                , name
+                ));
+            }
             functions.name = name.to_string();
             functions.is_global = true;
             if !arg.trim().is_empty() {

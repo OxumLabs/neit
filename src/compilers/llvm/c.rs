@@ -1,6 +1,9 @@
-use crate::utils::{
-    tokens::print::p_to_c,
-    types::{Args, Tokens, Vars},
+use crate::{
+    utils::{
+        tokens::print::p_to_c,
+        types::{Args, Tokens, Vars},
+    },
+    UCMF, UCMI,
 };
 use std::{collections::HashSet, process::exit};
 
@@ -12,8 +15,9 @@ pub fn to_c(tokens: &Vec<Tokens>) -> String {
     let mut funs = String::new();
 
     // Add function definitions
-    funs.push_str(
-        r#"int fdi(int a, int b) {
+    if unsafe { UCMI } {
+        funs.push_str(
+            r#"int fdi(int a, int b) {
     if (b == 0) {
         return 0; // Error: Division by zero
     }
@@ -23,7 +27,11 @@ pub fn to_c(tokens: &Vec<Tokens>) -> String {
     }
     return result;
 }
-
+"#,
+        );
+    }
+    if unsafe { UCMF } {
+        funs.push_str(r#"
 double fdf(double a, double b) {
     if (b == 0.0) {
         return 0.0; // Error: Division by zero in float
@@ -34,6 +42,7 @@ double fdf(double a, double b) {
 
 "#,
     );
+    }
 
     let mut declared_vars: HashSet<String> = HashSet::new();
 
@@ -47,6 +56,7 @@ double fdf(double a, double b) {
                     Args::Str(name) => name.clone(),
                     Args::Int(name) => name.clone(),
                     Args::Float(name) => name.clone(),
+                    Args::EMP(e) => e.to_string(),
                     _ => unreachable!(
                         "✘ Error: Unsupported argument type. ⚙ Location: to_c make_args"
                     ),

@@ -6,6 +6,9 @@ use std::{
     process::{exit, Command, Stdio},
 };
 
+pub static mut UCMF: bool = false;
+pub static mut UCMI: bool = false;
+
 pub mod cli;
 pub mod compilers;
 pub mod ntune;
@@ -74,6 +77,7 @@ fn main() {
         "run" => run_project(proj),
         "new" => create_new_project(proj),
         "help" => display_help(),
+        "cli" => cli(),
         "target-list" => display_target_list(),
         _ => {
             eprintln!(
@@ -204,6 +208,7 @@ fn build_project(proj: &str) {
                     asm_code = to_c(&tokens); // Handle unsupported targets
                 } else {
                     if target == "win_asm" {
+                        println!("WARNING! :- Windows Assembly Don't seem to do anything right now I really don't know why , ask the creator...");
                         asm_code = genasm_win(&tokens); // Generate Windows ASM
                         println!("\n\nWindows ASM :\n{}\n\n", asm_code);
                     } else {
