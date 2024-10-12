@@ -6,7 +6,7 @@ use super::{
 };
 
 #[allow(unused, irrefutable_let_patterns)]
-pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<Tokens>, String> {
+pub fn gentoken(code: Vec<String>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<Tokens>, String> {
     let mut index: i64 = 0;
     let mut tokens: Vec<Tokens> = casetkns;
     let mut ct: Vec<Tokens> = Vec::new();
@@ -16,23 +16,25 @@ pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<
     let mut p_label = 0;
     let mut fp_label = 364;
     let mut incase = false;
-    let mut cbody: Vec<&str> = Vec::new();
+    let mut cbody: Vec<String> = Vec::new();
     let mut cname = String::new();
     let mut inif = false;
     let mut ifbody: Vec<String> = Vec::new();
 
-    for mut ln in code.clone() {
+    for (mut i, mut ln) in code.clone().iter().enumerate() {
         //println!("ln : {:?} | inif : {:?} | incase : {:?}", ln, inif, incase);
+        let mut ln = ln.as_str();
         ln = ln.trim(); // Trim whitespace from the line
         if let Some(pos) = ln.find('#') {
             ln = ln[..pos].trim(); // Remove comments
         }
         index += 1;
 
-        if ln.starts_with("if{") {
+        if ln.starts_with("if{") && !in_function {
             inif = true;
+            brace_depth += 1;
             continue;
-        } else if inif {
+        } else if inif && !in_function {
             if ln != "}" {
                 let pts: Vec<&str> = ln.split(":").collect();
                 if pts.len() != 2 && !ln.trim().is_empty() {
@@ -44,6 +46,7 @@ pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<
                         index, ln
                     ));
                 }
+                brace_depth -= 1;
 
                 //ifbody.push(ln.to_string());
             } else {
@@ -77,7 +80,7 @@ pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<
                 }
                 //println!("cbody : {:?}", cbody);
             } else {
-                cbody.push(ln);
+                cbody.push(ln.to_string());
             }
         }
 
@@ -119,9 +122,29 @@ pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<
             }
         } else if in_function {
             function_body.push(ln);
+            println!("\nadding ln to func : \n{}", ln);
+            println!("brace depth before : {}", brace_depth);
 
             brace_depth += ln.matches('{').count();
             brace_depth -= ln.matches('}').count();
+            println!("brace depth after : {}", brace_depth);
+            if brace_depth > 0 && (i + 1 >= code.len()) {
+                return Err(format!(
+                    "{} Error: Function has not been properly closed!\n\
+                    The function declaration is missing a closing brace.\n\
+                    What happened:\n\
+                    → At line {}, there is an unmatched opening brace '{{'. The function remains open and needs to be properly closed.\n\
+                    What to do:\n\
+                    1. Ensure that every opening brace '{{' has a corresponding closing brace '}}'.\n\
+                    2. Check the function body for completeness.\n\
+                    Code snippet causing the issue:\n\
+                    ----------------------------\n\
+                    {}\n\
+                    ----------------------------\n\
+                    Please fix the braces to ensure proper function closure!",
+                    "✘", i, code.join("\n")
+                ));
+            }
 
             if brace_depth == 0 {
                 let full_function_code = function_body.join("\n");

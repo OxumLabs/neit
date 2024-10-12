@@ -7,6 +7,7 @@ use crate::utils::{
 
 #[allow(unused)]
 pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, String> {
+    println!("ln : {}", ln);
     let mut functions = FN::new(
         "_NAME_".to_string(),
         false,
@@ -20,9 +21,13 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
     let mut lv: Vec<fvars> = Vec::new();
 
     let mut incase = false;
-    let mut cbody: Vec<&str> = Vec::new();
+    let mut cbody: Vec<String> = Vec::new();
     let mut cname = String::new();
     let mut brace_depth = 0;
+
+    let mut inif = false;
+    let mut ifbody: Vec<String> = Vec::new();
+
     // Helper function to parse arguments
     fn parse_arguments(
         arg_str: &str,
@@ -118,7 +123,32 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
 
     for ln in lines {
         let ln = ln.trim();
-        if incase {
+        println!("ln : {}", ln);
+        if ln.starts_with("if{") {
+            inif = true;
+            continue;
+        } else if inif {
+            if ln != "}" {
+                let pts: Vec<&str> = ln.split(":").collect();
+                if pts.len() != 2 && !ln.trim().is_empty() {
+                    return Err(format!(
+                        "Error at line '{}':\n\
+                        An 'if' statement must have 2 parts separated by ':'.\n\
+                        You provided: {}\n\
+                        Please fix this!",
+                        index, ln
+                    ));
+                }
+
+                ifbody.push(ln.to_string());
+            } else {
+                inif = false;
+                let iftkn = Tokens::Cond(ifbody.clone());
+
+                fnbody.push(iftkn);
+                continue;
+            }
+        } else if incase {
             brace_depth += ln.matches("{").count();
             brace_depth -= ln.matches("}").count();
             if brace_depth == 0 {
@@ -134,7 +164,7 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
                 // println!("cbody : {:?}", cbody);
             }
 
-            cbody.push(ln);
+            cbody.push(ln.to_owned());
         } else if ln.starts_with("case ") && ln.ends_with("{") {
             let cnamee = ln[5..].trim_end_matches("{");
             if !cname.chars().all(|c| c.is_alphabetic() || c == '_') {

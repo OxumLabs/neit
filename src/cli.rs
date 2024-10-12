@@ -30,7 +30,7 @@ pub fn cli() {
                     exit(0);
                 }
                 _ => {
-                    let olv = vec![cmd.trim()];
+                    let olv = vec![cmd.trim().to_string()];
                     let tkn = gentoken(olv, str_tkns.clone(), false);
                     match tkn {
                         Ok(tkn) => {

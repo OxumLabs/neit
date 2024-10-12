@@ -2,7 +2,7 @@ use super::{token::gentoken, types::Tokens};
 
 pub fn process_case(
     _ln: &str,
-    code: Vec<&str>,
+    code: Vec<String>,
     _index: &mut i64,
     ogtkns: &Vec<Tokens>,
     _fc: bool,

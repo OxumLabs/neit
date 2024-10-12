@@ -200,10 +200,14 @@ fn build_project(proj: &str) {
         updated_content = process_neit_file(&main_file_path, &usrgrm, &defgen);
     }
 
-    let code: Vec<&str> = updated_content.lines().collect();
+    let code: Vec<String> = updated_content
+        .lines()
+        .map(|line| line.to_owned())
+        .collect();
     match gentoken(code, Vec::new(), false) {
         Ok(tokens) => {
             // Create a channel to receive results from threads
+            println!("tokens : {:?}", tokens);
             let (tx, rx) = mpsc::channel();
             let mut handles = vec![];
 
@@ -330,7 +334,7 @@ fn run_project(proj: &str) {
         mc = nmc;
     }
 
-    let cds: Vec<&str> = mc.split("\n").collect();
+    let cds: Vec<String> = mc.lines().map(|s| s.to_owned()).collect();
     match gentoken(cds, Vec::new(), false) {
         Ok(tkns) => {
             let dtf = format!("{}/_.c", proj); // Temporary C file
