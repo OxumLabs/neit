@@ -30,29 +30,39 @@ pub fn comp_c(c_code: &String, proj: &str, target: &str, project_name: &str) {
         }
     };
 
+    // Collect messages for printing later
+    let mut messages = Vec::new();
+
     // Handle 'c' target first: just write the C code to the file and exit
     if target == "c" {
         match File::create(&output_file) {
             Ok(mut c_file) => {
                 let c_code = cfmt(c_code);
                 if let Err(_) = c_file.write_all(c_code.as_bytes()) {
-                    eprintln!("✘ Eeeek! I tried to write your C code but... it slipped through my fingers.");
-                    eprintln!("→ Hint: Double-check those file permissions before I try again!");
-                    eprintln!("⚙ [Location: comp_c while writing C code to the file]");
+                    messages.push("✘ Eeeek! I tried to write your C code but... it slipped through my fingers.".to_string());
+                    messages.push(
+                        "→ Hint: Double-check those file permissions before I try again!"
+                            .to_string(),
+                    );
+                    messages
+                        .push("⚙ [Location: comp_c while writing C code to the file]".to_string());
+                    print_messages(&messages);
                     exit(1);
                 }
-                println!(
+                messages.push(format!(
                     "ℹ Boom! Your Neit has pukeed out C file which is ready at: {:?}",
                     output_file
-                );
+                ));
             }
             Err(_) => {
-                eprintln!("✘ Uh-oh, I'm blocked! Can't create the C file. File permissions are pesky little things, huh?");
-                eprintln!("→ Hint: File permissions, check 'em out!");
-                eprintln!("⚙ [Location: comp_c creating C file]");
+                messages.push("✘ Uh-oh, I'm blocked! Can't create the C file. File permissions are pesky little things, huh?".to_string());
+                messages.push("→ Hint: File permissions, check 'em out!".to_string());
+                messages.push("⚙ [Location: comp_c creating C file]".to_string());
+                print_messages(&messages);
                 exit(1);
             }
         }
+        print_messages(&messages);
         return; // Exit after generating the C file
     }
 
@@ -63,16 +73,25 @@ pub fn comp_c(c_code: &String, proj: &str, target: &str, project_name: &str) {
     match File::create(&c_file_path) {
         Ok(mut c_file) => {
             if let Err(_) = c_file.write_all(c_code.as_bytes()) {
-                eprintln!("✘ Uh-oh! I tried to scribble your C code, but something's not right.");
-                eprintln!("→ Hint: Check if the temp file is allowed to be written on.");
-                eprintln!("⚙ [Location: comp_c writing to temp file]");
+                messages.push(
+                    "✘ Uh-oh! I tried to scribble your C code, but something's not right."
+                        .to_string(),
+                );
+                messages.push(
+                    "→ Hint: Check if the temp file is allowed to be written on.".to_string(),
+                );
+                messages.push("⚙ [Location: comp_c writing to temp file]".to_string());
+                print_messages(&messages);
                 exit(1);
             }
         }
         Err(_) => {
-            eprintln!("✘ Aha! Caught in a trap—can't even create the temporary C file.");
-            eprintln!("→ Hint: Permissions? Disk space?");
-            eprintln!("⚙ [Location: comp_c creating temp C file]");
+            messages.push(
+                "✘ Aha! Caught in a trap—can't even create the temporary C file.".to_string(),
+            );
+            messages.push("→ Hint: Permissions? Disk space?".to_string());
+            messages.push("⚙ [Location: comp_c creating temp C file]".to_string());
+            print_messages(&messages);
             exit(1);
         }
     }
@@ -170,55 +189,32 @@ pub fn comp_c(c_code: &String, proj: &str, target: &str, project_name: &str) {
     // Check if clang was successful
     match clang_status {
         Ok(status) if status.success() => {
-            println!(
+            messages.push(format!(
                 "ℹ Success! Neit code compiled for target '{}'. Output at: {:?}",
                 target, output_file
-            );
+            ));
         }
         Ok(_) => {
-            // If clang failed, try gcc
+            messages.push("✘ Oops! Clang failed to compile your code...".to_string());
+            messages.push("→ Hint: Check for errors above this message!".to_string());
+            messages.push("⚙ [Location: comp_c while running clang]".to_string());
+            print_messages(&messages);
+            exit(1);
         }
-        Err(_e) => {
-            eprintln!("✘ Clang compilation failed, trying GCC...");
-
-            // Define GCC arguments based on target
-            let gcc_args = if target == "llvm-ir" {
-                vec![
-                    c_file_path.to_str().unwrap(),
-                    "-S", // Output as assembly
-                    "-o",
-                    output_file.to_str().unwrap(),
-                ]
-            } else {
-                vec![
-                    c_file_path.to_str().unwrap(),
-                    "-o",
-                    output_file.to_str().unwrap(),
-                    "-O3", // Optimize for maximum speed
-                ]
-            };
-
-            // Execute gcc command
-            let gcc_status = Command::new("gcc").args(&gcc_args).status();
-
-            // Check if gcc was successful
-            match gcc_status {
-                Ok(status) if status.success() => {
-                    println!(
-                        "ℹ Success! Neit code compiled for target '{}' using GCC. Output at: {:?}",
-                        target, output_file
-                    );
-                }
-                Ok(_) => {
-                    eprintln!("✘ Both Clang and GCC failed to compile the C code.");
-                    exit(1);
-                }
-                Err(e) => {
-                    eprintln!("✘ An error occurred while executing GCC: {}", e);
-                    exit(1);
-                }
-            }
+        Err(e) => {
+            messages.push("✘ Whoops! Clang went missing...".to_string());
+            messages.push("→ Hint: Make sure it's installed and in your PATH!".to_string());
+            messages.push(format!("⚙ [Error: {:?}]", e));
+            print_messages(&messages);
+            exit(1);
         }
+    }
+
+    print_messages(&messages);
+}
+fn print_messages(messages: &[String]) {
+    for msg in messages {
+        println!("{}", msg);
     }
 }
 

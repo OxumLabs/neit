@@ -6,6 +6,9 @@ use std::{
     process::{exit, Command, Stdio},
 };
 
+use std::sync::mpsc;
+use std::thread;
+
 pub static mut UCMF: bool = false;
 pub static mut UCMI: bool = false;
 
@@ -180,7 +183,7 @@ fn build_project(proj: &str) {
                 1. Check if the 'main.nsc' file exists at the specified path.\n\
                 2. Ensure that you have the necessary permissions to access this file.\n\
                 3. If the file has been moved or deleted, consider restoring it from a backup or recreating it.\n\n\
-                Let’s track it down and see what’s going on—maybe it just needs a map!",main_file_path,e
+                Let’s track it down and see what’s going on—maybe it just needs a map!", main_file_path, e
             );
 
             exit(1);
@@ -200,31 +203,57 @@ fn build_project(proj: &str) {
     let code: Vec<&str> = updated_content.lines().collect();
     match gentoken(code, Vec::new(), false) {
         Ok(tokens) => {
-            // Process each build target
-            for target in build_targets {
-                // Generate assembly code based on the target
-                let mut asm_code = String::new();
-                if target != "win_asm" && target != "lin_asm" {
-                    asm_code = to_c(&tokens); // Handle unsupported targets
-                } else {
-                    if target == "win_asm" {
-                        println!("WARNING! :- Windows Assembly Don't seem to do anything right now I really don't know why , ask the creator...");
-                        asm_code = genasm_win(&tokens); // Generate Windows ASM
-                        println!("\n\nWindows ASM :\n{}\n\n", asm_code);
-                    } else {
-                        asm_code = genasm_lin(&tokens); // Generate Linux ASM
-                        println!("\n\nLinux ASM :\n{}\n\n", asm_code);
-                    }
-                }
+            // Create a channel to receive results from threads
+            let (tx, rx) = mpsc::channel();
+            let mut handles = vec![];
 
-                // Compile the generated assembly code, passing the project name
-                if target == "win_asm" {
-                    compile(&asm_code, proj, &target, &project_name);
-                } else if target == "lin_asm" {
-                    compile(&asm_code, proj, &target, &project_name);
-                } else {
-                    comp_c(&asm_code, proj, &target, &project_name);
-                }
+            // Process each build target in parallel
+            for target in build_targets {
+                let tokens_clone = tokens.clone(); // Clone tokens for thread safety
+                let proj_clone = proj.to_string();
+                let project_name_clone = project_name.clone();
+                let tx_clone: mpsc::Sender<&str> = tx.clone();
+
+                let handle = thread::spawn(move || {
+                    let mut asm_code = String::new();
+
+                    if target != "win_asm" && target != "lin_asm" {
+                        asm_code = to_c(&tokens_clone); // Handle unsupported targets
+                    } else {
+                        if target == "win_asm" {
+                            println!("WARNING! :- Windows Assembly Don't seem to do anything right now I really don't know why, ask the creator...");
+                            asm_code = genasm_win(&tokens_clone); // Generate Windows ASM
+                            println!("\n\nWindows ASM :\n{}\n\n", asm_code);
+                        } else {
+                            asm_code = genasm_lin(&tokens_clone); // Generate Linux ASM
+                            println!("\n\nLinux ASM :\n{}\n\n", asm_code);
+                        }
+                    }
+
+                    // Compile the generated assembly code, passing the project name
+                    if target == "win_asm" || target == "lin_asm" {
+                        compile(&asm_code, &proj_clone, &target, &project_name_clone);
+                    } else {
+                        comp_c(&asm_code, &proj_clone, &target, &project_name_clone);
+                    }
+
+                    // Send back the results (you can modify this to return more info)
+                    //tx_clone.send("").unwrap();
+                });
+
+                handles.push(handle);
+            }
+
+            // Drop the sender to close the channel after all threads are done
+            drop(tx);
+
+            // Wait for all threads to complete and handle results
+            for received in rx {
+                println!("{}", received);
+            }
+
+            for handle in handles {
+                handle.join().unwrap(); // Wait for each thread to finish
             }
         }
         Err(e) => {

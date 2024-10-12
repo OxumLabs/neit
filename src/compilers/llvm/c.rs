@@ -9,254 +9,172 @@ use std::{collections::HashSet, process::exit};
 
 use super::bc::cfmt;
 
-pub fn to_c(tokens: &Vec<Tokens>) -> String {
-    let imports = String::from("#include <stdio.h>\n#include <string.h>\n");
-    let mut main = String::new();
-    let mut funs = String::new();
+pub fn to_c(tokens: &[Tokens]) -> String {
+    let mut c_code = String::with_capacity(1024);
+    c_code.push_str("#include <stdio.h>\n#include <string.h>\n");
+    let mut funs = String::with_capacity(512);
     funs.push_str("int fdi(int a, int b);\n");
     funs.push_str("double fdf(double a, double b);\n");
 
-    // Add function definitions
-
     let mut declared_vars: HashSet<String> = HashSet::new();
 
-    // Handle function definitions
-    for i in tokens {
-        if let Tokens::Func(fun) = i {
-            let arg_vars: Vec<String> = fun
+    for token in tokens {
+        if let Tokens::Func(fun) = token {
+            let arg_vars: Vec<&String> = fun
                 .args
                 .iter()
                 .map(|arg| match arg {
-                    Args::Str(name) => name.clone(),
-                    Args::Int(name) => name.clone(),
-                    Args::Float(name) => name.clone(),
-                    Args::EMP(e) => e.to_string(),
-                    _ => unreachable!(
-                        "✘ Error: Unsupported argument type. ⚙ Location: to_c make_args"
-                    ),
+                    Args::Str(name) | Args::Int(name) | Args::Float(name) => name,
+                    Args::EMP(e) => e,
+                    _ => unreachable!(),
                 })
                 .collect();
 
-            // Generate C function header
-            let s = format!("void {}({}) {{\n", fun.name, make_args(&fun.args));
-            funs.push_str(&s);
-
-            // Process function code (function body)
+            funs.push_str(&format!("void {}({}) {{\n", fun.name, make_args(&fun.args)));
             process(&mut funs, &arg_vars, true, &fun.code, &mut declared_vars);
-
-            // Close the function definition
-            funs.push_str("\n}\n\n");
+            funs.push_str("}\n\n");
         }
     }
 
-    // Generate main function
-    main.push_str("int main() {\n");
-
-    let non_function_tokens: Vec<&Tokens> = tokens
+    c_code.push_str("int main() {\n");
+    let nft: Vec<Tokens> = tokens
         .iter()
         .filter(|token| !matches!(token, Tokens::Func(_)))
+        .cloned() // Clone the Tokens to get owned values
         .collect();
 
-    //println!("non func tkns:\n{:?}", non_function_tokens);
+    let non_function_tokens: &[Tokens] = &nft; // Now it's a slice of Tokens
 
-    // Process non-function tokens in global scope
     process(
-        &mut main,
+        &mut c_code,
         &[],
         false,
-        &non_function_tokens.iter().cloned().cloned().collect(),
+        non_function_tokens,
         &mut declared_vars,
     );
-    //unsafe { println!("UCMI : {} | UCMF : {}", UCMI, UCMF) };
+
     if unsafe { UCMI } {
-        funs.push_str(
-            r#"int fdi(int a, int b) {
-    if (b == 0) {
-        return 0; // Error: Division by zero
-    }
-    int result = a / b;
-    if ((a % b != 0) && ((a < 0) != (b < 0))) {
-        result--;
-    }
-    return result;
-}
-"#,
-        );
+        funs.push_str("int fdi(int a, int b) {\nif (b == 0) return 0;\nint result = a / b;\nif ((a % b != 0) && ((a < 0) != (b < 0))) result--;\nreturn result;\n}\n");
     }
     if unsafe { UCMF } {
-        funs.push_str(r#"
-double fdf(double a, double b) {
-    if (b == 0.0) {
-        return 0.0; // Error: Division by zero in float
-    }
-    double result = a / b;
-    return (result > 0 && result != (int)result) ? (int)result : (result < 0 && result != (int)result) ? (int)result - 1 : result;
-}
-
-"#,
-    );
+        funs.push_str("double fdf(double a, double b) {\nif (b == 0.0) return 0.0;\ndouble result = a / b;\nreturn (result > 0 && result != (int)result) ? (int)result : (result < 0 && result != (int)result) ? (int)result - 1 : result;\n}\n");
     }
 
-    main.push_str("    return 0;\n}\n"); // Close main function
-
-    // Combine all parts into final C code
-    let mut c_code = imports;
-
+    c_code.push_str("return 0;\n}\n");
     c_code.push_str(&funs);
-    c_code.push_str(&main);
     c_code = cfmt(&c_code);
     c_code
 }
 
 fn process(
     func: &mut String,
-    arg_vars: &[String],
-    iff: bool, // Add the iff parameter
-    tokens: &Vec<Tokens>,
+    arg_vars: &[&String],
+    iff: bool,
+    tokens: &[Tokens],
     declared_vars: &mut HashSet<String>,
 ) {
-    //let mut nli = 0;
     for token in tokens {
         match token {
-            Tokens::IFun(_name, _code) => {
-                // Only process Tokens::IFun if iff is true
-                if iff {
-                    let mut gcc = String::new();
-                    process(&mut gcc, arg_vars, false, _code, declared_vars);
-                    func.push_str(&gcc);
-                }
+            Tokens::IFun(_name, code) if iff => {
+                let mut gcc = String::new();
+                process(&mut gcc, arg_vars, false, code, declared_vars);
+                func.push_str(&gcc);
             }
             Tokens::Cond(conds) => {
                 let mut condc = String::new();
                 let mut else_block = String::new();
                 let mut last_condition_found = false;
 
-                let mut addc = String::new(); // To store the code for each condition
                 for (i, s) in conds.iter().enumerate() {
-                    addc.clear(); // Clear addc for each new condition
-
-                    // Skip empty conditions
                     if s.trim().is_empty() {
                         continue;
                     }
 
-                    // Split condition into the condition part and the code part
-                    let pts: Vec<&str> = s.split(":").collect();
+                    let pts: Vec<&str> = s.split(':').collect();
                     if pts.len() != 2 {
-                        eprintln!(
-                            "✘ Error: Invalid Condition Format\n\n\
-                            The condition '{}' is invalid. It should contain exactly one ':' character.\n\n\
-                            ➔ Ensure the condition follows the format 'key:value'.\n\
-                            ➔ Check for any extra colons or missing values on either side.\n\
-                            ➔ Review the input and try again!"
-                            , s
-                        );
+                        eprintln!("✘ Error: Invalid Condition Format");
                         continue;
                     }
 
-                    let cond = pts[0].trim(); // The condition part
-                    let code = pts[1].trim(); // The code part
+                    let cond = pts[0].trim();
+                    let code = pts[1].trim();
 
-                    // Check for the 'last' condition
                     if cond == "last" {
-                        //println!("in last condition");
                         if last_condition_found {
                             eprintln!("Error! Multiple 'last' conditions found.");
-                            exit(1); // Exit if multiple 'last' conditions are found
+                            exit(1);
                         }
                         last_condition_found = true;
 
-                        // Only process tokens related to this 'last' condition
                         for t in tokens {
-                            //println!("las cond token match : {:?}", t);
                             if let Tokens::IFun(n, c) = t {
                                 if n == code {
-                                    //println!("\ntoken matched last cond : {:?}", t);
-                                    // Clear addc before processing to avoid carrying code from other conditions
-                                    addc.clear();
+                                    let mut addc = String::new();
                                     process(&mut addc, arg_vars, true, c, declared_vars);
-                                    // Store the code for the 'last' condition in the else block
-                                    else_block.push_str(&format!("    {}\n", addc));
+                                    else_block.push_str(&format!("{}\n", addc));
                                 }
                             }
                         }
-                        continue; // Skip the rest of the processing for 'last'
+                        continue;
                     }
 
-                    // For the first condition, use 'if', otherwise 'else if'
-                    if i == 0 {
-                        condc.push_str(&format!("if ({}) {{\n", cond));
-                    } else {
-                        condc.push_str(&format!("else if ({}) {{\n", cond));
-                    }
+                    condc.push_str(&format!(
+                        "{}if ({}) {{\n",
+                        if i == 0 { "" } else { "else " },
+                        cond
+                    ));
 
-                    // Process the tokens for the current condition
                     for t in tokens {
                         if let Tokens::IFun(n, c) = t {
                             if n == code {
-                                addc.clear(); // Clear addc before processing the current condition
+                                let mut addc = String::new();
                                 process(&mut addc, arg_vars, true, c, declared_vars);
                                 condc.push_str(&addc);
                             }
                         }
                     }
-
-                    condc.push_str("}\n"); // Close the condition block
+                    condc.push_str("}\n");
                 }
 
-                // If a 'last' condition was found, append the else block
                 if last_condition_found {
                     condc.push_str("else {\n");
                     condc.push_str(&else_block);
                     condc.push_str("}\n");
                 }
-
-                // Finalize the generated code
                 func.push_str(&condc);
             }
 
-            Tokens::Print(v, _n) => {
-                let pc = p_to_c(v, tokens);
-                func.push_str(format!("    printf({});\n", pc).as_str());
+            Tokens::Print(v, _) => {
+                let pc = p_to_c(v, &tokens.to_vec());
+                func.push_str(&format!("printf({});\n", pc));
             }
             Tokens::In(vnm) => {
-                func.push_str(&format!("fgets({}, sizeof({}) - 1, stdin);\n", vnm, vnm));
-                func.push_str(&format!(
-                    "for (int i = 0; {}[i] != '\\0'; i++) {{\nif ({}[i] == '\\n') {}[i] = '\\0';\n}}\n",
-                    vnm, vnm, vnm
-                ));
+                func.push_str(&format!("fgets({}, sizeof({}) - 1, stdin);\nsize_t len = strcspn({}, \"\\n\");\n{}[len] = '\\0';\n", vnm, vnm, vnm, vnm));
             }
 
             Tokens::FnCall(fc, args) => {
-                func.push_str(&format!("    {}({});\n", fc, args.join(",")));
+                func.push_str(&format!("{}({});\n", fc, args.join(",")));
             }
             Tokens::Var(v, n, mutable) => {
-                if arg_vars.contains(n) || declared_vars.contains(n) {
+                if arg_vars.contains(&n) || declared_vars.contains(n) {
                     continue;
                 }
 
                 declared_vars.insert(n.clone());
-
-                let var_declaration = if *mutable {
-                    match v {
-                        Vars::STR(s) => format!("char {}[{}] = \"{}\";\n", n, n.len() + 333, s),
-                        Vars::INT(s) => format!("int {} = {};\n", n, s),
-                        Vars::F(f) => format!("double {} = {};\n", n, f),
-                        _ => unreachable!("✘ Error: Unsupported variable type."),
-                    }
-                } else {
-                    match v {
-                        Vars::STR(s) => format!("const char *{} = \"{}\";\n", n, s),
-                        Vars::INT(s) => format!("const int {} = {};\n", n, s),
-                        Vars::F(f) => format!("const double {} = {};\n", n, f),
-                        _ => unreachable!("✘ Error: Unsupported variable type."),
-                    }
+                let var_declaration = match (v, *mutable) {
+                    (Vars::STR(s), true) => format!("char {}[{}] = \"{}\";\n", n, n.len() + 333, s),
+                    (Vars::INT(s), true) => format!("int {} = {};\n", n, s),
+                    (Vars::F(f), true) => format!("double {} = {};\n", n, f),
+                    (Vars::STR(s), false) => format!("const char *{} = \"{}\";\n", n, s),
+                    (Vars::INT(s), false) => format!("const int {} = {};\n", n, s),
+                    (Vars::F(f), false) => format!("const double {} = {};\n", n, f),
+                    _ => unreachable!("✘ Error: Unsupported variable type."),
                 };
 
                 func.push_str(&var_declaration);
             }
             Tokens::Revar(n, v) => {
-                func.push_str(format!("{} = {};\n", n, v).as_str());
+                func.push_str(&format!("{} = {};\n", n, v));
             }
             _ => {}
         }
@@ -264,7 +182,7 @@ fn process(
 }
 
 fn make_args(args: &[Args]) -> String {
-    let mut farg = String::new();
+    let mut farg = String::with_capacity(256);
     for (i, arg) in args.iter().enumerate() {
         match arg {
             Args::Str(name) => farg.push_str(&format!("char *{}", name)),

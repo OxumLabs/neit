@@ -1,0 +1,13 @@
+may name = ""
+print("> ")
+takein(name)
+if{
+    strcmp(name,"joy") == 0 : admin
+    last : wtv
+}
+case admin{
+    println("hello {name} sir!")
+}
+case wtv{
+    println("so we meet again , {name}")
+}

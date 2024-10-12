@@ -45,10 +45,10 @@ pub fn gentoken(code: Vec<&str>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<
                     ));
                 }
 
-                ifbody.push(ln.to_string());
+                //ifbody.push(ln.to_string());
             } else {
                 inif = false;
-                println!("ifbod : \n{:?}", ifbody);
+                //println!("ifbod : \n{:?}", ifbody);
                 let iftkn = Tokens::Cond(ifbody.clone());
                 if fc {
                     ct.push(iftkn);
