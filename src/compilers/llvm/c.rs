@@ -13,8 +13,8 @@ pub fn to_c(tokens: &[Tokens]) -> String {
     let mut c_code = String::with_capacity(1024);
     c_code.push_str("#include <stdio.h>\n#include <string.h>\n");
     let mut funs = String::with_capacity(512);
-    funs.push_str("int fdi(int a, int b);\n");
-    funs.push_str("double fdf(double a, double b);\n");
+    c_code.push_str("int fdi(int a, int b);\n");
+    c_code.push_str("double fdf(double a, double b);\n");
 
     let mut declared_vars: HashSet<String> = HashSet::new();
 

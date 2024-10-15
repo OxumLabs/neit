@@ -1,6 +1,9 @@
-use crate::utils::case::process_case;
+use std::process::exit;
+
+use crate::utils::{case::process_case, cond_evaluator::ctoc};
 
 use super::{
+    cond_evaluator::eval_cond,
     tokens::{func::process_func, input::process_input, print::process_print, var::process_var},
     types::{Args, Tokens, Vars},
 };
@@ -20,6 +23,7 @@ pub fn gentoken(code: Vec<String>, casetkns: Vec<Tokens>, fc: bool) -> Result<Ve
     let mut cname = String::new();
     let mut inif = false;
     let mut ifbody: Vec<String> = Vec::new();
+    let mut lastfnd = false;
 
     for (mut i, mut ln) in code.clone().iter().enumerate() {
         //println!("ln : {:?} | inif : {:?} | incase : {:?}", ln, inif, incase);
@@ -45,6 +49,33 @@ pub fn gentoken(code: Vec<String>, casetkns: Vec<Tokens>, fc: bool) -> Result<Ve
                         Please fix this!",
                         index, ln
                     ));
+                }
+                let cond = pts[0];
+                if cond != "last" {
+                    let a = eval_cond(cond, &tokens);
+                    match a {
+                        Ok(k) => {
+                            println!("cond : {}", k);
+                            match ctoc(&k, &tokens){
+                                Ok(cc) => {
+                                    println!("cc -> {}",cc);
+                                    ifbody.push(format!("{}:{}", cc, pts[1]));
+
+                                }
+                                Err(e) => return Err(format!("{}",e)),
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!("error at line {}\n{}", index,e);
+                            exit(1);
+                        }
+                    }
+                } else {
+                    if lastfnd != true {
+                        ifbody.push(format!("{}:{}", cond, pts[1]));
+                    } else {
+                        return Err(format!("Last condition already evaluated!"));
+                    }
                 }
                 brace_depth -= 1;
 

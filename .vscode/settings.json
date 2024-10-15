@@ -1,4 +1,7 @@
 {
     "window.title": "${dirty}${activeFolderMedium}${activeEditorShort}",
-    "accessibility.hideAccessibleView": false
+    "accessibility.hideAccessibleView": false,
+    "workbench.activityBar.iconClickBehavior": "focus",
+    "workbench.activityBar.location": "default",
+    "workbench.iconTheme": "eq-material-theme-icons-darker"
 }

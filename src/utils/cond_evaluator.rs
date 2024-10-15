@@ -1,107 +1,198 @@
-use super::types::{Tokens, Vars}; // Keep this if Vars is used, otherwise remove it.
+use super::types::{Tokens, Vars};
 
 pub fn eval_cond(cond: &str, vars: &[Tokens]) -> Result<String, String> {
-    let mut curwrd = String::new(); // Collects the current word being parsed
-    let mut result = String::new(); // Placeholder result
-    let mut chars = cond.chars().enumerate().peekable(); // Peekable iterator to check next character
-    let mut current_type: Option<String> = None; // Track the current type for consistency
+    let mut curwrd = String::new();
+    let mut result = String::new();
+    let binding = cond.replace(" ", "");
+    let mut chars = binding.chars().enumerate().peekable();
+    let mut current_type: Option<String> = None;
+    let _operators = ["!=", "==", ">=", "<=", ">", "<"];
 
-    // Define the valid condition operators
-    let operators = ["!=", "==", ">=", "=<", "<=", "=>", "="];
-
-    // Iterate through characters
-    while let Some((_i, c)) = chars.next() {
-        let nxtc = chars.peek().map(|(_, next_c)| *next_c); // Peek next character
+    while let Some((i, c)) = chars.next() {
+        let nxtc = chars.peek().map(|(_, next_c)| *next_c);
 
         match c {
-            // If we find a space or an operator, we check the current word
-            ' ' | '!' | '=' | '>' | '<' => {
-                // Evaluate the current word before handling the operator
+            '!' | '=' | '>' | '<' => {
                 if !curwrd.is_empty() {
                     if let Some(var_type) = check_word_type(&curwrd, vars) {
                         if let Some(ref cur_type) = current_type {
-                            // Ensure type consistency or perform promotion
                             if !is_type_compatible(cur_type, &var_type) {
                                 return Err(format!(
-                                    "Type mismatch: '{}' is not compatible with '{}'",
-                                    cur_type, var_type
+                                    "Type mismatch at index {}: expected type '{}', found type '{}'",
+                                    i, cur_type, var_type
                                 ));
                             }
                         } else {
-                            // Set the initial type for further checks
                             current_type = Some(var_type.clone());
                         }
-
-                        // Append the valid word to the result
                         result.push_str(&curwrd);
                     } else {
-                        return Err(format!("Invalid word: {}", curwrd));
+                        return Err(format!("Invalid word at index {}: '{}'", i, curwrd));
                     }
                 }
-                curwrd.clear(); // Reset the current word
+                curwrd.clear();
 
-                // Handle operators (checking if it's a valid one)
                 if let Some(op) = nxtc {
                     let mut operator = c.to_string();
                     operator.push(op);
 
-                    if operators.contains(&operator.as_str()) {
-                        chars.next(); // Consume the second part of the operator
-                        result.push_str(&operator); // Add the operator to the result
-                    } else {
-                        result.push(c); // If it's just one part, add it directly
+                    match operator.as_str() {
+                        "!=" | "==" | ">=" | "<=" => {
+                            chars.next();
+                            result.push_str(&operator);
+                        }
+                        "=<" | "=>" | "=!" | "===" => {
+                            return Err(format!(
+                                "Invalid operator at index {}: '{}'. Did you mean '{}'?",
+                                i, operator, correct_operator(&operator)
+                            ));
+                        }
+                        "><" => {
+                            return Err(format!(
+                                "Invalid operator at index {}: '{}'. Did you mean '!='?",
+                                i, operator
+                            ));
+                        }
+                        "!!" => {
+                            return Err(format!(
+                                "Invalid operator at index {}: '{}'. Did you mean '!'?",
+                                i, operator
+                            ));
+                        }
+                        "<>" => {
+                            return Err(format!(
+                                "Invalid operator at index {}: '{}'. Did you mean '!='?",
+                                i, operator
+                            ));
+                        }
+                        "=" => {
+                            return Err(format!(
+                                "Invalid operator at index {}: single '=' is not allowed",
+                                i
+                            ));
+                        }
+                        "!" => {
+                            return Err(format!(
+                                "Invalid operator at index {}: '!' must be followed by '=' (!=)",
+                                i
+                            ));
+                        }
+                        _ => {
+                            result.push(c);
+                        }
                     }
                 }
             }
             _ => {
-                // If it's a regular character (part of a word), append it to the current word
                 curwrd.push(c);
             }
         }
     }
 
-    // Check the last collected word (in case string doesn't end with a space or operator)
     if !curwrd.is_empty() {
         if let Some(var_type) = check_word_type(&curwrd, vars) {
             if let Some(ref cur_type) = current_type {
                 if !is_type_compatible(cur_type, &var_type) {
                     return Err(format!(
-                        "Type mismatch: '{}' is not compatible with '{}'",
-                        cur_type, var_type
+                        "Final type mismatch: expected type '{}', found type '{}' for '{}'",
+                        cur_type, var_type, curwrd
                     ));
                 }
             }
             result.push_str(&curwrd);
         } else {
-            return Err(format!("Invalid word: {}", curwrd));
+            return Err(format!("Invalid word in final check: '{}'", curwrd));
         }
     }
 
-    Ok(result) // Return the evaluated result (or error message)
+    Ok(result)
 }
 
-// Check if the word is a number or a valid variable from `vars`, returning its type
 fn check_word_type(word: &str, vars: &[Tokens]) -> Option<String> {
+    if word.starts_with('"') && word.ends_with('"') {
+        return Some("string".to_string());
+    }
+
     if word.parse::<i32>().is_ok() {
-        Some("int".to_string())
-    } else if word.parse::<f64>().is_ok() {
-        Some("float".to_string())
-    } else {
-        vars.iter().find_map(|token| match token {
-            Tokens::Var(var_type, var_name, _) if var_name == word => match var_type {
+        return Some("int".to_string());
+    }
+
+    if word.parse::<f64>().is_ok() {
+        return Some("float".to_string());
+    }
+
+    vars.iter().find_map(|token| match token {
+        Tokens::Var(var_type, var_name, _) if var_name == word => {
+            match var_type {
                 Vars::STR(_) => Some("string".to_string()),
                 Vars::INT(_) => Some("int".to_string()),
                 Vars::F(_) => Some("float".to_string()),
                 _ => None,
-            },
-            _ => None,
-        })
-    }
+            }
+        }
+        _ => None,
+    })
 }
 
-// Check if the two types are compatible (supports int to float promotion)
 fn is_type_compatible(current_type: &str, new_type: &str) -> bool {
     (current_type == new_type)
         || (current_type == "float" && new_type == "int")
         || (current_type == "int" && new_type == "float")
+        || (current_type == "string" && new_type == "string")
+}
+
+fn correct_operator(invalid_op: &str) -> &str {
+    match invalid_op {
+        "=<" => "<=",
+        "=>" => ">=",
+        "=!" => "!=",
+        "===" => "==",
+        "==!" => "!=",
+        "<>" => "!=",
+        _ => "",
+    }
+}
+
+pub fn ctoc(cond: &str, _vars: &[Tokens]) -> Result<String, String> {
+    let mut r = String::new();
+    let cond = cond.trim();
+    let mut insmode = false;
+    let mut aism = false;
+    let ndw = ['=', '!', '<', '>'];
+    let condd: Vec<char> = cond.chars().peekable().collect();
+
+    let mut i = 0;
+    while i < condd.len() {
+        let c = condd[i];
+        
+        match c {
+            '"' => {
+                insmode = !insmode;
+
+                if insmode {
+                    if !aism {
+                        r.push_str("strcmp(");
+                        aism = true;
+                    } else {
+                        r.push(',');
+                    }
+                    r.push(c);
+                } else {
+                    r.push(c);
+                    if i + 1 < condd.len() && !ndw.contains(&condd[i + 1]) {
+                        r.push_str(",");
+                    }
+                }
+            }
+            _ if !ndw.contains(&c) => r.push(c),
+            _ => {}
+        }
+        i += 1;
+    }
+
+    if aism {
+        r.push_str(") == 0");
+    }
+
+    Ok(r)
 }
