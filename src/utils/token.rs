@@ -56,17 +56,16 @@ pub fn gentoken(code: Vec<String>, casetkns: Vec<Tokens>, fc: bool) -> Result<Ve
                     match a {
                         Ok(k) => {
                             println!("cond : {}", k);
-                            match ctoc(&k, &tokens){
+                            match ctoc(&k, &tokens) {
                                 Ok(cc) => {
-                                    println!("cc -> {}",cc);
+                                    println!("cc -> {}", cc);
                                     ifbody.push(format!("{}:{}", cc, pts[1]));
-
                                 }
-                                Err(e) => return Err(format!("{}",e)),
+                                Err(e) => return Err(format!("{}", e)),
                             }
                         }
                         Err(e) => {
-                            eprintln!("error at line {}\n{}", index,e);
+                            eprintln!("error at line {}\n{}", index, e);
                             exit(1);
                         }
                     }

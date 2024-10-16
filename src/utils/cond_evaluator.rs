@@ -44,7 +44,9 @@ pub fn eval_cond(cond: &str, vars: &[Tokens]) -> Result<String, String> {
                         "=<" | "=>" | "=!" | "===" => {
                             return Err(format!(
                                 "Invalid operator at index {}: '{}'. Did you mean '{}'?",
-                                i, operator, correct_operator(&operator)
+                                i,
+                                operator,
+                                correct_operator(&operator)
                             ));
                         }
                         "><" => {
@@ -122,14 +124,12 @@ fn check_word_type(word: &str, vars: &[Tokens]) -> Option<String> {
     }
 
     vars.iter().find_map(|token| match token {
-        Tokens::Var(var_type, var_name, _) if var_name == word => {
-            match var_type {
-                Vars::STR(_) => Some("string".to_string()),
-                Vars::INT(_) => Some("int".to_string()),
-                Vars::F(_) => Some("float".to_string()),
-                _ => None,
-            }
-        }
+        Tokens::Var(var_type, var_name, _) if var_name == word => match var_type {
+            Vars::STR(_) => Some("string".to_string()),
+            Vars::INT(_) => Some("int".to_string()),
+            Vars::F(_) => Some("float".to_string()),
+            _ => None,
+        },
         _ => None,
     })
 }
@@ -164,7 +164,7 @@ pub fn ctoc(cond: &str, _vars: &[Tokens]) -> Result<String, String> {
     let mut i = 0;
     while i < condd.len() {
         let c = condd[i];
-        
+
         match c {
             '"' => {
                 insmode = !insmode;
