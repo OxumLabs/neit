@@ -13,6 +13,8 @@ pub fn parse_single_line(
     vars: &mut Vec<Tokens>,
     f_args: &[Args],
 ) -> Result<Tokens, String> {
+    //println!("first cal ln in ftokesn : {}", line);
+
     let line = line.trim();
     if line.is_empty() {
         return Err("|_EMP_|".to_string());

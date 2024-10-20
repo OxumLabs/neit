@@ -7,7 +7,7 @@ use crate::utils::{
 
 #[allow(unused)]
 pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, String> {
-    println!("ln : {}", ln);
+    //println!("ln : {}", ln);
     let mut functions = FN::new(
         "_NAME_".to_string(),
         false,
@@ -45,7 +45,7 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
                     "✘ Error: Invalid Argument Declaration\n\
                     Invalid argument declaration at line {}.\n\
                     ➔ Hint: Use the format 'name:type' (e.g., 'myArg:int').\n\
-                    ⚙ [Code: {}]",
+                    ⚙ Code: \n{}",
                     index as i32, ln
                 ));
             }
@@ -55,7 +55,7 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
                     "✘ Error: Missing Argument Name\n\
                     Argument name is missing at line {}.\n\
                     ➔ Hint: Provide a valid argument name (e.g., 'argName:int').\n\
-                    ⚙ [Code: {}]",
+                    ⚙ Code: \n{}",
                     index as i32, ln
                 ));
             }
@@ -123,7 +123,7 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
 
     for ln in lines {
         let ln = ln.trim();
-        println!("ln : {}", ln);
+        //println!("ln : {}", ln);
         if ln.starts_with("if{") {
             inif = true;
             continue;
@@ -228,7 +228,7 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
                     - 'functionName': Your function's name.\n\
                     - 'arg1:type, arg2:type': Arguments in parentheses with names followed by types, separated by commas.\n\
                     ➔ Example: 'fn add(x:int, y:int)' declares a function 'add' taking two integers.\n\
-                    ⚙ [Code: {}]",
+                    ⚙ Code: \n{}",
                     index, ln
                 ));
             }
@@ -319,7 +319,7 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
                                 // Code for the second function\n\
                             }}'\n\
                     ➔ Remember: Close a function before defining another for better organization!\n\
-                    ⚙ [Code: {}]",
+                    ⚙ Code: \n{}",
                     index, ln
                 ));
             }
@@ -387,14 +387,10 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
                         "|_EMP_|" => continue,
                         _ => {
                             return Err(format!(
-                                "✘ Error: Unexpected Issue Encountered\n\n\
-                                Yikes! An unexpected error occurred at line {}.\n\n\
-                                ➔ What Happened: There was an error in your code that I wasn't prepared for. This can happen due to various reasons, such as incorrect syntax, unsupported operations, or misconfigured settings.\n\
-                                ➔ Suggested Action: Please review the syntax around this line carefully and ensure everything is correct. Double-check for common mistakes like missing brackets, incorrect function names, or unsupported expressions.\n\n\
-                                ➔ Here’s the specific error message for more context:\n\
-                                    [Error: {}]\n\n\
-                                ⚙ [Code: {}]",
-                                index, e, ln
+                                "✘ Error: Unexpected Issue Encountered\n\
+                                Yikes! An unexpected error occurred at line {}.\n\
+                                ➔ Error: \n{}\n",
+                                index, e
                             ));
                         }
                     },
@@ -417,7 +413,7 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
                 "✘ Error: Unrecognized Line Format at Line {}\n\
                 ➔ Issue: The line doesn't match the expected syntax for declarations or code blocks. Check for missing keywords or punctuation.\n\
                 ➔ Action: Review the line for proper syntax: use 'fn' for functions, ensure parentheses and braces are correct, and match the expected structure.\n\
-                ⚙ [Code: {}] Fix the format to keep your code running smoothly!",
+                ⚙ Code: \n{}\n Fix the format to keep your code running smoothly!",
                 index, ln
             ));
         }
@@ -433,6 +429,6 @@ pub fn process_func(ln: &str, index: usize, p_label: &mut i32) -> Result<FN, Str
     }
 
     functions.local_vars = lv;
-    println!("funcs : \n{:?}", functions);
+    //println!("funcs : \n{:?}", functions);
     Ok(functions)
 }

@@ -1,6 +1,6 @@
 use std::process::exit;
 
-use crate::utils::{case::process_case, cond_evaluator::ctoc};
+use crate::utils::case::process_case;
 
 use super::{
     cond_evaluator::eval_cond,
@@ -9,7 +9,7 @@ use super::{
 };
 
 #[allow(unused, irrefutable_let_patterns)]
-pub fn gentoken(code: Vec<String>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<Tokens>, String> {
+pub fn gentoken(mut code: Vec<String>, casetkns: Vec<Tokens>, fc: bool) -> Result<Vec<Tokens>, String> {
     let mut index: i64 = 0;
     let mut tokens: Vec<Tokens> = casetkns;
     let mut ct: Vec<Tokens> = Vec::new();
@@ -23,9 +23,14 @@ pub fn gentoken(code: Vec<String>, casetkns: Vec<Tokens>, fc: bool) -> Result<Ve
     let mut cname = String::new();
     let mut inif = false;
     let mut ifbody: Vec<String> = Vec::new();
-    let mut lastfnd = false;
+    let mut lastfnd: bool = false;
+    let mut ctypecond = false;
 
     for (mut i, mut ln) in code.clone().iter().enumerate() {
+        // if i != 0{
+
+        //     code.remove(i-1);
+        // }
         //println!("ln : {:?} | inif : {:?} | incase : {:?}", ln, inif, incase);
         let mut ln = ln.as_str();
         ln = ln.trim(); // Trim whitespace from the line
@@ -52,22 +57,28 @@ pub fn gentoken(code: Vec<String>, casetkns: Vec<Tokens>, fc: bool) -> Result<Ve
                 }
                 let cond = pts[0];
                 if cond != "last" {
-                    let a = eval_cond(cond, &tokens);
-                    match a {
-                        Ok(k) => {
-                            println!("cond : {}", k);
-                            match ctoc(&k, &tokens) {
-                                Ok(cc) => {
-                                    println!("cc -> {}", cc);
-                                    ifbody.push(format!("{}:{}", cc, pts[1]));
+                    if !ctypecond {
+                        let a = eval_cond(cond, &tokens);
+                        match a {
+                            Ok(k) => {
+                                println!("cond : {}", k);
+                                println!("ctc -> {}", ctypecond);
+                                println!("to c!");
+                                match eval_cond(&k, &tokens) {
+                                    Ok(cc) => {
+                                        println!("cc -> {}", cc);
+                                        ifbody.push(format!("{}:{}", cc, pts[1]));
+                                    }
+                                    Err(e) => return Err(format!("{}", e)),
                                 }
-                                Err(e) => return Err(format!("{}", e)),
+                            }
+                            Err(e) => {
+                                eprintln!("error at line {}\n{}", index, e);
+                                exit(1);
                             }
                         }
-                        Err(e) => {
-                            eprintln!("error at line {}\n{}", index, e);
-                            exit(1);
-                        }
+                    } else {
+                        ifbody.push(format!("{}:{}", cond, pts[1]));
                     }
                 } else {
                     if lastfnd != true {
@@ -76,7 +87,10 @@ pub fn gentoken(code: Vec<String>, casetkns: Vec<Tokens>, fc: bool) -> Result<Ve
                         return Err(format!("Last condition already evaluated!"));
                     }
                 }
-                brace_depth -= 1;
+                if brace_depth != 0{
+
+                    brace_depth -= 1;
+                }
 
                 //ifbody.push(ln.to_string());
             } else {
@@ -151,13 +165,15 @@ pub fn gentoken(code: Vec<String>, casetkns: Vec<Tokens>, fc: bool) -> Result<Ve
                 function_body.clear();
             }
         } else if in_function {
+            //println!("\nadding ln to func : \n{}", ln);
+            //println!("brace depth before : {}", brace_depth);
+            if brace_depth == 0{
+                
+            } 
             function_body.push(ln);
-            println!("\nadding ln to func : \n{}", ln);
-            println!("brace depth before : {}", brace_depth);
-
             brace_depth += ln.matches('{').count();
             brace_depth -= ln.matches('}').count();
-            println!("brace depth after : {}", brace_depth);
+            //println!("brace depth after : {}", brace_depth);
             if brace_depth > 0 && (i + 1 >= code.len()) {
                 return Err(format!(
                     "{} Error: Function has not been properly closed!\n\
@@ -244,6 +260,10 @@ pub fn gentoken(code: Vec<String>, casetkns: Vec<Tokens>, fc: bool) -> Result<Ve
                 }
                 Err(e) => return Err(e),
             }
+        } else if ln.to_ascii_lowercase() == "[c]" {
+            ctypecond = true;
+        } else if ln.to_ascii_lowercase() == "![c]" {
+            ctypecond = false;
         } else if ln.trim().starts_with("may ") && !incase && !inif {
             let vr = process_var(ln.trim(), &tokens, true);
             match vr {
@@ -446,6 +466,10 @@ pub fn gentoken(code: Vec<String>, casetkns: Vec<Tokens>, fc: bool) -> Result<Ve
         }
     }
     //println!("ct :\n{:?}\ntokens : \n{:?}", ct, tokens);
+    drop(code);
+    drop(cbody);
+
+    drop(ifbody);
     if fc {
         return Ok(ct);
     } else {

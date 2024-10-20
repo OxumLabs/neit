@@ -192,6 +192,8 @@ fn run_command(command: &str, args: &[&str]) -> bool {
 fn handle_input_error(e: std::io::Error) {
     eprintln!("Error reading input: {}", e);
     eprintln!(" - This could be due to an issue with the standard input stream.");
-    eprintln!(" - Please check if your terminal is functioning properly or if the input was interrupted.");
+    eprintln!(
+        " - Please check if your terminal is functioning properly or if the input was interrupted."
+    );
     exit(1);
 }

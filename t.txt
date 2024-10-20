@@ -1,0 +1,39 @@
+ Both clang and gcc are installed. All good!
+Running project at: sam
+
+adding ln to func : 
+[c]
+brace depth before : 1
+brace depth after : 1
+
+adding ln to func : 
+if{
+brace depth before : 1
+brace depth after : 2
+
+adding ln to func : 
+strcmp("joy","joy") == 0: case
+brace depth before : 2
+brace depth after : 2
+
+adding ln to func : 
+}
+brace depth before : 2
+brace depth after : 1
+
+adding ln to func : 
+}
+brace depth before : 1
+brace depth after : 0
+first cal ln : fn hi(){
+}
+functions : FN { name: "_NAME_", is_global: false, code: [], args: [], local_vars: [] }
+brace depth : 0
+ln : fn hi(){
+functions : FN { name: "hi", is_global: false, code: [], args: [], local_vars: [] }
+brace depth : 0
+ln : }
+funcs : 
+FN { name: "hi", is_global: false, code: [], args: [], local_vars: [] }
+func codes end : []
+Successfully compiled with clang.

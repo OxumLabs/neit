@@ -1,5 +1,15 @@
-fn say(){
-    if{
-        1==1 : say
-    }
+may name = ""
+print("> ")
+takein(name)
+[c]
+if{
+    strcmp(name,"joy") ==0 : admin
+    last : wtv
+}
+case admin{
+    println("Hello joy!")
+}
+case wtv{
+        println("Hello {name}!")
+
 }
