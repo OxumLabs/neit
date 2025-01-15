@@ -1,5 +1,5 @@
 use std::{
-    env::consts::OS,
+    env::{consts::OS, current_exe},
     fs::{self, File},
     io::Write,
     path::Path,
@@ -17,6 +17,44 @@ use crate::{
 };
 
 pub fn build(args: &[String]) {
+    let exe_path = match std::env::current_exe() {
+        Ok(path) => path,
+        Err(e) => {
+            eprintln!("Error getting the current executable path: {}", e);
+            std::process::exit(1);
+        }
+    };
+    
+    let exe_dir = match exe_path.parent() {
+        Some(dir) => dir,
+        None => {
+            eprintln!("Error getting the directory of the executable.");
+            std::process::exit(1);
+        }
+    };
+    
+    let source_path = exe_dir.join("libnulibc.a");
+    
+    if !source_path.exists() {
+        eprintln!("Source file does not exist: {:?}", source_path);
+        std::process::exit(1);
+    }
+    
+    let current_dir = match std::env::current_dir() {
+        Ok(dir) => dir,
+        Err(e) => {
+            eprintln!("Error getting the current working directory: {}", e);
+            std::process::exit(1);
+        }
+    };
+    
+    let destination_path = current_dir.join("libnulibc.a");
+    
+    if let Err(e) = std::fs::copy(&source_path, &destination_path) {
+        eprintln!("Error copying file from {:?} to {:?}: {}", source_path, destination_path, e);
+        std::process::exit(1);
+    }
+    
     let src_path = Path::new(&args[2]);
 
     if !src_path.exists() {
@@ -184,6 +222,9 @@ fn write_to_file(ccode: &str, output_file: &str) {
 fn build_clang_command(args: &[String], output_file: &str, _src: &Path, opt_level: i32) -> Command {
     let mut cmd = Command::new("clang");
     cmd.arg(format!("{}.c", output_file));
+    cmd.arg("-I.");
+    cmd.arg("-static");
+    cmd.arg("-Wno-return-type");
     let nulibcp = Path::new("nulibc.c");
     let nulibchp = Path::new("nulibc.h");
     match File::create(nulibcp) {
@@ -313,7 +354,6 @@ fn run_clang_command(mut cmd: Command, output_file: &str, args: &[String]) {
                         }
                     }
                 }
-                exit(0);
             } else {
                 eprintln!("{}", "Clang compilation failed.".red());
                 exit(-1);

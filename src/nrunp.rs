@@ -57,7 +57,7 @@ pub fn genc(nst: &Vec<NST>, target: &str) -> String {
                     VVal::VarRef(_, t) => t,
                 };
 
-                bc.push_str(&format!(".{}{}{};", v.name, var_type, var_value));
+                bc.push_str(&format!(".{}!{}!{};", v.name, var_type, var_value));
             }
             NST::Input(v) => {
                 bc.push_str(&format!("..{};", v)); // Input command with separator

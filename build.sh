@@ -22,4 +22,7 @@ echo "Making them executable lol"
 chmod +x bin/neit-lingnu
 chmod +x bin/neit-musl
 
+echo "Copying libnulibc.a to bin"
+cp ./libnulibc.a bin/libnulibc.a
+
 echo "built successfully"

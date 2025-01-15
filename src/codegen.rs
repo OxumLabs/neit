@@ -8,7 +8,6 @@ pub fn codegen(nst: &mut Vec<NST>, addh: bool, generate_main: bool, addstrcmp: b
     let mut ccode = String::new();
     let mut vars: HashMap<String, VVal> = HashMap::new();
     let mut func_body = String::new();
-    let mut added_nclrscrn = false;
     if addstrcmp {
         //println!("[DEBUG] ~ adding strmp");
         ccode.push_str(r#""#);
@@ -17,7 +16,7 @@ pub fn codegen(nst: &mut Vec<NST>, addh: bool, generate_main: bool, addstrcmp: b
 
     if addh {
         println!("{}", "-> Adding headers".green().bold());
-        ccode.push_str("#include \"nulibc.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <unistd.h>\n\n");
+        ccode.push_str("#include \"nulibc.h\"\n\n\n");
     }
 
     if nst.iter().any(|mc| matches!(mc, NST::NCLRSCRN)) {
@@ -29,10 +28,10 @@ pub fn codegen(nst: &mut Vec<NST>, addh: bool, generate_main: bool, addstrcmp: b
     for mc in &mut *nst {
         match mc {
             NST::NCLRSCRN => {
-                if !added_nclrscrn {
-                    ccode.push_str(&nclrscrn());
-                    added_nclrscrn = true;
-                }
+                //if !added_nclrscrn {
+                    func_body.push_str("__NCLRSCRN__();\n");
+                 //   added_nclrscrn = true;
+               // }
             }
             NST::PRINT(txt) => {
                 let print_code = generate_print_code(txt, &vars);
@@ -108,12 +107,6 @@ pub fn codegen(nst: &mut Vec<NST>, addh: bool, generate_main: bool, addstrcmp: b
     ccode
 }
 
-fn nclrscrn() -> String {
-    r#"
-"#
-    .to_string()
-}
-
 fn generate_print_code(txt: &str, vars: &HashMap<String, VVal>) -> String {
     let mut format_str = String::new();
     let mut var_names: Vec<String> = Vec::new();
@@ -165,12 +158,12 @@ fn generate_print_code(txt: &str, vars: &HashMap<String, VVal>) -> String {
 
     if !var_names.is_empty() {
         format!(
-            "    printf(\"{}\", {});\n    fflush(stdout);\n",
+            "    nprintf(STDOUT,\"{}\", {});\n    \n",
             format_str,
             var_names.join(", ")
         )
     } else {
-        format!("    printf(\"{}\");\n    fflush(stdout);\n", format_str)
+        format!("    nprintf(STDOUT,\"{}\");\n \n", format_str)
     }
 }
 
