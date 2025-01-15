@@ -34,7 +34,7 @@ pub fn p2(
     vars: &HashMap<String, VVal>,
     file: &str,
 ) -> bool {
-    println!("toks in p2 : {:?}",toks);
+    //println!("toks in p2 : {:?}",toks);
     match (toks.get_type(), toks.get_value()) {
         (TokType::CMD, "if") => {
             let mut cond = String::new();
