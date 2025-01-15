@@ -36,6 +36,7 @@ We are constantly working on improving Neit to make it better, faster, and more 
 
 ### **License**
 
-> Neit is licensed under the [Apache 2.0 License](LICENSE).
+> Neit is licensed under the [Apache 2.0 License](LICENSE)
+> This project uses the [Nulibc](https://github.com/johnny-c/nulibc) library for C which is a till-now minimal impl of the C standard library created by oxumlabs!
 
 ---
