@@ -1,2 +1,2 @@
-may z = "joy"
-print {z}\n
+print \{
+exit seg

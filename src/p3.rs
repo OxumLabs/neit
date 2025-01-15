@@ -17,6 +17,8 @@ pub fn p3(
     vars: &HashMap<String, VVal>,
     file: &str,
 ) {
+    println!("toks in p3 : {:?}",tok);
+
     match (tok.get_type(), tok.get_value()) {
         (TokType::CMD, "while") => {
             let mut cond = String::new();
@@ -99,8 +101,6 @@ pub fn p3(
 
             // Check for unmatched braces
             if brace_count != 0 {
-                println!("unmatched paren");
-
                 println!("braces : {}",brace_count);
                 errors.push(ErrT::UnmatchedParen(
                     *ln,
@@ -118,6 +118,56 @@ pub fn p3(
             // Parse the body tokens
             let body = parse(&body_tokens, codes, file, false, errors);
             nst.push(NST::NWHILE(condition, body));
+        }
+        (TokType::CMD, "exit") => {
+            let mut exs = String::new();
+            while let Some(tok) = tokiter.next() {
+                match (tok.get_type(), tok.get_value()) {
+                    (TokType::EOL, _) => {
+                        *ln += 1;
+                        break; // Exit parsing
+                    }
+                    (_, _) => {
+                        exs.push_str(tok.get_value());
+                    }
+                }
+            }
+            match exs.trim() {
+                "" => {
+                    errors.push(ErrT::InvVal(*ln, "exit".to_string(), "".to_string()));
+                }
+                "ok" | "success" | "0" => {
+                    nst.push(NST::EX(0));
+                }
+                "fail" | "failure" | "1" => {
+                    nst.push(NST::EX(1));
+                }
+                "invalid arg" | "inv arg" | "128" => {
+                    nst.push(NST::EX(128));
+                }
+                "not found" | "nf" | "127" => {
+                    nst.push(NST::EX(127));
+                }
+                "permission err" | "perm err" | "permission denied" | "126" => {
+                    nst.push(NST::EX(126));
+                }
+                "killed" | "kill" | "137" => {
+                    nst.push(NST::EX(137));
+                }
+                "interrupt" | "int" | "signal int" | "130" => {
+                    nst.push(NST::EX(130));
+                }
+                "segfault" | "seg" | "segmentation fault" | "11" => {
+                    nst.push(NST::EX(11));
+                }
+                "out of range" | "range error" | "255" => {
+                    nst.push(NST::EX(255));
+                }
+                _ => {
+                    errors.push(ErrT::InvVal(*ln, "exit".to_string(), exs.to_string()));
+                }
+            }
+            
         }
         _ => {}
     }

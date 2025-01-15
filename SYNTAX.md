@@ -211,7 +211,24 @@ if (name == "joy"){
   println Hello joyyyyy!!!!
 }
 ```
+---
 
+### **Exit Command**
+
+- Exit the program with the specified status code
+  ```neit
+  exit {status_code}
+  ```
+  available status codes are:
+  - for success use : ``ok`` , ``success`` , ``0``
+  - for failure use : ``fail`` , ``failure`` , ``1``
+  - for invalid argument use : ``invalid arg`` , ``inv arg`` , ``128``
+  - for not found use : ``not found`` , ``nf`` , ``127``
+  - for permission error use : ``permission err`` , ``perm err`` , ``permission denied`` , ``126``
+  - for killed use : ``killed`` , ``kill`` , ``137``
+  - for interrupt use : ``interrupt`` , ``int`` , ``signal int`` , ``130``
+  - for segmentation fault use : ``segfault`` , ``seg`` , ``segmentation fault`` , ``11``
+  - for out of range use : ``out of range`` , ``range error`` , ``255``
 
 ---
 

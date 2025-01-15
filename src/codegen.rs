@@ -27,6 +27,9 @@ pub fn codegen(nst: &mut Vec<NST>, addh: bool, generate_main: bool, addstrcmp: b
 
     for mc in &mut *nst {
         match mc {
+            NST::EX(code) => {
+                func_body.push_str(&format!("nexit({});\n",code));
+            }
             NST::NCLRSCRN => {
                 //if !added_nclrscrn {
                     func_body.push_str("__NCLRSCRN__();\n");

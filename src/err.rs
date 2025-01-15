@@ -63,9 +63,19 @@ pub enum ErrT {
     /// Holds:
     /// - `usize`: Line number where the error occurred.
     InvalidCondOp(usize, String),
+    /// Represents an invalid operand for a conditional operator
+    /// Holds:
+    /// - `usize`: Line number where the error occurred.
+    /// - `String`: The invalid operand
     InvalidOperand(usize, String),
+    /// Represents an invalid value 
+    /// Holds:
+    /// - `usize`: Line number where the error occurred
+    /// - `String`: Invalid value was used for?
+    /// - `String`: The invalid value itself
+    InvVal(usize, String, String),
 }
-
+#[allow(unused)]
 pub fn generr(err: ErrT, codes: &Vec<&str>) {
     match err {
         ErrT::InValidVarVal(line, value) => {
@@ -370,7 +380,87 @@ pub fn generr(err: ErrT, codes: &Vec<&str>) {
                     .bright_cyan()
             );
             println!(" └─ {} {}", "Code:".bright_white(), codeline.red().italic());
+        }ErrT::InvVal(line, vfor, value) => {
+            let codeline = if line > 0 && line <= codes.len() {
+                &codes[line - 1]
+            } else {
+                "<unknown code>"
+            };
+        
+            if value.is_empty() {
+                println!("{}", "ERROR: Missing Value".bold().red());
+                println!(
+                    " ├─ {} {}",
+                    "Line:".bright_white(),
+                    format!("{}", line).yellow().bold()
+                );
+                println!(
+                    " ├─ {} {}",
+                    "Cause:".bright_white(),
+                    format!(
+                        "The required value for `{}` is missing or not provided.",
+                        vfor
+                    )
+                    .yellow()
+                );
+                println!(" ├─ {}", "Explanation:".bright_white());
+                println!(
+                    " │   {}",
+                    "This error occurs when a required value is omitted.".bright_cyan()
+                );
+                println!(
+                    " │   {}",
+                    "Ensure you specify a valid value for the required operation or entity."
+                        .bright_cyan()
+                );
+                println!(
+                    " │   {}",
+                    format!(
+                        "For example, if `{}` expects a value, ensure it is defined.",
+                        vfor
+                    )
+                    .bright_cyan()
+                );
+                println!(" └─ {} {}", "Code:".bright_white(), codeline.red().italic());
+            } else {
+                println!("{}", "ERROR: Invalid Value".bold().red());
+                println!(
+                    " ├─ {} {}",
+                    "Line:".bright_white(),
+                    format!("{}", line).yellow().bold()
+                );
+                println!(
+                    " ├─ {} {}",
+                    "Cause:".bright_white(),
+                    format!(
+                        "The value `{}` provided for `{}` is invalid or incompatible.",
+                        value, vfor
+                    )
+                    .yellow()
+                );
+                println!(" ├─ {}", "Explanation:".bright_white());
+                println!(
+                    " │   {}",
+                    "This error occurs when the provided value does not meet the expected criteria."
+                        .bright_cyan()
+                );
+                println!(
+                    " │   {}",
+                    "Ensure the value is valid, compatible, and follows the required format."
+                        .bright_cyan()
+                );
+                println!(
+                    " │   {}",
+                    format!(
+                        "For example, `{}` should only accept values that meet specific criteria.",
+                        vfor
+                    )
+                    .bright_cyan()
+                );
+                println!(" └─ {} {}", "Code:".bright_white(), codeline.red().italic());
+            }
         }
+        
         _ => {}
     }
 }

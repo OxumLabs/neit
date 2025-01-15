@@ -18,6 +18,7 @@ pub enum NST {
     NIF(Condition, Vec<NST>),
     VarRD(String, VVal),
     NWHILE(Condition, Vec<NST>),
+    EX(i32)
 }
 
 #[derive(Debug, PartialEq)]
@@ -47,6 +48,7 @@ pub fn parse(
     let mut tok_iter = toks.iter().peekable();
 
     while let Some(tok) = tok_iter.next() {
+        println!("tok : {:?}",tok);
         if let TokType::EOL = tok.get_type() {
             ln += 1;
         }

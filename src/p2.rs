@@ -34,6 +34,7 @@ pub fn p2(
     vars: &HashMap<String, VVal>,
     file: &str,
 ) -> bool {
+    println!("toks in p2 : {:?}",toks);
     match (toks.get_type(), toks.get_value()) {
         (TokType::CMD, "if") => {
             let mut cond = String::new();
@@ -139,7 +140,8 @@ pub fn p2(
                 && v != "may"
                 && v != "cmd"
                 && v != "while"
-                && v != "if") =>
+                && v != "if")
+                && v != "exit" =>
         {
             let mut isvrd = false;
             let mut collected_value = String::new();
