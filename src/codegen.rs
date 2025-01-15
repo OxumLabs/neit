@@ -48,12 +48,12 @@ pub fn codegen(nst: &mut Vec<NST>, addh: bool, generate_main: bool, addstrcmp: b
             }
             NST::Var(v) => {
                 vars.insert(v.name.clone(), v.value.clone());
-                func_body.push_str(&generate_var_code(v));
+                func_body.push_str(&generate_var_code(v,&vars));
             }
             NST::Input(v) => {
                 func_body.push_str(&format!(
-                    "char {}[2048];\nscanf(\"%2047[^\\n]\", {});\n",
-                    v, v
+                    "nstring {} = nstr_new(\"\");\nninput(&{});\n",
+                    v,v
                 ));
                 vars.insert(v.to_string(), VVal::Str(String::from("")));
             }
@@ -77,7 +77,7 @@ pub fn codegen(nst: &mut Vec<NST>, addh: bool, generate_main: bool, addstrcmp: b
             }
             NST::VarRD(n, v) => match v {
                 VVal::Str(s) => {
-                    func_body.push_str(format!("{} = {};\n", n, s).as_str());
+                    func_body.push_str(format!("{} = nstr_new(\"{}\");\n", n, s).as_str());
                 }
                 VVal::Int(i) => {
                     func_body.push_str(format!("{} = {};\n", n, i).as_str());
@@ -170,13 +170,33 @@ fn generate_print_code(txt: &str, vars: &HashMap<String, VVal>) -> String {
     }
 }
 
-fn generate_var_code(v: &Var) -> String {
+fn generate_var_code(v: &Var, vars: &HashMap<String, VVal>) -> String {
     match &v.value {
         VVal::Str(s) => {
-            format!("    char {}[2048] = \"{}\";\n", v.name, s)
+            format!("    nstring {} = nstr_new(\"{}\");\n", v.name, s)
         }
         VVal::Int(i) => format!("    int {} = {};\n", v.name, i),
         VVal::F(f) => format!("    float {} = {};\n", v.name, f),
-        VVal::VarRef(_, _) => String::new(),
+        VVal::VarRef(vnm, _) => {
+            // Check if the referenced variable exists in the map
+            match vars.get(vnm) {
+                Some(VVal::Str(_)) => {
+                    format!("    nstring {} = {};\n", v.name, vnm)
+                }
+                Some(VVal::Int(_)) => {
+                    format!("    int {} = {};\n", v.name, vnm)
+                }
+                Some(VVal::F(_)) => {
+                    format!("    float {} = {};\n", v.name, vnm)
+                }
+                None => {
+                    format!(
+                        "    // Error: Referenced variable '{}' not found in variable map.\n",
+                        vnm
+                    )
+                }
+                _ => String::from("//refrence not found"),
+            }
+        }
     }
 }

@@ -78,7 +78,7 @@ fn build_file(args: &[String], src: &Path) {
     println!("{}", "Lexing file...".green());
     let mut toks = Tokens::new();
     lex(&code, &mut toks);
-    println!("[DEBUG] toks : {:?}", toks);
+    //println!("[DEBUG] toks : {:?}", toks);
 
     println!("{}", "Parsing file...".green());
     let mut nst = parse(
@@ -88,7 +88,7 @@ fn build_file(args: &[String], src: &Path) {
         true,
         &mut Vec::new(),
     );
-    println!("[DEBUG] nst : {:?}", nst);
+    //println!("[DEBUG] nst : {:?}", nst);
 
     println!("{}", "Parsing CLI arguments...".green());
     let _target_os = parse_target_os(args);

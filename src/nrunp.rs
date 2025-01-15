@@ -8,7 +8,12 @@ cls -> clear screen
 - Bytecode generation without new lines
 - Clear separators used for readability and compactness
 */
-
+///
+/// 
+/// NOTE: This code is completely unused and not needed though for some reason is still there in the project
+/// 
+/// 
+/// 
 use std::{thread::sleep, time::Duration};
 
 use colored::Colorize;
@@ -25,7 +30,7 @@ pub fn nrunp(nst: &Vec<NST>, target: &str) -> String {
         String::new()
     }
 }
-
+#[allow(unused)]
 pub fn genc(nst: &Vec<NST>, target: &str) -> String {
     let mut bc = String::with_capacity(1024);
 
@@ -40,7 +45,7 @@ pub fn genc(nst: &Vec<NST>, target: &str) -> String {
             NST::Func(name, args, nsts) => {
                 let body = genc(nsts, target);
                 let body_cleaned = body.replace("\n", ";");
-                bc.push_str(&format!("@{}({})[{}];", name, args.join(","), body_cleaned));
+                //bc.push_str(&format!("@{}({})[{}];", name, args.join(","), body_cleaned));
             }
             NST::Var(v) => {
                 let var_type = match v.value {

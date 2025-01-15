@@ -1,2 +1,4 @@
-print \{
-exit seg
+may a = "jay"
+a = "joy"
+may b = takein()
+println {b}

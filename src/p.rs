@@ -1,3 +1,4 @@
+
 use crate::{
     err::{generr, ErrT},
     lex::{TokType, Tokens},
@@ -12,7 +13,7 @@ pub enum NST {
     Var(Var),
     Input(String),
     VRDInput(String),
-    Func(String, Vec<String>, Vec<NST>),
+    Func(String, Vec<(String,String)>, Vec<NST>),
     NCLRSCRN,
     WAIT(u64),
     NIF(Condition, Vec<NST>),
@@ -48,7 +49,7 @@ pub fn parse(
     let mut tok_iter = toks.iter().peekable();
 
     while let Some(tok) = tok_iter.next() {
-        println!("tok : {:?}",tok);
+       // println!("tok : {:?}",tok);
         if let TokType::EOL = tok.get_type() {
             ln += 1;
         }
@@ -196,20 +197,36 @@ pub fn parse(
             (TokType::CMD, "cmd") => {
                 let mut bc = 0;
                 let mut name = String::new();
-                let mut args = Vec::new();
+                let mut cargs = String::new();
+                let mut args: Vec<(String,String)> = Vec::new();
                 let mut body = Vec::new();
-
+                let mut in_args = false;
+            
                 for ctok in tok_iter.by_ref() {
-                    //println!("bc : {} | tok : {:?}", bc, ctok);
                     if ctok.get_type() == TokType::EOL {
                         continue;
                     }
+            
+                    if ctok.get_type() == TokType::OP && ctok.get_value() == "(" {
+                        in_args = true;
+                        continue;
+                    }
+            
+                    if in_args {
+                        if ctok.get_type() == TokType::OP && ctok.get_value() == ")" {
+                            in_args = false;
+                            continue;
+                        }
+                        if ctok.get_type() == TokType::INSTR {
+                            cargs.push_str(ctok.get_value());
+                        }
+                        continue;
+                    }
+            
                     if bc == 0 {
                         if ctok.get_type() == TokType::INSTR {
                             if name.is_empty() {
                                 name = ctok.get_value().to_string();
-                            } else {
-                                args.push(ctok.get_value().to_string());
                             }
                         }
                         if ctok.get_type() == TokType::OP && ctok.get_value() == "{" {
@@ -229,9 +246,33 @@ pub fn parse(
                         body.push(ctok.clone());
                     }
                 }
+                for a in cargs.split(",").collect::<Vec<&str>>() {
+                    let pts = a.split(":").collect::<Vec<&str>>();
+                    if pts.len() == 2 {
+                        let name = pts[0].trim();
+                        let ty = pts[1].trim();
+                        match ty {
+                            "string" | "str" => {}
+                            "int" => {}
+                            "float" => {}
+                            _ => {
+                                errors.push(ErrT::InvVal(ln, "arguement".to_string(), a.to_string()));
+                                
+                            }
+                        }
+                        args.push((name.to_string(), ty.to_string()));
+                    }
+                    else {
+                        errors.push(ErrT::InvVal(ln, "arguement".to_string(), a.to_string()));
+                    }
+                }
+                for i in &args {
+                    println!("{:?}", i);
+                }
                 let func_body = parse(&body, codes, file, false, errors);
                 nst.push(NST::Func(name, args, func_body));
             }
+            
             _ => {
                 let b = p2(tok, &mut tok_iter, codes, errors, &mut nst, &mut ln, &vars, file);
                 if !b{

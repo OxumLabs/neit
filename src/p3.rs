@@ -17,7 +17,7 @@ pub fn p3(
     vars: &HashMap<String, VVal>,
     file: &str,
 ) {
-    println!("toks in p3 : {:?}",tok);
+    //println!("toks in p3 : {:?}",tok);
 
     match (tok.get_type(), tok.get_value()) {
         (TokType::CMD, "while") => {
