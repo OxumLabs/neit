@@ -229,6 +229,11 @@ if (name == "joy"){
   - for interrupt use : ``interrupt`` , ``int`` , ``signal int`` , ``130``
   - for segmentation fault use : ``segfault`` , ``seg`` , ``segmentation fault`` , ``11``
   - for out of range use : ``out of range`` , ``range error`` , ``255``
+  
+  for example:
+  ```neit
+  exit fail
+  ```
 
 ---
 
