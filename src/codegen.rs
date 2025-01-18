@@ -8,6 +8,8 @@ pub fn codegen(nst: &mut Vec<NST>, addh: bool, generate_main: bool, addstrcmp: b
     let mut ccode = String::new();
     let mut vars: HashMap<String, VVal> = HashMap::new();
     let mut func_body = String::new();
+    ccode.push_str("#define _CRT_SECURE_NO_WARNINGS\n");
+
     if addstrcmp {
         //println!("[DEBUG] ~ adding strmp");
         ccode.push_str(r#""#);
@@ -28,13 +30,13 @@ pub fn codegen(nst: &mut Vec<NST>, addh: bool, generate_main: bool, addstrcmp: b
     for mc in &mut *nst {
         match mc {
             NST::EX(code) => {
-                func_body.push_str(&format!("nexit({});\n",code));
+                func_body.push_str(&format!("nexit({});\n", code));
             }
             NST::NCLRSCRN => {
                 //if !added_nclrscrn {
-                    func_body.push_str("__NCLRSCRN__();\n");
-                 //   added_nclrscrn = true;
-               // }
+                func_body.push_str("__NCLRSCRN__();\n");
+                //   added_nclrscrn = true;
+                // }
             }
             NST::PRINT(txt) => {
                 let print_code = generate_print_code(txt, &vars);
@@ -48,12 +50,12 @@ pub fn codegen(nst: &mut Vec<NST>, addh: bool, generate_main: bool, addstrcmp: b
             }
             NST::Var(v) => {
                 vars.insert(v.name.clone(), v.value.clone());
-                func_body.push_str(&generate_var_code(v,&vars));
+                func_body.push_str(&generate_var_code(v, &vars));
             }
             NST::Input(v) => {
                 func_body.push_str(&format!(
                     "nstring {} = nstr_new(\"\");\nninput(&{});\n",
-                    v,v
+                    v, v
                 ));
                 vars.insert(v.to_string(), VVal::Str(String::from("")));
             }
@@ -141,13 +143,19 @@ fn generate_print_code(txt: &str, vars: &HashMap<String, VVal>) -> String {
                 in_var_mode = false;
 
                 if let Some(var_val) = vars.get(&current_var) {
+                    let mut vn = String::new();
                     match var_val {
                         VVal::Str(_) => format_str.push_str("%s"),
                         VVal::Int(_) => format_str.push_str("%d"),
                         VVal::F(_) => format_str.push_str("%f"),
                         VVal::VarRef(_, _) => format_str.push_str("%d"),
                     }
-                    var_names.push(current_var.clone());
+                    vn.push_str(&current_var.clone());
+                    match var_val{
+                        VVal::Str(_) => vn.push_str(".str"),
+                        _ => {}
+                    }
+                    var_names.push(vn);
                 }
             } else {
                 format_str.push(c);

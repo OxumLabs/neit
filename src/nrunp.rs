@@ -9,11 +9,11 @@ cls -> clear screen
 - Clear separators used for readability and compactness
 */
 ///
-/// 
+///
 /// NOTE: This code is completely unused and not needed though for some reason is still there in the project
-/// 
-/// 
-/// 
+///
+///
+///
 use std::{thread::sleep, time::Duration};
 
 use colored::Colorize;

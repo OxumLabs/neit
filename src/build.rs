@@ -17,7 +17,6 @@ use crate::{
 };
 
 pub fn build(args: &[String]) {
-       
     let src_path = Path::new(&args[2]);
 
     if !src_path.exists() {
@@ -44,8 +43,17 @@ pub fn build(args: &[String]) {
 }
 #[allow(unused)]
 fn build_dir(args: &[String], src: &Path) {
-    println!("{}", "Building projects coming soon!".red());
-    exit(0);
+    println!("{}{}", "Building directory :".green(), src.display());
+    println!("{}", "Trying to find main.nsc file...".red());
+    let mf = src.join("main.nsc");
+    if !mf.exists() {
+        eprintln!(
+            "{}{}",
+            "Unable to find 'main.nsc' file at :".red(),
+            mf.display()
+        );
+        exit(2);
+    }
 }
 
 fn build_file(args: &[String], src: &Path) {
@@ -143,12 +151,30 @@ fn parse_optimization(args: &[String]) -> i32 {
 }
 
 fn parse_output(args: &[String]) -> String {
+    let mut outputname = String::from("output");
+    let mut target_os = String::new();
+
     for arg in args {
         if let Some(output) = parse_flag(arg, "-o=", "--out=") {
-            return output;
+            outputname = output;
+        } else if let Some(target) = parse_flag(arg, "-t=", "--target=") {
+            target_os = target;
         }
     }
-    "output".to_string() // Default output file name
+
+    //if outputname == "output" {
+        match target_os.as_str() {
+            "linux" => {}
+            "windows" => outputname.push_str(".exe"),
+            "macos" => {}
+            _ => {
+                eprintln!("Error: Target OS not specified or invalid.");
+                std::process::exit(-1);
+            }
+        }
+    //}
+
+    outputname
 }
 
 fn parse_flag(arg: &str, flag1: &str, flag2: &str) -> Option<String> {

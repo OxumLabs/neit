@@ -62,7 +62,6 @@ pub fn p2(
                         cond.push_str(tok.get_value());
                     }
                     _ => {
-                        
                         errors.push(ErrT::UnmatchedParen(*ln, codes[*ln].to_string()));
                         return true;
                     }
@@ -71,7 +70,6 @@ pub fn p2(
 
             // Check for unmatched or empty condition
             if in_parentheses {
-                
                 errors.push(ErrT::UnmatchedParen(*ln, codes[*ln].to_string()));
                 return true;
             }
@@ -136,62 +134,74 @@ pub fn p2(
         (TokType::CMD, v) if vars.contains_key(v) => {
             let mut is_var_declared = false;
             let mut collected_value = String::new();
-        
+
             while let Some(tok) = tok_iter.next() {
                 match tok.get_type() {
                     TokType::EOL => {
                         if is_var_declared {
                             let var_name = v;
                             let var_value = collected_value.trim().to_string();
-        
+
                             if var_value == "takein()" {
                                 nst.push(NST::VRDInput(var_name.to_string()));
                                 return true;
                             }
-        
+
                             if vars.contains_key(var_name) {
                                 let mut is_valid_value = false;
-                                let resolved_value = if var_value.starts_with('"') && var_value.ends_with('"') {
-                                    is_valid_value = true;
-                                    VVal::Str(var_value[1..var_value.len() - 1].to_string())
-                                } else if var_value.parse::<i32>().is_ok() {
-                                    is_valid_value = true;
-                                    VVal::Int(var_value.parse::<i32>().unwrap())
-                                } else if var_value.parse::<f32>().is_ok() {
-                                    is_valid_value = true;
-                                    VVal::F(var_value.parse::<f32>().unwrap())
-                                } else if let Some(existing_var) = vars.get(&var_value) {
-                                    is_valid_value = true;
-        
-                                    match existing_var {
-                                        VVal::Str(_) => VVal::VarRef(var_name.to_string(), "s".to_string()),
-                                        VVal::Int(_) => VVal::VarRef(var_name.to_string(), "i".to_string()),
-                                        VVal::F(_) => VVal::VarRef(var_name.to_string(), "f".to_string()),
-                                        _ => {
-                                            VVal::VarRef(var_name.to_string(), match existing_var{
-                                                VVal::Str(_) => "s".to_string(),
-                                                VVal::Int(_) => "i".to_string(),
-                                                VVal::F(_) => "f".to_string(),
-                                                _ => "v".to_string(),
-                                            })
+                                let resolved_value =
+                                    if var_value.starts_with('"') && var_value.ends_with('"') {
+                                        is_valid_value = true;
+                                        VVal::Str(var_value[1..var_value.len() - 1].to_string())
+                                    } else if var_value.parse::<i32>().is_ok() {
+                                        is_valid_value = true;
+                                        VVal::Int(var_value.parse::<i32>().unwrap())
+                                    } else if var_value.parse::<f32>().is_ok() {
+                                        is_valid_value = true;
+                                        VVal::F(var_value.parse::<f32>().unwrap())
+                                    } else if let Some(existing_var) = vars.get(&var_value) {
+                                        is_valid_value = true;
+
+                                        match existing_var {
+                                            VVal::Str(_) => {
+                                                VVal::VarRef(var_name.to_string(), "s".to_string())
+                                            }
+                                            VVal::Int(_) => {
+                                                VVal::VarRef(var_name.to_string(), "i".to_string())
+                                            }
+                                            VVal::F(_) => {
+                                                VVal::VarRef(var_name.to_string(), "f".to_string())
+                                            }
+                                            _ => VVal::VarRef(
+                                                var_name.to_string(),
+                                                match existing_var {
+                                                    VVal::Str(_) => "s".to_string(),
+                                                    VVal::Int(_) => "i".to_string(),
+                                                    VVal::F(_) => "f".to_string(),
+                                                    _ => "v".to_string(),
+                                                },
+                                            ),
                                         }
-                                    }
-                                } else {
-                                    errors.push(ErrT::InValidVarVal(*ln, var_value.clone()));
-                                    VVal::Str(var_value.clone())
-                                };
-        
+                                    } else {
+                                        errors.push(ErrT::InValidVarVal(*ln, var_value.clone()));
+                                        VVal::Str(var_value.clone())
+                                    };
+
                                 if let Some(original_var) = vars.get(var_name) {
                                     match (original_var, &resolved_value) {
-                                        (VVal::Str(_), VVal::Str(_)) |
-                                        (VVal::Int(_), VVal::Int(_)) |
-                                        (VVal::F(_), VVal::F(_)) |
-                                        (VVal::VarRef(_, _), VVal::VarRef(_, _)) => {
-                                            nst.push(NST::VarRD(var_name.to_string(), resolved_value));
+                                        (VVal::Str(_), VVal::Str(_))
+                                        | (VVal::Int(_), VVal::Int(_))
+                                        | (VVal::F(_), VVal::F(_))
+                                        | (VVal::VarRef(_, _), VVal::VarRef(_, _)) => {
+                                            nst.push(NST::VarRD(
+                                                var_name.to_string(),
+                                                resolved_value,
+                                            ));
                                             return true;
                                         }
                                         _ => {
-                                            errors.push(ErrT::InValidVarVal(*ln, var_value.clone()));
+                                            errors
+                                                .push(ErrT::InValidVarVal(*ln, var_value.clone()));
                                             return true;
                                         }
                                     }
@@ -215,11 +225,11 @@ pub fn p2(
                     _ => {}
                 }
             }
-        
+
             *ln += 1;
             true
         }
-        
+
         _ => {
             return false;
         }
@@ -415,16 +425,22 @@ fn apply_operator(
             (left.starts_with('"') && left.ends_with('"')) // String literal check for left operand
             || (right.starts_with('"') && right.ends_with('"')) // String literal check for right operand
             || vars.get(&left).map_or(false, |v| matches!(v, VVal::Str(_))) // Check if left is a variable of type Str
-            || vars.get(&right).map_or(false, |v| matches!(v, VVal::Str(_))) // Check if right is a variable of type Str
-        )
-    {
-        let left = if left.starts_with('"') && left.ends_with('"') || vars.get(&left).map_or(false, |v| matches!(v, VVal::Str(_))) {
+            || vars.get(&right).map_or(false, |v| matches!(v, VVal::Str(_)))
+            // Check if right is a variable of type Str
+        ) {
+        let left = if left.starts_with('"') && left.ends_with('"')
+            || vars.get(&left).map_or(false, |v| matches!(v, VVal::Str(_)))
+        {
             format!("to_nstr({})", left)
         } else {
             left
         };
 
-        let right = if right.starts_with('"') && right.ends_with('"') || vars.get(&right).map_or(false, |v| matches!(v, VVal::Str(_))) {
+        let right = if right.starts_with('"') && right.ends_with('"')
+            || vars
+                .get(&right)
+                .map_or(false, |v| matches!(v, VVal::Str(_)))
+        {
             format!("to_nstr({})", right)
         } else {
             right

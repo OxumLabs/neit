@@ -6,6 +6,11 @@ use colored::*;
 #[allow(unused)]
 /// Enum representing various error types that can occur during parsing.
 pub enum ErrT {
+    /// Invalid file import statement
+    /// Holds:
+    /// - `usize`: Line number where the error occurred
+    /// - `String`: The invalid file path
+    InvFILE(usize, String),
     /// Represents an invalid value assigned to a variable.
     /// Holds:
     /// - `usize`: Line number where the error occurred.
@@ -68,7 +73,7 @@ pub enum ErrT {
     /// - `usize`: Line number where the error occurred.
     /// - `String`: The invalid operand
     InvalidOperand(usize, String),
-    /// Represents an invalid value 
+    /// Represents an invalid value
     /// Holds:
     /// - `usize`: Line number where the error occurred
     /// - `String`: Invalid value was used for?
@@ -108,6 +113,32 @@ pub fn generr(err: ErrT, codes: &Vec<&str>) {
             println!(
                 " │   {}",
                 "Check the assignment value for typos, or ensure it's compatible with the variable's type."
+                    .bright_cyan()
+            );
+            println!(" └─ {} {}", "Code:".bright_white(), codeline.red().italic());
+        }
+        ErrT::InvFILE(ln, path) => {
+            let codeline = &codes[ln - 1];
+            println!("{}", "ERROR: Invalid File Import".bold().red());
+            println!(
+                " ├─ {} {}",
+                "Line:".bright_white(),
+                format!("{}", ln).yellow().bold()
+            );
+            println!(
+                " ├─ {} {}",
+                "Cause:".bright_white(),
+                format!("Invalid file path: `{}`", path).yellow()
+            );
+            println!(" ├─ {}", "Explanation:".bright_white());
+            println!(
+                " │   {}",
+                "The file path provided for import is either incorrect or inaccessible."
+                    .bright_cyan()
+            );
+            println!(
+                " │   {}",
+                "Ensure the file path is correct and the file is accessible from the current directory\nNOTE: you can type '..' to go back a directory and so on"
                     .bright_cyan()
             );
             println!(" └─ {} {}", "Code:".bright_white(), codeline.red().italic());
@@ -380,13 +411,14 @@ pub fn generr(err: ErrT, codes: &Vec<&str>) {
                     .bright_cyan()
             );
             println!(" └─ {} {}", "Code:".bright_white(), codeline.red().italic());
-        }ErrT::InvVal(line, vfor, value) => {
+        }
+        ErrT::InvVal(line, vfor, value) => {
             let codeline = if line > 0 && line <= codes.len() {
                 &codes[line - 1]
             } else {
                 "<unknown code>"
             };
-        
+
             if value.is_empty() {
                 println!("{}", "ERROR: Missing Value".bold().red());
                 println!(
@@ -460,7 +492,7 @@ pub fn generr(err: ErrT, codes: &Vec<&str>) {
                 println!(" └─ {} {}", "Code:".bright_white(), codeline.red().italic());
             }
         }
-        
+
         _ => {}
     }
 }

@@ -1,8 +1,8 @@
-
 use crate::{
     err::{generr, ErrT},
     lex::{TokType, Tokens},
-    p2::{p2, Condition}, p3::p3,
+    p2::{p2, Condition},
+    p3::p3,
 };
 use colored::Colorize;
 use std::{collections::HashMap, process::exit};
@@ -13,13 +13,13 @@ pub enum NST {
     Var(Var),
     Input(String),
     VRDInput(String),
-    Func(String, Vec<(String,String)>, Vec<NST>),
+    Func(String, Vec<(String, String)>, Vec<NST>),
     NCLRSCRN,
     WAIT(u64),
     NIF(Condition, Vec<NST>),
     VarRD(String, VVal),
     NWHILE(Condition, Vec<NST>),
-    EX(i32)
+    EX(i32),
 }
 
 #[derive(Debug, PartialEq)]
@@ -49,7 +49,7 @@ pub fn parse(
     let mut tok_iter = toks.iter().peekable();
 
     while let Some(tok) = tok_iter.next() {
-       // println!("tok : {:?}",tok);
+        // println!("tok : {:?}",tok);
         if let TokType::EOL = tok.get_type() {
             ln += 1;
         }
@@ -198,20 +198,20 @@ pub fn parse(
                 let mut bc = 0;
                 let mut name = String::new();
                 let mut cargs = String::new();
-                let mut args: Vec<(String,String)> = Vec::new();
+                let mut args: Vec<(String, String)> = Vec::new();
                 let mut body = Vec::new();
                 let mut in_args = false;
-            
+
                 for ctok in tok_iter.by_ref() {
                     if ctok.get_type() == TokType::EOL {
                         continue;
                     }
-            
+
                     if ctok.get_type() == TokType::OP && ctok.get_value() == "(" {
                         in_args = true;
                         continue;
                     }
-            
+
                     if in_args {
                         if ctok.get_type() == TokType::OP && ctok.get_value() == ")" {
                             in_args = false;
@@ -222,7 +222,7 @@ pub fn parse(
                         }
                         continue;
                     }
-            
+
                     if bc == 0 {
                         if ctok.get_type() == TokType::INSTR {
                             if name.is_empty() {
@@ -256,13 +256,15 @@ pub fn parse(
                             "int" => {}
                             "float" => {}
                             _ => {
-                                errors.push(ErrT::InvVal(ln, "arguement".to_string(), a.to_string()));
-                                
+                                errors.push(ErrT::InvVal(
+                                    ln,
+                                    "arguement".to_string(),
+                                    a.to_string(),
+                                ));
                             }
                         }
                         args.push((name.to_string(), ty.to_string()));
-                    }
-                    else {
+                    } else {
                         errors.push(ErrT::InvVal(ln, "arguement".to_string(), a.to_string()));
                     }
                 }
@@ -272,11 +274,29 @@ pub fn parse(
                 let func_body = parse(&body, codes, file, false, errors);
                 nst.push(NST::Func(name, args, func_body));
             }
-            
+
             _ => {
-                let b = p2(tok, &mut tok_iter, codes, errors, &mut nst, &mut ln, &vars, file);
-                if !b{
-                    p3(tok, &mut tok_iter, codes, errors, &mut nst, &mut ln, &vars, file);
+                let b = p2(
+                    tok,
+                    &mut tok_iter,
+                    codes,
+                    errors,
+                    &mut nst,
+                    &mut ln,
+                    &vars,
+                    file,
+                );
+                if !b {
+                    p3(
+                        tok,
+                        &mut tok_iter,
+                        codes,
+                        errors,
+                        &mut nst,
+                        &mut ln,
+                        &vars,
+                        file,
+                    );
                 }
             }
         }

@@ -25,7 +25,10 @@ pub fn pbc(bc: &String) {
         eprintln!("[ERROR] Error reading file {}: {}", executable_path, e);
         return;
     }
-    println!("[DEBUG] Read {} bytes from the original file.", contents.len());
+    println!(
+        "[DEBUG] Read {} bytes from the original file.",
+        contents.len()
+    );
 
     // Get the original size
     let original_size = contents.len() as u64;

@@ -1,4 +1,13 @@
-
+use build::build;
+use colored::Colorize;
+use enable_ansi_support::enable_ansi_support;
+use help::help;
+#[allow(unused)]
+use lex::{lex, Tokens};
+#[allow(unused)]
+use nrunp::nrunp;
+#[allow(unused)]
+use p::parse;
 use std::fs;
 #[allow(unused)]
 use std::{
@@ -6,20 +15,6 @@ use std::{
     fs::File,
     process::{exit, Command},
 };
-use build::build;
-use colored::Colorize;
-use enable_ansi_support::enable_ansi_support;
-use help::help;
-#[allow(unused)]
-
-use lex::{lex, Tokens};
-#[allow(unused)]
-
-use nrunp::nrunp;
-#[allow(unused)]
-
-use p::parse;
-
 
 pub mod build;
 pub mod codegen;
@@ -58,51 +53,51 @@ fn main() {
         "h" | "help" => help(),
         "build" => build(&args),
         "run" => {
-    if args.len() < 3 {
-        eprintln!("Error: No source file provided.");
-        help();
-        exit(1);
-    }
-
-    let srcf = format!("./{}", &args[2]);
-    let rargs = ["joyjoy", "build", &srcf, "-o=run","-rc"];
-
-    // Start building the program
-    println!("{}", "***** Starting the build process *****".dimmed());
-    build(&rargs.iter().map(|s| s.to_string()).collect::<Vec<String>>());
-
-    // Run the program
-    println!("\n{}", "***** Running the program *****\n".dimmed());
-    let mut rcmd = Command::new("./run");
-
-    match rcmd.status() {
-        Ok(status) => {
-            if status.success() {
-                println!("{}", "Program ran successfully.".bright_green());
-            } else {
-                println!("{}", "Program failed to run.".bright_red());
+            if args.len() < 3 {
+                eprintln!("Error: No source file provided.");
+                help();
+                exit(1);
             }
-        }
-        Err(e) => {
-            eprintln!("Error running program: {}", e);
-            return; // Exit early if running the program fails
-        }
-    }
 
-    // Wait for the program to finish and then delete the file
-    println!("{}", "***** Removing the program file *****".dimmed());
-    match fs::remove_file("run") {
-        Ok(_) => {
-            println!("{}", "Program successfully removed.".bright_green());
-        }
-        Err(e) => {
-            eprintln!("Error removing program: {}", e);
-        }
-    }
+            let srcf = format!("./{}", &args[2]);
+            let rargs = ["joyjoy", "build", &srcf, "-o=run", "-rc"];
 
-    // Indicate the completion of the process
-    println!("{}", "***** Process completed *****".dimmed());
-}
+            // Start building the program
+            println!("{}", "***** Starting the build process *****".dimmed());
+            build(&rargs.iter().map(|s| s.to_string()).collect::<Vec<String>>());
+
+            // Run the program
+            println!("\n{}", "***** Running the program *****\n".dimmed());
+            let mut rcmd = Command::new("./run");
+
+            match rcmd.status() {
+                Ok(status) => {
+                    if status.success() {
+                        println!("{}", "Program ran successfully.".bright_green());
+                    } else {
+                        println!("{}", "Program failed to run.".bright_red());
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Error running program: {}", e);
+                    return; // Exit early if running the program fails
+                }
+            }
+
+            // Wait for the program to finish and then delete the file
+            println!("{}", "***** Removing the program file *****".dimmed());
+            match fs::remove_file("run") {
+                Ok(_) => {
+                    println!("{}", "Program successfully removed.".bright_green());
+                }
+                Err(e) => {
+                    eprintln!("Error removing program: {}", e);
+                }
+            }
+
+            // Indicate the completion of the process
+            println!("{}", "***** Process completed *****".dimmed());
+        }
 
         _ => {
             eprintln!("Error: Unknown Command: {}\n", cmd);
