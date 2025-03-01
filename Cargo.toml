@@ -1,0 +1,10 @@
+[package]
+name = "neit"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+colored = "3.0.0"
+lazy_static = "1.5.0"
+#add xasm-rs for the time being
+xasm-rs = {path = "../xasm-rs/"}

@@ -1,0 +1,5 @@
+print Hello world!
+eprint This is a error
+println hello world on new line
+eprintln error on new line
+lol
