@@ -1,12 +1,12 @@
 use std::process::exit;
 
 use crate::{err_system::err_types::ErrTypes, tok_system::tokens::Token};
-use super::{ERRORS, FileDescriptors, PrintTokTypes, AST, LINE};
+use super::{parse2::parse2, FileDescriptors, PrintTokTypes, AST, COLLECTED_ERRORS, LINE};
 
 #[allow(unused)]
 pub fn p1(tokens: &[Token]) -> Vec<AST> {
     let mut ast = Vec::new();
-    let mut tokens_iter = tokens.iter().peekable();
+    let mut tokens_iter: std::iter::Peekable<std::slice::Iter<'_, Token>> = tokens.iter().peekable();
     
     while let Some(token) = tokens_iter.next() {
         match token {
@@ -17,7 +17,6 @@ pub fn p1(tokens: &[Token]) -> Vec<AST> {
                     let mut has_seen_delim_space = false;
                     let mut content = Vec::new();
                     let mut escape_mode = false;
-                    
                     while let Some(next_tok) = tokens_iter.peek() {
                         match next_tok {
                             Token::EOL | Token::EOF => {
@@ -76,17 +75,8 @@ pub fn p1(tokens: &[Token]) -> Vec<AST> {
                     }
                 }
                 else{
-                    //give err
-                    unsafe {match ERRORS.lock(){
-                        Ok(mut e) => {
-                            e.push(ErrTypes::UnknownCMD(LINE));
-                        },
-                        Err(_) => {
-                            eprintln!("Error: Failed to lock mutex");
-                            exit(1);
-                        }
-                    }};
-
+                    println!("unknown calling parse2");
+                    parse2(token, &mut tokens_iter, &mut ast);
                 }
             }
             Token::EOL => {

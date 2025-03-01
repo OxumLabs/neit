@@ -1,5 +1,5 @@
-print Hello world!
-eprint This is a error
-println hello world on new line
-eprintln error on new line
-lol
+may jl = 1
+may ss = jl
+may sss = ss
+may ssss = sss
+may name = ssss

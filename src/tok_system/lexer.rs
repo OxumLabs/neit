@@ -9,6 +9,13 @@ impl LexicalAnalysis for Vec<Token> {
         let mut word = String::new();
         for c in code.chars() {
             match c {
+                '=' => {
+                    if !word.is_empty(){
+                        self.push(Token::Iden(word.clone()));
+                        word.clear();
+                    }
+                    self.push(Token::EqSign);
+                }
                 ' ' | '\t' => {
                     if !word.is_empty() {
                         self.push(Token::Iden(word.clone()));
