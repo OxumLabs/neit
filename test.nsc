@@ -1,5 +1,2 @@
-may jl = 1
-may ss = jl
-may sss = ss
-may ssss = sss
-may name = ssss
+may tst = 1/2
+print %tst

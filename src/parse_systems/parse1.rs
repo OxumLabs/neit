@@ -1,22 +1,22 @@
-use std::process::exit;
+use crate::tok_system::tokens::Token;
+use super::{parse2::parse2, FileDescriptors, PrintTokTypes, AST, LINE};
 
-use crate::{err_system::err_types::ErrTypes, tok_system::tokens::Token};
-use super::{parse2::parse2, FileDescriptors, PrintTokTypes, AST, COLLECTED_ERRORS, LINE};
-
-#[allow(unused)]
 pub fn p1(tokens: &[Token]) -> Vec<AST> {
     let mut ast = Vec::new();
-    let mut tokens_iter: std::iter::Peekable<std::slice::Iter<'_, Token>> = tokens.iter().peekable();
-    
+    let mut tokens_iter = tokens.iter().peekable();
     while let Some(token) = tokens_iter.next() {
         match token {
             Token::Iden(cmd) => {
                 if cmd == "print" || cmd == "eprint" || cmd == "println" || cmd == "eprintln" {
-                    let fd = if cmd == "eprint"||cmd == "eprintln" { FileDescriptors::STDERR } else { FileDescriptors::STDOUT };
-                    let add_newline = (cmd == "println" || cmd == "eprintln" );
-                    let mut has_seen_delim_space = false;
+                    let fd = if cmd == "eprint" || cmd == "eprintln" {
+                        FileDescriptors::STDERR
+                    } else {
+                        FileDescriptors::STDOUT
+                    };
+                    let add_newline = cmd == "println" || cmd == "eprintln";
                     let mut content = Vec::new();
                     let mut escape_mode = false;
+                    let mut has_seen_delim_space = false;
                     while let Some(next_tok) = tokens_iter.peek() {
                         match next_tok {
                             Token::EOL | Token::EOF => {
@@ -26,7 +26,6 @@ pub fn p1(tokens: &[Token]) -> Vec<AST> {
                                     content.push(PrintTokTypes::Newline);
                                 }
                                 ast.push(AST::Print { descriptor: fd, text: content });
-                                content = Vec::new();
                                 break;
                             }
                             Token::Space => {
@@ -41,25 +40,20 @@ pub fn p1(tokens: &[Token]) -> Vec<AST> {
                                 tokens_iter.next();
                                 escape_mode = true;
                             }
+                            Token::PercentSign => {
+                                tokens_iter.next();
+                                if let Some(Token::Iden(var_text)) = tokens_iter.peek() {
+                                    tokens_iter.next();
+                                    content.push(PrintTokTypes::Var(var_text.clone()));
+                                } else {
+                                    content.push(PrintTokTypes::Word("%".to_string()));
+                                }
+                            }
                             Token::Iden(text) => {
                                 tokens_iter.next();
                                 if escape_mode {
                                     if text == "n" {
                                         content.push(PrintTokTypes::Newline);
-                                    } else if text == "%" {
-                                        if let Some(Token::Iden(var_text)) = tokens_iter.peek() {
-                                            let var_token = var_text.clone();
-                                            tokens_iter.next();
-                                            let mut var_collected = String::new();
-                                            for c in var_token.chars() {
-                                                if c.is_alphanumeric() || c == '_' {
-                                                    var_collected.push(c);
-                                                } else {
-                                                    break;
-                                                }
-                                            }
-                                            content.push(PrintTokTypes::Var(var_collected));
-                                        }
                                     } else {
                                         content.push(PrintTokTypes::Word(format!("\\{}", text)));
                                     }
@@ -73,20 +67,15 @@ pub fn p1(tokens: &[Token]) -> Vec<AST> {
                             }
                         }
                     }
-                }
-                else{
-                    println!("unknown calling parse2");
+                } else {
                     parse2(token, &mut tokens_iter, &mut ast);
                 }
             }
             Token::EOL => {
                 unsafe { LINE += 1 };
             }
-            _ => {
-
-            }
+            _ => {}
         }
     }
-    
     ast
 }

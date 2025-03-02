@@ -9,8 +9,15 @@ impl LexicalAnalysis for Vec<Token> {
         let mut word = String::new();
         for c in code.chars() {
             match c {
+                '%' => {
+                    if !word.is_empty() {
+                        self.push(Token::Iden(word.clone()));
+                        word.clear();
+                    }
+                    self.push(Token::PercentSign);
+                }
                 '=' => {
-                    if !word.is_empty(){
+                    if !word.is_empty() {
                         self.push(Token::Iden(word.clone()));
                         word.clear();
                     }
@@ -37,6 +44,34 @@ impl LexicalAnalysis for Vec<Token> {
                         word.clear();
                     }
                     self.push(Token::BackSlash);
+                }
+                '+' => {
+                    if !word.is_empty() {
+                        self.push(Token::Iden(word.clone()));
+                        word.clear();
+                    }
+                    self.push(Token::ADDOP);
+                }
+                '-' => {
+                    if !word.is_empty() {
+                        self.push(Token::Iden(word.clone()));
+                        word.clear();
+                    }
+                    self.push(Token::SUBOP);
+                }
+                '/' => {
+                    if !word.is_empty() {
+                        self.push(Token::Iden(word.clone()));
+                        word.clear();
+                    }
+                    self.push(Token::DIVOP);
+                }
+                '*' => {
+                    if !word.is_empty() {
+                        self.push(Token::Iden(word.clone()));
+                        word.clear();
+                    }
+                    self.push(Token::MULTIOP);
                 }
                 _ => {
                     word.push(c);

@@ -42,7 +42,6 @@ fn main() {
             tokens.run_lexical_analysis(&code);
             let ast = parse(&tokens, &code);
             let c_code = make_c(&ast, true);
-            println!("{}", c_code);
             match linux_b_64(&c_code){
                 Ok(()) => println!("build success"),
                 Err(e) => eprintln!("build failed : {}",e),

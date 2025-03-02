@@ -71,7 +71,8 @@ void write_char(int fd, char c) {
 
 void write_str(int fd, const char *str) {
     while (*str) {
-        write(fd, str++, 1);
+        write(fd, str, 1);
+        str++;
     }
 }
 
@@ -128,13 +129,10 @@ void write_hex(int fd, unsigned int num) {
     }
 }
 
-int file_exists(nstring filename) {
-    return access(filename.str, F_OK);
-}
-
 void write_ptr(int fd, void *ptr) {
     write(fd, "0x", 2);
-    write_hex(fd, (unsigned long long)ptr);  // Correcting the cast to a 64-bit type
+    // Casting pointer to unsigned long long for 64-bit safety.
+    write_hex(fd, (unsigned int)((unsigned long long)ptr));
 }
 
 void write_float(int fd, double num) {
@@ -145,16 +143,35 @@ void write_float(int fd, double num) {
     write_num(fd, int_part);
     write(fd, ".", 1);
 
+    // Multiply the fractional part to get 6 decimal places.
     frac_part *= 1000000;
-    int frac_int = (int)frac_part;
-    write_num(fd, frac_int);
+    int frac_int = (int)(frac_part + 0.5); // rounding
+    // Ensure leading zeros if necessary.
+    char frac_buffer[10];
+    snprintf(frac_buffer, sizeof(frac_buffer), "%06d", frac_int);
+    write_str(fd, frac_buffer);
+}
+
+void write_long(int fd, long int num) {
+    char buffer[32];
+    int len = snprintf(buffer, sizeof(buffer), "%ld", num);
+    if(len > 0) {
+        write(fd, buffer, len);
+    }
+}
+
+void write_double(int fd, double num) {
+    char buffer[64];
+    int len = snprintf(buffer, sizeof(buffer), "%lf", num);
+    if(len > 0) {
+        write(fd, buffer, len);
+    }
 }
 
 void nprintf(int fd, const char *format, ...) {
     va_list args;
     va_start(args, format);
     const char *ptr = format;
-
     while (*ptr) {
         if (*ptr == '%' && *(ptr + 1) == 'd') {
             int num = va_arg(args, int);
@@ -177,25 +194,31 @@ void nprintf(int fd, const char *format, ...) {
             write_hex(fd, hex);
             ptr += 2;
         } else if (*ptr == '%' && *(ptr + 1) == 'p') {
-            void *ptr_value = va_arg(args, void*);
-            write_ptr(fd, ptr_value);
+            void *p = va_arg(args, void*);
+            write_ptr(fd, p);
             ptr += 2;
         } else if (*ptr == '%' && *(ptr + 1) == 'f') {
             double num = va_arg(args, double);
             write_float(fd, num);
             ptr += 2;
-        } else if (*ptr == '%' && *(ptr + 1) == '%') {
+        } else if (*ptr == '%' && *(ptr + 1) == '%' ) {
             write_char(fd, '%');
             ptr += 2;
+        } else if (*ptr == '%' && *(ptr + 1) == 'l' && *(ptr + 2) == 'd') {
+            long int num = va_arg(args, long int);
+            write_long(fd, num);
+            ptr += 3;
+        } else if (*ptr == '%' && *(ptr + 1) == 'l' && *(ptr + 2) == 'f') {
+            double num = va_arg(args, double);
+            write_double(fd, num);
+            ptr += 3;
         } else {
             write_char(fd, *ptr);
             ptr++;
         }
     }
-
     va_end(args);
 }
-
 typedef struct {
     int SUCCESS;
     int FAILURE;

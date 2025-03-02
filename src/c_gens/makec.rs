@@ -1,4 +1,4 @@
-use crate::parse_systems::{PrintTokTypes, Variables, AST};
+use crate::parse_systems::{PrintTokTypes, Variables, AST, COLLECTED_VARS};
 use std::fmt::Write;
 
 /// Generates C code from the AST. If `gen_main_function` is true, a main function wrapper is produced.
@@ -10,17 +10,37 @@ pub fn make_c(ast: &[AST], gen_main_function: bool) -> String {
     for node in ast {
         if let AST::Print { descriptor: fd, text } = node {
             let mut to_print = String::new();
+            let mut args_to_print = Vec::new();
             for ptok in text {
                 match ptok {
                     PrintTokTypes::Newline => to_print.push_str("\\n"),
                     PrintTokTypes::Space => to_print.push(' '),
-                    PrintTokTypes::Var(var) => to_print.push_str(var),
+                    PrintTokTypes::Var(var) => {
+                        args_to_print.push(format!("{}",var));
+                        for i in COLLECTED_VARS.lock().unwrap().iter(){
+                            match i.1 {
+                                "ch" => write!(to_print, "%c").unwrap(),
+                                "i8" => write!(to_print, "%d").unwrap(),
+                                "i16" => write!(to_print, "%d").unwrap(),
+                                "i32" => write!(to_print, "%d").unwrap(),
+                                "i64" => write!(to_print, "%d").unwrap(),
+                                "f32" => write!(to_print, "%f").unwrap(),
+                                "f64" => write!(to_print, "%lf").unwrap(),
+                                _ => {}
+                            }
+                        }
+                        to_print.push_str("\",");
+                        to_print.push_str(&args_to_print.join(","));
+                    },
                     PrintTokTypes::Word(word) => to_print.push_str(word),
                 }
             }
-            write!(&mut code, "nprintf({},\"{}\");\n", fd.display(), to_print).unwrap();
+            write!(&mut code, "nprintf({},\"{});\n", fd.display(), to_print).unwrap();
         } else if let AST::Var(var) = node {
             match var {
+                Variables::MATH(name, value) => {
+                    write!(&mut code, "f32 {} = (f32){};\n", name, value).unwrap();
+                }
                 Variables::Char(name, value) => {
                     write!(&mut code, "char {} = '{}';\n", name, value).unwrap();
                 }
@@ -69,6 +89,9 @@ pub fn make_c(ast: &[AST], gen_main_function: bool) -> String {
                                 Variables::F32(var_name, _) => var_name == actual_value,
                                 Variables::F64(var_name, _) => var_name == actual_value,
                                 Variables::REF(_, _) => false,
+                                Variables::MATH(var_name,_ ) => {
+                                    var_name == actual_value
+                                }
                             }
                         } else {
                             false
@@ -82,6 +105,7 @@ pub fn make_c(ast: &[AST], gen_main_function: bool) -> String {
                             AST::Var(Variables::I64(_, _)) => "i64",
                             AST::Var(Variables::F32(_, _)) => "f32",
                             AST::Var(Variables::F64(_, _)) => "double",
+                            AST::Var(Variables::MATH(_, _ )) => "f64",
                             _ => "auto",
                         };
                     }

@@ -10,4 +10,6 @@ pub enum ErrTypes{
     VarAlreadyExists(i32),
     ///Char type variable shall have length of 1
     CharVarLen(i32),
+    ///Invalid math usage
+    InvalidMathUsage(i32),
 }

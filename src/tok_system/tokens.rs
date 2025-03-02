@@ -8,6 +8,11 @@ pub enum Token {
     Quote,
     BackSlash,
     EqSign,
+    ADDOP,
+    SUBOP,
+    DIVOP,
+    MULTIOP,
     EOL,
-    EOF
+    EOF,
+    PercentSign,
 }

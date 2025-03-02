@@ -10,7 +10,7 @@ use lazy_static::lazy_static;
 
 lazy_static! {
     pub static ref COLLECTED_ERRORS: std::sync::Mutex<Vec<ErrTypes>> = std::sync::Mutex::new(Vec::new());
-    pub static ref COLLECTED_VARS: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new());
+    pub static ref COLLECTED_VARS: std::sync::Mutex<Vec<(String,&'static str)>> = std::sync::Mutex::new(Vec::new());
 }
 
 #[derive(Debug)]
@@ -53,6 +53,8 @@ pub enum Variables{
     F64(&'static str , f64),
     // first is the name of the variable, second is the ref var name
     REF(&'static str, String),
+    //variable containing maths operations
+    MATH(String, String),
 }
 
 pub mod parse1;
@@ -75,10 +77,10 @@ pub fn parse(tokens : &Vec<Token>,code : &String) -> Vec<AST> {
             exit(1);
         }
     }
-    println!("{}", "┌[AST]".bold().green());
-    for ast in ast.iter() {
-        println!("{:?}", ast);
-    }
-    println!("{}", "└[AST]".bold().green());
+    // println!("{}", "┌[AST]".bold().green());
+    // for ast in ast.iter() {
+    //     println!("{:?}", ast);
+    // }
+    // println!("{}", "└[AST]".bold().green());
     ast
 }
