@@ -1,6 +1,6 @@
 use crate::parse_systems::Variables;
 
-#[derive(Debug,PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum Token {
     Iden(String),
     Var(Variables),

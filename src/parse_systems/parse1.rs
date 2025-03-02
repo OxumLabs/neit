@@ -1,5 +1,5 @@
-use crate::tok_system::tokens::Token;
 use super::{parse2::parse2, FileDescriptors, PrintTokTypes, AST, LINE};
+use crate::tok_system::tokens::Token;
 
 pub fn p1(tokens: &[Token]) -> Vec<AST> {
     let mut ast = Vec::new();
@@ -25,7 +25,10 @@ pub fn p1(tokens: &[Token]) -> Vec<AST> {
                                 if add_newline {
                                     content.push(PrintTokTypes::Newline);
                                 }
-                                ast.push(AST::Print { descriptor: fd, text: content });
+                                ast.push(AST::Print {
+                                    descriptor: fd,
+                                    text: content,
+                                });
                                 break;
                             }
                             Token::Space => {

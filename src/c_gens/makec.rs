@@ -5,30 +5,32 @@ use std::fmt::Write;
 pub fn make_c(ast: &[AST], gen_main_function: bool) -> String {
     let mut code = String::with_capacity(1024);
     if gen_main_function {
-        code.push_str("#include \"nulibc.h\"\n#include <stdio.h>\n#include <stdlib.h>\nint main(){\n");
+        code.push_str(
+            "#include \"nulibc.h\"\n#include <stdio.h>\n#include <stdlib.h>\nint main(){\n",
+        );
     }
     for node in ast {
         if let AST::Print { descriptor: fd, text } = node {
             let mut to_print = String::new();
             let mut args_to_print = Vec::new();
+            // Lock COLLECTED_VARS once per print statement.
+            let collected = COLLECTED_VARS.lock().unwrap();
             for ptok in text {
                 match ptok {
                     PrintTokTypes::Newline => to_print.push_str("\\n"),
                     PrintTokTypes::Space => to_print.push(' '),
                     PrintTokTypes::Var(var) => {
-                        args_to_print.push(format!("{}",var));
-                        for i in COLLECTED_VARS.lock().unwrap().iter(){
-                            match i.1 {
+                        args_to_print.push(format!("{}", var));
+                        if let Some((_, var_type)) = collected.iter().find(|(name, _)| name == var) {
+                            match *var_type {
                                 "ch" => write!(to_print, "%c").unwrap(),
-                                "i8" => write!(to_print, "%d").unwrap(),
-                                "i16" => write!(to_print, "%d").unwrap(),
-                                "i32" => write!(to_print, "%d").unwrap(),
-                                "i64" => write!(to_print, "%d").unwrap(),
+                                "i8" | "i16" | "i32" | "i64" => write!(to_print, "%d").unwrap(),
                                 "f32" => write!(to_print, "%f").unwrap(),
                                 "f64" => write!(to_print, "%lf").unwrap(),
                                 _ => {}
                             }
                         }
+                        // Append closing quote and comma for arguments.
                         to_print.push_str("\",");
                         to_print.push_str(&args_to_print.join(","));
                     },
@@ -39,7 +41,7 @@ pub fn make_c(ast: &[AST], gen_main_function: bool) -> String {
         } else if let AST::Var(var) = node {
             match var {
                 Variables::MATH(name, value) => {
-                    write!(&mut code, "f32 {} = (f32){};\n", name, value).unwrap();
+                    write!(&mut code, "f32 {} = {};\n", name, value).unwrap();
                 }
                 Variables::Char(name, value) => {
                     write!(&mut code, "char {} = '{}';\n", name, value).unwrap();
@@ -68,7 +70,11 @@ pub fn make_c(ast: &[AST], gen_main_function: bool) -> String {
                     loop {
                         if let Some(next) = ast.iter().find_map(|node| {
                             if let AST::Var(Variables::REF(var_name, next_value)) = node {
-                                if var_name == actual_value { Some(next_value) } else { None }
+                                if var_name == actual_value {
+                                    Some(next_value)
+                                } else {
+                                    None
+                                }
                             } else {
                                 None
                             }
@@ -89,9 +95,7 @@ pub fn make_c(ast: &[AST], gen_main_function: bool) -> String {
                                 Variables::F32(var_name, _) => var_name == actual_value,
                                 Variables::F64(var_name, _) => var_name == actual_value,
                                 Variables::REF(_, _) => false,
-                                Variables::MATH(var_name,_ ) => {
-                                    var_name == actual_value
-                                }
+                                Variables::MATH(var_name, _) => var_name == actual_value,
                             }
                         } else {
                             false
@@ -105,19 +109,17 @@ pub fn make_c(ast: &[AST], gen_main_function: bool) -> String {
                             AST::Var(Variables::I64(_, _)) => "i64",
                             AST::Var(Variables::F32(_, _)) => "f32",
                             AST::Var(Variables::F64(_, _)) => "double",
-                            AST::Var(Variables::MATH(_, _ )) => "f64",
+                            AST::Var(Variables::MATH(_, _)) => "f64",
                             _ => "auto",
                         };
                     }
                     write!(&mut code, "{} {} = {};\n", actual_type, name, actual_value).unwrap();
                 }
-                
             }
         }
     }
     if gen_main_function {
         code.push_str("return 0;\n}");
     }
-    println!("{}", code);
     code
 }

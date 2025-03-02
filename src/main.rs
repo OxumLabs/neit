@@ -4,12 +4,12 @@ use build_system::linux_b::linux_b_64;
 use c_gens::makec::make_c;
 use parse_systems::parse;
 use tok_system::{lexer::LexicalAnalysis, tokens::Token};
-pub mod tok_system;
-pub mod parse_systems;
-pub mod c_gens;
 pub mod build_system;
-pub mod nulibc;
+pub mod c_gens;
 pub mod err_system;
+pub mod nulibc;
+pub mod parse_systems;
+pub mod tok_system;
 
 fn main() {
     let args = args().collect::<Vec<String>>();
@@ -42,9 +42,9 @@ fn main() {
             tokens.run_lexical_analysis(&code);
             let ast = parse(&tokens, &code);
             let c_code = make_c(&ast, true);
-            match linux_b_64(&c_code){
+            match linux_b_64(&c_code) {
                 Ok(()) => println!("build success"),
-                Err(e) => eprintln!("build failed : {}",e),
+                Err(e) => eprintln!("build failed : {}", e),
             }
         } else {
             eprintln!("unable to open file {}", path);

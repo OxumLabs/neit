@@ -1,4 +1,3 @@
-
 use std::fs::File;
 use std::io::Write;
 use std::process::Command;
@@ -27,8 +26,11 @@ pub fn linux_b_64(source: &str) -> Result<(), Box<dyn std::error::Error>> {
         .output()?;
 
     if !output.status.success() {
-        return Err(format!("Compilation failed: {}", 
-            String::from_utf8_lossy(&output.stderr)).into());
+        return Err(format!(
+            "Compilation failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        )
+        .into());
     }
 
     // Clean up temporary files

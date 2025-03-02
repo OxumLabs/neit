@@ -1,2 +1,3 @@
-may tst = 2
-print %tst
+may tst = 1
+may tstt = tst+1
+print %tstt

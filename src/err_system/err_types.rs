@@ -1,15 +1,31 @@
-///Different types of errors
-/// format is ErrType(line_containing the error)
-#[derive(Debug,Clone, Copy)]
-pub enum ErrTypes{
-    ///Unknown command , bascially we ecnountered Something we dont know how to handle
+#[derive(Debug, Clone, Copy)]
+pub enum ErrTypes {
+    /// Unknown command encountered.
     UnknownCMD(i32),
-    ///Unsupported variable type
+    /// Unsupported variable type.
     UnsupportedVarType(i32),
-    ///Variable already exists in the public
+    /// Variable already exists.
     VarAlreadyExists(i32),
-    ///Char type variable shall have length of 1
+    /// Char type variable shall have a length of 1.
     CharVarLen(i32),
-    ///Invalid math usage
+    /// Invalid math usage (e.g. multiple operators in sequence).
     InvalidMathUsage(i32),
+    /// Referenced variable not found.
+    VarNotFound(i32),
+    /// Generic syntax error.
+    SyntaxError(i32),
+    /// Expected operator is missing.
+    MissingOperator(i32),
+    /// An unexpected token was encountered.
+    UnexpectedToken(i32),
+    /// A required value is missing.
+    MissingValue(i32),
+    /// Parentheses or similar grouping symbols are unbalanced.
+    UnbalancedParentheses(i32),
+    /// Attempted division by zero.
+    DivisionByZero(i32),
+    /// Mismatched types in an operation or assignment.
+    TypeMismatch(i32),
+    /// Reserved keyword used as identifier.
+    ReservedKeyword(i32),
 }
