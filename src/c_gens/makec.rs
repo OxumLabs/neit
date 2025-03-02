@@ -118,5 +118,6 @@ pub fn make_c(ast: &[AST], gen_main_function: bool) -> String {
     if gen_main_function {
         code.push_str("return 0;\n}");
     }
+    println!("{}", code);
     code
 }
