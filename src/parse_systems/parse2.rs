@@ -71,7 +71,7 @@ pub fn parse2(
                         if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
                             unsafe { errors.push(ErrTypes::UnexpectedToken(LINE)) };
                         }
-                       	return;
+                        return;
                     }
                 } else {
                     if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
@@ -100,6 +100,19 @@ pub fn parse2(
                 }
                 return;
             }
+            // --- Begin Compound Assignment Adjustment Block --- //
+            if found_eq && found_math_op {
+                match math_operator {
+                    Some('+') => {
+                        raw_value = format!("1+{}", raw_value);
+                    },
+                    Some('-') => {
+                        raw_value = format!("1-{}", raw_value);
+                    },
+                    _ => {}
+                }
+            }
+            // --- End Compound Assignment Adjustment Block --- //
             if (found_eq && found_math_op) || raw_value.contains('+') || raw_value.contains('-') || raw_value.contains('*') || raw_value.contains('/') {
                 let mut expr_tokens = Vec::new();
                 let mut current = String::new();
@@ -213,8 +226,7 @@ pub fn parse2(
             return;
         }
         _ => {
-            //println!("├──[!] Second Parser Part was unable to check the AST , trying next parser part");
-
+            //println!(\"├──[!] Second Parser Part was unable to check the AST , trying next parser part\");
             parse3(token, token_iter, ast, code);
         }
     }

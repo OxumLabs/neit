@@ -34,9 +34,9 @@ pub fn linux_b_64(source: &str) -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Clean up temporary files
-    std::fs::remove_file(c_file)?;
-    std::fs::remove_file(nulibc_h)?;
-    std::fs::remove_file(nulibc_c)?;
+    // std::fs::remove_file(c_file)?;
+    // std::fs::remove_file(nulibc_h)?;
+    // std::fs::remove_file(nulibc_c)?;
 
     Ok(())
 }

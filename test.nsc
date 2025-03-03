@@ -1,5 +1,2 @@
-may tst = "'r'"
-while tst == "'r'"{
-    print hI
-
-}
+may age =+ 1
+may nage += age
