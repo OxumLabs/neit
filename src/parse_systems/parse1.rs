@@ -1,7 +1,7 @@
 use super::{parse2::parse2, FileDescriptors, PrintTokTypes, AST, LINE};
 use crate::tok_system::tokens::Token;
 
-pub fn p1(tokens: &[Token]) -> Vec<AST> {
+pub fn p1(tokens: &[Token], code: &String) -> Vec<AST> {
     let mut ast = Vec::new();
     let mut tokens_iter = tokens.iter().peekable();
     while let Some(token) = tokens_iter.next() {
@@ -15,12 +15,12 @@ pub fn p1(tokens: &[Token]) -> Vec<AST> {
                     };
                     let add_newline = cmd == "println" || cmd == "eprintln";
                     let mut content = Vec::new();
+                    content.reserve(16);
                     let mut escape_mode = false;
                     let mut has_seen_delim_space = false;
-                    while let Some(next_tok) = tokens_iter.peek() {
-                        match next_tok {
-                            Token::EOL | Token::EOF => {
-                                tokens_iter.next();
+                    loop {
+                        match tokens_iter.next() {
+                            Some(Token::EOL) | Some(Token::EOF) => {
                                 unsafe { LINE += 1 };
                                 if add_newline {
                                     content.push(PrintTokTypes::Newline);
@@ -31,29 +31,24 @@ pub fn p1(tokens: &[Token]) -> Vec<AST> {
                                 });
                                 break;
                             }
-                            Token::Space => {
-                                tokens_iter.next();
+                            Some(Token::Space) => {
                                 if !has_seen_delim_space {
                                     has_seen_delim_space = true;
                                 } else {
                                     content.push(PrintTokTypes::Space);
                                 }
                             }
-                            Token::BackSlash => {
-                                tokens_iter.next();
+                            Some(Token::BackSlash) => {
                                 escape_mode = true;
                             }
-                            Token::PercentSign => {
-                                tokens_iter.next();
-                                if let Some(Token::Iden(var_text)) = tokens_iter.peek() {
-                                    tokens_iter.next();
+                            Some(Token::PercentSign) => {
+                                if let Some(Token::Iden(var_text)) = tokens_iter.next() {
                                     content.push(PrintTokTypes::Var(var_text.clone()));
                                 } else {
                                     content.push(PrintTokTypes::Word("%".to_string()));
                                 }
                             }
-                            Token::Iden(text) => {
-                                tokens_iter.next();
+                            Some(Token::Iden(text)) => {
                                 if escape_mode {
                                     if text == "n" {
                                         content.push(PrintTokTypes::Newline);
@@ -65,13 +60,13 @@ pub fn p1(tokens: &[Token]) -> Vec<AST> {
                                     content.push(PrintTokTypes::Word(text.clone()));
                                 }
                             }
-                            _ => {
-                                tokens_iter.next();
-                            }
+                            Some(_) => {}
+                            None => break,
                         }
                     }
                 } else {
-                    parse2(token, &mut tokens_iter, &mut ast);
+                    //println!("├──[!] First Parser Part was unable to check the AST , trying next parser part");
+                    parse2(token, &mut tokens_iter, &mut ast, code);
                 }
             }
             Token::EOL => {

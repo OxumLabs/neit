@@ -1,3 +1,5 @@
-may tst = 1
-may tstt = tst+1
-print %tstt %tst
+may tst = "'r'"
+while tst == "'r'"{
+    print hI
+
+}

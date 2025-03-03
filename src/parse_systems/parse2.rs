@@ -1,12 +1,14 @@
 use crate::{err_system::err_types::ErrTypes, tok_system::tokens::Token};
 use crate::parse_systems::{Variables, COLLECTED_VARS};
+use super::parse3::parse3;
 use super::{AST, COLLECTED_ERRORS, LINE};
 
 #[allow(unused)]
 pub fn parse2(
     token: &Token,
     token_iter: &mut std::iter::Peekable<std::slice::Iter<'_, Token>>,
-    ast: &mut Vec<AST>
+    ast: &mut Vec<AST>,
+    code: &String
 ) {
     match token {
         Token::Iden(ref id) if id == "may" => {
@@ -32,11 +34,11 @@ pub fn parse2(
             let mut math_operator: Option<char> = None;
             if let Some(first) = token_iter.next() {
                 match first {
-                    Token::EqSign => { found_eq = true; },
-                    Token::ADDOP => { found_math_op = true; math_operator = Some('+'); },
-                    Token::SUBOP => { found_math_op = true; math_operator = Some('-'); },
-                    Token::MULTIOP => { found_math_op = true; math_operator = Some('*'); },
-                    Token::DIVOP => { found_math_op = true; math_operator = Some('/'); },
+                    Token::EqSign => { found_eq = true; }
+                    Token::ADDOP => { found_math_op = true; math_operator = Some('+'); }
+                    Token::SUBOP => { found_math_op = true; math_operator = Some('-'); }
+                    Token::MULTIOP => { found_math_op = true; math_operator = Some('*'); }
+                    Token::DIVOP => { found_math_op = true; math_operator = Some('/'); }
                     _ => {
                         if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
                             unsafe { errors.push(ErrTypes::UnknownCMD(LINE)) };
@@ -54,10 +56,10 @@ pub fn parse2(
             if found_eq && !found_math_op {
                 if let Some(next_tok) = token_iter.peek() {
                     match next_tok {
-                        Token::ADDOP => { found_math_op = true; math_operator = Some('+'); token_iter.next(); },
-                        Token::SUBOP => { found_math_op = true; math_operator = Some('-'); token_iter.next(); },
-                        Token::MULTIOP => { found_math_op = true; math_operator = Some('*'); token_iter.next(); },
-                        Token::DIVOP => { found_math_op = true; math_operator = Some('/'); token_iter.next(); },
+                        Token::ADDOP => { found_math_op = true; math_operator = Some('+'); token_iter.next(); }
+                        Token::SUBOP => { found_math_op = true; math_operator = Some('-'); token_iter.next(); }
+                        Token::MULTIOP => { found_math_op = true; math_operator = Some('*'); token_iter.next(); }
+                        Token::DIVOP => { found_math_op = true; math_operator = Some('/'); token_iter.next(); }
                         _ => {}
                     }
                 }
@@ -83,12 +85,12 @@ pub fn parse2(
             while let Some(tok) = token_iter.peek() {
                 match tok {
                     Token::EOL | Token::EOF => break,
-                    Token::Space => { token_iter.next(); },
-                    Token::Iden(val) => { raw_value.push_str(val); token_iter.next(); },
-                    Token::ADDOP => { raw_value.push('+'); token_iter.next(); },
-                    Token::SUBOP => { raw_value.push('-'); token_iter.next(); },
-                    Token::MULTIOP => { raw_value.push('*'); token_iter.next(); },
-                    Token::DIVOP => { raw_value.push('/'); token_iter.next(); },
+                    Token::Space => { token_iter.next(); }
+                    Token::Iden(val) => { raw_value.push_str(val); token_iter.next(); }
+                    Token::ADDOP => { raw_value.push('+'); token_iter.next(); }
+                    Token::SUBOP => { raw_value.push('-'); token_iter.next(); }
+                    Token::MULTIOP => { raw_value.push('*'); token_iter.next(); }
+                    Token::DIVOP => { raw_value.push('/'); token_iter.next(); }
                     _ => { token_iter.next(); }
                 }
             }
@@ -106,7 +108,9 @@ pub fn parse2(
                         if !current.trim().is_empty() { expr_tokens.push(current.trim().to_string()); }
                         expr_tokens.push(c.to_string());
                         current.clear();
-                    } else { current.push(c); }
+                    } else {
+                        current.push(c);
+                    }
                 }
                 if !current.trim().is_empty() { expr_tokens.push(current.trim().to_string()); }
                 if !expr_tokens.is_empty() {
@@ -151,10 +155,16 @@ pub fn parse2(
             } else {
                 let (is_quoted, processed_value) = if raw_value.starts_with('\'') && raw_value.ends_with('\'') {
                     (true, raw_value[1..raw_value.len()-1].to_string())
+                } else if raw_value.starts_with('"') && raw_value.ends_with('"') {
+                    (true, raw_value[1..raw_value.len()-1].to_string())
                 } else {
-                    (false, raw_value)
+                    (false, raw_value.clone())
                 };
-                if is_quoted {
+                if raw_value.starts_with('"') && raw_value.ends_with('"') {
+                    let var_name_static = Box::leak(var_name.clone().into_boxed_str());
+                    COLLECTED_VARS.lock().unwrap().push((var_name.clone(), "str"));
+                    ast.push(AST::Var(Variables::Str(var_name_static, processed_value)));
+                } else if is_quoted {
                     if processed_value.chars().count() != 1 {
                         if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
                             unsafe { errors.push(ErrTypes::CharVarLen(LINE)) };
@@ -195,11 +205,17 @@ pub fn parse2(
                     }
                 }
             }
-        },
-        _ => {
+        }
+        Token::EOL => {
             if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
-                unsafe { errors.push(ErrTypes::UnknownCMD(LINE)) };
+                unsafe { errors.push(ErrTypes::UnexpectedToken(LINE)) };
             }
+            return;
+        }
+        _ => {
+            //println!("├──[!] Second Parser Part was unable to check the AST , trying next parser part");
+
+            parse3(token, token_iter, ast, code);
         }
     }
 }

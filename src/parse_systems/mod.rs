@@ -4,8 +4,7 @@ use colored::Colorize;
 use parse1::p1;
 
 use crate::{
-    err_system::{self, err_types::ErrTypes},
-    tok_system::tokens::Token,
+    err_system::{self, err_types::ErrTypes}, helpers::Condition, tok_system::tokens::Token
 };
 
 pub static mut LINE: i32 = 1;
@@ -25,6 +24,8 @@ pub enum AST {
         text: Vec<PrintTokTypes>,
     },
     Var(Variables),
+    While(Vec<AST>,Condition,),
+    IF(Vec<AST>,Condition),
 }
 #[derive(Debug)]
 
@@ -57,6 +58,7 @@ pub enum Variables {
     I16(&'static str, i16),
     I64(&'static str, i64),
     Char(&'static str, char),
+    Str(&'static str, String),
     F32(&'static str, f32),
     F64(&'static str, f64),
     // first is the name of the variable, second is the ref var name
@@ -67,9 +69,10 @@ pub enum Variables {
 
 pub mod parse1;
 pub mod parse2;
+pub mod parse3;
 
 pub fn parse(tokens: &Vec<Token>, code: &String) -> Vec<AST> {
-    let ast = p1(tokens);
+    let ast = p1(tokens,code);
     match COLLECTED_ERRORS.lock() {
         Ok(errors) => {
             if !errors.is_empty() {

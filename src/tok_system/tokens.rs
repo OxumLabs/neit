@@ -1,9 +1,6 @@
-use crate::parse_systems::Variables;
-
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     Iden(String),
-    Var(Variables),
     Space,
     Quote,
     BackSlash,
@@ -15,4 +12,14 @@ pub enum Token {
     EOL,
     EOF,
     PercentSign,
+    DoubleEqSign,
+    LCurly,
+    RCurly,
+    And,
+    Or,
+    Not,
+    GreaterThan,
+    LessThan,
+    LSmallBrac,
+    RSmallBracket,
 }

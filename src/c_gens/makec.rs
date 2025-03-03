@@ -1,19 +1,19 @@
-use crate::parse_systems::{PrintTokTypes, Variables, AST, COLLECTED_VARS};
+use crate::{
+    helpers::c_condmk::mk_c_cond,
+    parse_systems::{PrintTokTypes, Variables, AST, COLLECTED_VARS},
+};
 use std::fmt::Write;
 
 pub fn make_c(ast: &[AST], gen_main_function: bool) -> String {
     let mut code = String::with_capacity(1024);
     if gen_main_function {
-        code.push_str(
-            "#include \"nulibc.h\"\n#include <stdio.h>\n#include <stdlib.h>\nint main(){\n",
-        );
+        code.push_str("#include \"nulibc.h\"\n#include <stdio.h>\n#include <stdlib.h>\nint main(){\n");
     }
     for node in ast {
         match node {
             AST::Print { descriptor: fd, text } => {
-                let mut format_string = String::new();
+                let mut format_string = String::with_capacity(text.len() * 4);
                 let mut args = Vec::new();
-                // Lock COLLECTED_VARS once per print statement.
                 let collected = COLLECTED_VARS.lock().unwrap();
                 for ptok in text {
                     match ptok {
@@ -21,13 +21,13 @@ pub fn make_c(ast: &[AST], gen_main_function: bool) -> String {
                         PrintTokTypes::Space => format_string.push(' '),
                         PrintTokTypes::Word(word) => format_string.push_str(word),
                         PrintTokTypes::Var(var) => {
-                            // Lookup the variable type by exact match.
                             if let Some((_, var_type)) = collected.iter().find(|(name, _)| name == var) {
                                 match *var_type {
                                     "ch" => format_string.push_str("%c"),
                                     "i8" | "i16" | "i32" | "i64" => format_string.push_str("%d"),
                                     "f32" => format_string.push_str("%f"),
                                     "f64" => format_string.push_str("%lf"),
+                                    "str" => format_string.push_str("%s"),
                                     _ => {}
                                 }
                             }
@@ -35,26 +35,12 @@ pub fn make_c(ast: &[AST], gen_main_function: bool) -> String {
                         }
                     }
                 }
-                // Build the final print call.
                 if !args.is_empty() {
-                    write!(
-                        &mut code,
-                        "nprintf({},\"{}\",{});\n",
-                        fd.display(),
-                        format_string,
-                        args.join(",")
-                    )
-                    .unwrap();
+                    write!(&mut code, "nprintf({},\"{}\",{});\n", fd.display(), format_string, args.join(",")).unwrap();
                 } else {
-                    write!(
-                        &mut code,
-                        "nprintf({},\"{}\");\n",
-                        fd.display(),
-                        format_string
-                    )
-                    .unwrap();
+                    write!(&mut code, "nprintf({},\"{}\");\n", fd.display(), format_string).unwrap();
                 }
-            },
+            }
             AST::Var(var) => {
                 match var {
                     Variables::MATH(name, value) => {
@@ -80,6 +66,9 @@ pub fn make_c(ast: &[AST], gen_main_function: bool) -> String {
                     }
                     Variables::F64(name, value) => {
                         write!(&mut code, "double {} = {};\n", name, value).unwrap();
+                    }
+                    Variables::Str(name, value) => {
+                        write!(&mut code, "nstring {} = nstr_new(\"{}\");\n", name, value).unwrap();
                     }
                     Variables::REF(name, value) => {
                         let mut actual_value = value;
@@ -113,6 +102,7 @@ pub fn make_c(ast: &[AST], gen_main_function: bool) -> String {
                                     Variables::F64(var_name, _) => var_name == actual_value,
                                     Variables::REF(_, _) => false,
                                     Variables::MATH(var_name, _) => var_name == actual_value,
+                                    Variables::Str(var_name, _) => var_name == actual_value,
                                 }
                             } else {
                                 false
@@ -127,13 +117,28 @@ pub fn make_c(ast: &[AST], gen_main_function: bool) -> String {
                                 AST::Var(Variables::F32(_, _)) => "f32",
                                 AST::Var(Variables::F64(_, _)) => "double",
                                 AST::Var(Variables::MATH(_, _)) => "f64",
+                                AST::Var(Variables::Str(_, _)) => "str",
                                 _ => "auto",
                             };
                         }
                         write!(&mut code, "{} {} = {};\n", actual_type, name, actual_value).unwrap();
                     }
                 }
-            },
+            }
+            AST::While(body, cond) => {
+                let cond = mk_c_cond(cond);
+                write!(&mut code, "while({}) {{\n", cond).unwrap();
+                let cond_code = make_c(&body, false);
+                code.push_str(&cond_code);
+                code.push_str("}\n");
+            }
+            AST::IF(body, cond) => {
+                let cond = mk_c_cond(cond);
+                write!(&mut code, "if({}) {{\n", cond).unwrap();
+                let cond_code = make_c(&body, false);
+                code.push_str(&cond_code);
+                code.push_str("}\n");
+            }
         }
     }
     if gen_main_function {

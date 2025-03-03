@@ -28,4 +28,11 @@ pub enum ErrTypes {
     TypeMismatch(i32),
     /// Reserved keyword used as identifier.
     ReservedKeyword(i32),
+    UnexpectedEndOfInput(i32),
+    InvalidNumberFormat(i32),
+    DuplicateOperator(i32),
+    MissingLeftOperand(i32),
+    MissingRightOperand(i32),
+    UnsupportedOperator(i32),
+    InvalidConditionSyntax(i32),
 }
