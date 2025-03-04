@@ -6,8 +6,7 @@ pub fn p1(tokens: &[Token], code: &String) -> Vec<AST> {
     let mut tokens_iter = tokens.iter().peekable();
     while let Some(token) = tokens_iter.next() {
         match token {
-            Token::Iden(cmd) => {
-                if cmd == "print" || cmd == "eprint" || cmd == "println" || cmd == "eprintln" {
+            Token::Iden(cmd) if cmd == "print" || cmd == "println" || cmd == "eprint" || cmd == "eprintln" => {
                     let fd = if cmd == "eprint" || cmd == "eprintln" {
                         FileDescriptors::STDERR
                     } else {
@@ -64,15 +63,15 @@ pub fn p1(tokens: &[Token], code: &String) -> Vec<AST> {
                             None => break,
                         }
                     }
-                } else {
-                    //println!("├──[!] First Parser Part was unable to check the AST , trying next parser part");
-                    parse2(token, &mut tokens_iter, &mut ast, code);
-                }
+                
             }
             Token::EOL => {
                 unsafe { LINE += 1 };
             }
-            _ => {}
+            Token::Space => {}
+            _ => {
+                parse2(token, &mut tokens_iter, &mut ast, code);
+            }
         }
     }
     ast

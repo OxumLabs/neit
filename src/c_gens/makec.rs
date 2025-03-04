@@ -62,7 +62,7 @@ pub fn make_c(ast: &[AST], gen_main_function: bool) -> String {
                         write!(&mut code, "i64 {} = {};\n", name, value).unwrap();
                     }
                     Variables::F32(name, value) => {
-                        write!(&mut code, "f32 {} = {}f;\n", name, value).unwrap();
+                        write!(&mut code, "f32 {} = {};\n", name, value).unwrap();
                     }
                     Variables::F64(name, value) => {
                         write!(&mut code, "double {} = {};\n", name, value).unwrap();
@@ -138,6 +138,41 @@ pub fn make_c(ast: &[AST], gen_main_function: bool) -> String {
                 let cond_code = make_c(&body, false);
                 code.push_str(&cond_code);
                 code.push_str("}\n");
+            }
+            AST::VarAssign(var) => {
+                // For reassignment, we simply output: variable = value;
+                match var {
+                    Variables::MATH(name, value) => {
+                        write!(&mut code, "{} = {};\n", name, value).unwrap();
+                    }
+                    Variables::Char(name, value) => {
+                        write!(&mut code, "{} = '{}';\n", name, value).unwrap();
+                    }
+                    Variables::I8(name, value) => {
+                        write!(&mut code, "{} = {};\n", name, value).unwrap();
+                    }
+                    Variables::I16(name, value) => {
+                        write!(&mut code, "{} = {};\n", name, value).unwrap();
+                    }
+                    Variables::I32(name, value) => {
+                        write!(&mut code, "{} = {};\n", name, value).unwrap();
+                    }
+                    Variables::I64(name, value) => {
+                        write!(&mut code, "{} = {};\n", name, value).unwrap();
+                    }
+                    Variables::F32(name, value) => {
+                        write!(&mut code, "{} = {};\n", name, value).unwrap();
+                    }
+                    Variables::F64(name, value) => {
+                        write!(&mut code, "{} = {};\n", name, value).unwrap();
+                    }
+                    Variables::Str(name, value) => {
+                        write!(&mut code, "{} = nstr_new(\"{}\");\n", name, value).unwrap();
+                    }
+                    Variables::REF(name, value) => {
+                        write!(&mut code, "{} = {};\n", name, value).unwrap();
+                    }
+                }
             }
         }
     }

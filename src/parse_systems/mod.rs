@@ -26,6 +26,7 @@ pub enum AST {
     Var(Variables),
     While(Vec<AST>,Condition,),
     IF(Vec<AST>,Condition),
+    VarAssign(Variables),
 }
 #[derive(Debug)]
 
@@ -70,6 +71,7 @@ pub enum Variables {
 pub mod parse1;
 pub mod parse2;
 pub mod parse3;
+pub mod parse4;
 
 pub fn parse(tokens: &Vec<Token>, code: &String) -> Vec<AST> {
     let ast = p1(tokens,code);

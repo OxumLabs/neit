@@ -35,4 +35,5 @@ pub enum ErrTypes {
     MissingRightOperand(i32),
     UnsupportedOperator(i32),
     InvalidConditionSyntax(i32),
+    VarISConst(i32),
 }

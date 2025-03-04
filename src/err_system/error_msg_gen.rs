@@ -298,5 +298,19 @@ pub fn gen_error_msg(err_type: ErrTypes, code: &String) -> String {
                 code_snippet.green().bold()
             )
         }
+        ErrTypes::VarISConst(line) => {
+            let code_snippet = code
+                .lines()
+                .nth((line - 1) as usize)
+                .unwrap_or("Line not found");
+            format!(
+                "Cannot modify constant variable at line {}.\n\
+                 Code Snippet:\n\
+                   {}\n\
+                 Hint: Constants cannot be modified after declaration",
+                line,
+                code_snippet.green().bold()
+            )
+        }
     }
 }

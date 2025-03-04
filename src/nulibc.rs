@@ -66,12 +66,22 @@ int strcmp(const char *str1, const char *str2) {
 }
 
 void write_char(int fd, char c) {
+    #if defined(_WIN32) || defined(_WIN64)
+    fwrite(&c, 1, 1, stdout);
+    #endif
+    #if defined(__unix__) || defined(__unix) || defined(__linux__) || defined(__APPLE__) || defined(__MACH__)
     write(fd, &c, 1);
+    #endif
 }
 
 void write_str(int fd, const char *str) {
     while (*str) {
+        #if defined(_WIN32) || defined(_WIN64)
+        fwrite(str, 1, 1, stdout);
+        #endif
+        #if defined(__unix__) || defined(__unix) || defined(__linux__) || defined(__APPLE__) || defined(__MACH__)
         write(fd, str, 1);
+        #endif
         str++;
     }
 }
@@ -80,11 +90,21 @@ void write_num(int fd, int num) {
     char buffer[20];
     int i = 0;
     if (num == 0) {
+        #if defined(_WIN32) || defined(_WIN64)
+        fwrite("0", 1, 1, stdout);
+        #endif
+        #if defined(__unix__) || defined(__unix) || defined(__linux__) || defined(__APPLE__) || defined(__MACH__)
         write(fd, "0", 1);
+        #endif
         return;
     }
     if (num < 0) {
+        #if defined(_WIN32) || defined(_WIN64)
+        fwrite("-", 1, 1, stdout);
+        #endif
+        #if defined(__unix__) || defined(__unix) || defined(__linux__) || defined(__APPLE__) || defined(__MACH__)
         write(fd, "-", 1);
+        #endif
         num = -num;
     }
     while (num > 0) {
@@ -92,7 +112,12 @@ void write_num(int fd, int num) {
         num /= 10;
     }
     for (int j = i - 1; j >= 0; j--) {
+        #if defined(_WIN32) || defined(_WIN64)
+        fwrite(&buffer[j], 1, 1, stdout);
+        #endif
+        #if defined(__unix__) || defined(__unix) || defined(__linux__) || defined(__APPLE__) || defined(__MACH__)
         write(fd, &buffer[j], 1);
+        #endif
     }
 }
 
@@ -100,7 +125,12 @@ void write_unsigned(int fd, unsigned int num) {
     char buffer[20];
     int i = 0;
     if (num == 0) {
+        #if defined(_WIN32) || defined(_WIN64)
+        fwrite("0", 1, 1, stdout);
+        #endif
+        #if defined(__unix__) || defined(__unix) || defined(__linux__) || defined(__APPLE__) || defined(__MACH__)
         write(fd, "0", 1);
+        #endif
         return;
     }
     while (num > 0) {
@@ -108,7 +138,12 @@ void write_unsigned(int fd, unsigned int num) {
         num /= 10;
     }
     for (int j = i - 1; j >= 0; j--) {
+        #if defined(_WIN32) || defined(_WIN64)
+        fwrite(&buffer[j], 1, 1, stdout);
+        #endif
+        #if defined(__unix__) || defined(__unix) || defined(__linux__) || defined(__APPLE__) || defined(__MACH__)
         write(fd, &buffer[j], 1);
+        #endif
     }
 }
 
@@ -117,7 +152,12 @@ void write_hex(int fd, unsigned int num) {
     char buffer[10];
     int i = 0;
     if (num == 0) {
+        #if defined(_WIN32) || defined(_WIN64)
+        fwrite("0", 1, 1, stdout);
+        #endif
+        #if defined(__unix__) || defined(__unix) || defined(__linux__) || defined(__APPLE__) || defined(__MACH__)
         write(fd, "0", 1);
+        #endif
         return;
     }
     while (num > 0) {
@@ -125,12 +165,23 @@ void write_hex(int fd, unsigned int num) {
         num /= 16;
     }
     for (int j = i - 1; j >= 0; j--) {
+        #if defined(_WIN32) || defined(_WIN64)
+        fwrite(&buffer[j], 1, 1, stdout);
+        #endif
+        #if defined(__unix__) || defined(__unix) || defined(__linux__) || defined(__APPLE__) || defined(__MACH__)
         write(fd, &buffer[j], 1);
+        #endif
     }
 }
 
 void write_ptr(int fd, void *ptr) {
+    // Write "0x" before the pointer value.
+    #if defined(_WIN32) || defined(_WIN64)
+    fwrite("0x", 2, 1, stdout);
+    #endif
+    #if defined(__unix__) || defined(__unix) || defined(__linux__) || defined(__APPLE__) || defined(__MACH__)
     write(fd, "0x", 2);
+    #endif
     // Casting pointer to unsigned long long for 64-bit safety.
     write_hex(fd, (unsigned int)((unsigned long long)ptr));
 }
@@ -141,7 +192,13 @@ void write_float(int fd, double num) {
     double frac_part = num - int_part;
 
     write_num(fd, int_part);
+    // Write decimal point.
+    #if defined(_WIN32) || defined(_WIN64)
+    fwrite(".", 1, 1, stdout);
+    #endif
+    #if defined(__unix__) || defined(__unix) || defined(__linux__) || defined(__APPLE__) || defined(__MACH__)
     write(fd, ".", 1);
+    #endif
 
     // Multiply the fractional part to get 6 decimal places.
     frac_part *= 1000000;
@@ -156,7 +213,12 @@ void write_long(int fd, long int num) {
     char buffer[32];
     int len = snprintf(buffer, sizeof(buffer), "%ld", num);
     if(len > 0) {
+        #if defined(_WIN32) || defined(_WIN64)
+        fwrite(buffer, 1, len, stdout);
+        #endif
+        #if defined(__unix__) || defined(__unix) || defined(__linux__) || defined(__APPLE__) || defined(__MACH__)
         write(fd, buffer, len);
+        #endif
     }
 }
 
@@ -164,7 +226,12 @@ void write_double(int fd, double num) {
     char buffer[64];
     int len = snprintf(buffer, sizeof(buffer), "%lf", num);
     if(len > 0) {
+        #if defined(_WIN32) || defined(_WIN64)
+        fwrite(buffer, 1, len, stdout);
+        #endif
+        #if defined(__unix__) || defined(__unix) || defined(__linux__) || defined(__APPLE__) || defined(__MACH__)
         write(fd, buffer, len);
+        #endif
     }
 }
 
