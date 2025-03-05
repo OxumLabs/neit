@@ -5,6 +5,7 @@ use std::{
     path::Path,
     process::exit,
 };
+
 use build_system::linux_b::linux_b_64;
 use c_gens::makec::make_c;
 use parse_systems::parse;
@@ -92,7 +93,6 @@ fn print_help() {
     println!("└─ Example: neit build ./source.neit --out=program --target=linux-x86-64,winx8664 --cc=zig");
 }
 
-
 fn main() {
     let config = parse_config();
     if config.command == "help" {
@@ -140,10 +140,20 @@ fn main() {
     let mut tokens: Vec<Token> = Vec::new();
     tokens.run_lexical_analysis(&code);
     println!("├─ Tokenization complete ({} tokens generated).", tokens.len());
-    let ast = parse(&tokens, &code);
+    let proj_path: &'static str = Box::leak(proj.display().to_string().into_boxed_str());
+    
+    // Create mutable vectors for variables and errors.
+    let mut collected_vars = Vec::new();
+    let mut collected_errors = Vec::new();
+    
+    // Parse tokens into an AST.
+    let (ast, _, _) = parse(&tokens, &code, proj_path, false, &mut collected_vars, &mut collected_errors);
     println!("├─ Parsing complete. AST generated.");
-    let c_code = make_c(&ast, true);
+    
+    // Generate C code using the AST and the mutable collected_vars/collected_errors.
+    let c_code = make_c(&ast, true, &collected_vars, &mut collected_errors);
     println!("└─ C code generated. Initiating build process...");
+    
     match linux_b_64(&c_code, &config) {
         Ok(()) => println!("└─ Build succeeded for '{}'.", config.path),
         Err(e) => {

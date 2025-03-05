@@ -1,41 +1,53 @@
 use crate::{
     err_system::err_types::ErrTypes,
-    parse_systems::{COLLECTED_ERRORS, COLLECTED_VARS, LINE},
     tok_system::tokens::Token,
 };
 use super::{ChildCond, Condition, LogicalJoin, Operand, CondToks};
 
-pub fn parse_condition(raw_cond: &Vec<Token>) -> Condition {
+/// Parses a raw condition (vector of tokens) into a `Condition` structure.
+///
+/// # Arguments
+/// - `raw_cond`: The tokens representing the condition.
+/// - `collected_errors`: Mutable reference to the error vector for reporting issues.
+/// - `collected_vars`: Immutable reference to the collected variables (name and type).
+/// - `line`: The current line number (used for error reporting).
+pub fn parse_condition(
+    raw_cond: &Vec<Token>,
+    collected_errors: &mut Vec<ErrTypes>,
+    collected_vars: &Vec<(String, &'static str)>,
+    line: i32,
+) -> Condition {
     let mut child_conditions = Vec::new();
     let mut tokens = raw_cond.iter().peekable();
+    
     while let Some(tok) = tokens.peek() {
         if let Token::Space = tok {
             tokens.next();
             continue;
         }
+        
         let (left_operand, left_type) = match tokens.next() {
             Some(Token::Iden(s)) => {
                 if s.starts_with("\"") && s.ends_with("\"") {
                     (Operand::Literal(s[1..s.len() - 1].to_string()), "str")
                 } else if let Ok(n) = s.parse::<f64>() {
                     (Operand::Numeric(n), "f64")
+                } else if let Some((_, var_type)) = collected_vars.iter().find(|(name, _)| name == s) {
+                    (Operand::Variable(s.clone()), *var_type)
                 } else {
-                    let collected_vars = COLLECTED_VARS.lock().unwrap();
-                    if let Some((_, var_type)) = collected_vars.iter().find(|(name, _)| name == s) {
-                        (Operand::Variable(s.clone()), *var_type)
-                    } else {
-                        if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
-                            unsafe { errors.push(ErrTypes::VarNotFound(LINE)) };
-                        }
-                        (Operand::Variable(s.clone()), "unknown")
-                    }
+                    collected_errors.push(ErrTypes::VarNotFound(line));
+                    (Operand::Variable(s.clone()), "unknown")
                 }
             }
             _ => continue,
         };
+        
+        // Skip any spaces.
         while let Some(Token::Space) = tokens.peek() {
             tokens.next();
         }
+        
+        // Parse operator.
         let operator = match tokens.next() {
             Some(Token::DoubleEqSign) => CondToks::Equal,
             Some(Token::EqSign) => CondToks::Equal,
@@ -46,37 +58,34 @@ pub fn parse_condition(raw_cond: &Vec<Token>) -> Condition {
                     tokens.next();
                     CondToks::NotEqual
                 } else {
-                    if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
-                        unsafe { errors.push(ErrTypes::MissingOperator(LINE)) };
-                    }
+                    collected_errors.push(ErrTypes::MissingOperator(line));
                     continue;
                 }
             }
             _ => continue,
         };
+        
         while let Some(Token::Space) = tokens.peek() {
             tokens.next();
         }
+        
+        // Parse right operand.
         let (right_operand, right_type) = match tokens.next() {
             Some(Token::Iden(s)) => {
                 if s.starts_with("\"") && s.ends_with("\"") {
                     (Operand::Literal(s[1..s.len() - 1].to_string()), "str")
                 } else if let Ok(n) = s.parse::<f64>() {
                     (Operand::Numeric(n), "f64")
+                } else if let Some((_, var_type)) = collected_vars.iter().find(|(name, _)| name == s) {
+                    (Operand::Variable(s.clone()), *var_type)
                 } else {
-                    let collected_vars = COLLECTED_VARS.lock().unwrap();
-                    if let Some((_, var_type)) = collected_vars.iter().find(|(name, _)| name == s) {
-                        (Operand::Variable(s.clone()), *var_type)
-                    } else {
-                        if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
-                            unsafe { errors.push(ErrTypes::VarNotFound(LINE)) };
-                        }
-                        (Operand::Variable(s.clone()), "unknown")
-                    }
+                    collected_errors.push(ErrTypes::VarNotFound(line));
+                    (Operand::Variable(s.clone()), "unknown")
                 }
             }
             _ => continue,
         };
+        
         let valid_combinations = [
             ("i8", "i8"),
             ("i8", "i16"),
@@ -117,18 +126,19 @@ pub fn parse_condition(raw_cond: &Vec<Token>) -> Condition {
             ("str", "str"),
             ("ch", "ch"),
         ];
+        
         let is_valid = valid_combinations
             .iter()
             .any(|&(lt, rt)| lt == left_type && rt == right_type);
         if !is_valid {
-            if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
-                unsafe { errors.push(ErrTypes::TypeMismatch(LINE)) };
-            }
+            collected_errors.push(ErrTypes::TypeMismatch(line));
             continue;
         }
+        
         while let Some(Token::Space) = tokens.peek() {
             tokens.next();
         }
+        
         let joiner = if let Some(token) = tokens.peek() {
             match token {
                 Token::And => {
@@ -144,6 +154,7 @@ pub fn parse_condition(raw_cond: &Vec<Token>) -> Condition {
         } else {
             None
         };
+        
         child_conditions.push(ChildCond {
             left: left_operand,
             operator,
@@ -151,5 +162,6 @@ pub fn parse_condition(raw_cond: &Vec<Token>) -> Condition {
             joiner,
         });
     }
+    
     Condition { child_conditions }
 }

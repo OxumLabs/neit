@@ -1,14 +1,17 @@
 use super::parse3::parse3;
-use super::{AST, COLLECTED_ERRORS, LINE};
-use crate::parse_systems::{Variables, COLLECTED_VARS};
+use super::AST;
+use crate::parse_systems::Variables;
 use crate::{err_system::err_types::ErrTypes, tok_system::tokens::Token};
 
-#[allow(unused)]
+#[allow(unused, non_snake_case)]
 pub fn parse2(
     token: &Token,
     token_iter: &mut std::iter::Peekable<std::slice::Iter<'_, Token>>,
     ast: &mut Vec<AST>,
     code: &String,
+    collected_vars: &mut Vec<(String, &'static str)>,
+    collected_errors: &mut Vec<ErrTypes>,
+    line: &mut i32,
 ) {
     match token {
         Token::Iden(ref id) if id == "may" => {
@@ -18,21 +21,20 @@ pub fn parse2(
             let var_name = match token_iter.next() {
                 Some(Token::Iden(name)) => name.clone(),
                 _ => {
-                    if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
-                        unsafe { errors.push(ErrTypes::UnknownCMD(LINE)) };
-                    }
+                    collected_errors.push(ErrTypes::UnknownCMD(*line));
                     return;
                 }
             };
-            if COLLECTED_VARS.lock().unwrap().iter().any(|(name, _)| name == &var_name) {
-                if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
-                    unsafe { errors.push(ErrTypes::VarAlreadyExists(LINE)) };
-                }
+
+            if collected_vars.iter().any(|(name, _)| name == &var_name) {
+                collected_errors.push(ErrTypes::VarAlreadyExists(*line));
                 return;
             }
+
             while let Some(Token::Space) = token_iter.peek() {
                 token_iter.next();
             }
+
             let mut found_eq = false;
             let mut found_math_op = false;
             let mut math_operator: Option<char> = None;
@@ -58,21 +60,19 @@ pub fn parse2(
                         math_operator = Some('/');
                     }
                     _ => {
-                        if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
-                            unsafe { errors.push(ErrTypes::UnknownCMD(LINE)) };
-                        }
+                        collected_errors.push(ErrTypes::UnknownCMD(*line));
                         return;
                     }
                 }
             } else {
-                if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
-                    unsafe { errors.push(ErrTypes::UnknownCMD(LINE)) };
-                }
+                collected_errors.push(ErrTypes::UnknownCMD(*line));
                 return;
             }
+
             while let Some(Token::Space) = token_iter.peek() {
                 token_iter.next();
             }
+
             if found_eq && !found_math_op {
                 if let Some(next_tok) = token_iter.peek() {
                     match next_tok {
@@ -107,21 +107,19 @@ pub fn parse2(
                     if let Token::EqSign = next_tok {
                         found_eq = true;
                     } else {
-                        if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
-                            unsafe { errors.push(ErrTypes::UnexpectedToken(LINE)) };
-                        }
+                        collected_errors.push(ErrTypes::UnexpectedToken(*line));
                         return;
                     }
                 } else {
-                    if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
-                        unsafe { errors.push(ErrTypes::MissingValue(LINE)) };
-                    }
+                    collected_errors.push(ErrTypes::MissingValue(*line));
                     return;
                 }
             }
+
             while let Some(Token::Space) = token_iter.peek() {
                 token_iter.next();
             }
+
             let mut raw_value = String::new();
             while let Some(tok) = token_iter.peek() {
                 match tok {
@@ -162,12 +160,12 @@ pub fn parse2(
                     }
                 }
             }
+
             if raw_value.trim().is_empty() {
-                if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
-                    unsafe { errors.push(ErrTypes::MissingValue(LINE)) };
-                }
+                collected_errors.push(ErrTypes::MissingValue(*line));
                 return;
             }
+
             if found_eq && found_math_op {
                 match math_operator {
                     Some('+') => {
@@ -178,6 +176,7 @@ pub fn parse2(
                     }
                     _ => {}
                 }
+
                 if raw_value.contains('+')
                     || raw_value.contains('-')
                     || raw_value.contains('*')
@@ -202,17 +201,13 @@ pub fn parse2(
                     if !expr_tokens.is_empty() {
                         if let Some(first) = expr_tokens.first() {
                             if first == "+" || first == "-" || first == "*" || first == "/" {
-                                if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
-                                    unsafe { errors.push(ErrTypes::MissingValue(LINE)) };
-                                }
+                                collected_errors.push(ErrTypes::MissingValue(*line));
                                 return;
                             }
                         }
                         if let Some(last) = expr_tokens.last() {
                             if last == "+" || last == "-" || last == "*" || last == "/" {
-                                if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
-                                    unsafe { errors.push(ErrTypes::MissingValue(LINE)) };
-                                }
+                                collected_errors.push(ErrTypes::MissingValue(*line));
                                 return;
                             }
                         }
@@ -220,26 +215,22 @@ pub fn parse2(
                             if (expr_tokens[i] == "+" || expr_tokens[i] == "-" || expr_tokens[i] == "*" || expr_tokens[i] == "/")
                                 && (expr_tokens[i + 1] == "+" || expr_tokens[i + 1] == "-" || expr_tokens[i + 1] == "*" || expr_tokens[i + 1] == "/")
                             {
-                                if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
-                                    unsafe { errors.push(ErrTypes::InvalidMathUsage(LINE)) };
-                                }
+                                collected_errors.push(ErrTypes::InvalidMathUsage(*line));
                                 return;
                             }
                             if expr_tokens[i] == "/" && expr_tokens[i + 1].trim() == "0" {
-                                if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
-                                    unsafe { errors.push(ErrTypes::DivisionByZero(LINE)) };
-                                }
+                                collected_errors.push(ErrTypes::DivisionByZero(*line));
                                 return;
                             }
                         }
                     }
-                    let math_expr = raw_value.clone();
-                    let var = Variables::MATH(var_name.clone(), math_expr);
-                    if COLLECTED_VARS.lock().unwrap().iter().all(|(name, _)| name != &var_name) {
-                        COLLECTED_VARS.lock().unwrap().push((var_name.clone(), "f32"));
-                    }
-                    ast.push(AST::Var(var));
                 }
+                let math_expr = raw_value.clone();
+                let var = Variables::MATH(var_name.clone(), math_expr);
+                if collected_vars.iter().all(|(name, _)| name != &var_name) {
+                    collected_vars.push((var_name.clone(), "f32"));
+                }
+                ast.push(AST::Var(var));
             } else {
                 let (is_quoted, mut processed_value) =
                     if raw_value.starts_with('\'') && raw_value.ends_with('\'') {
@@ -249,20 +240,22 @@ pub fn parse2(
                     } else {
                         (false, raw_value.clone())
                     };
+
                 if raw_value.starts_with('"') && raw_value.ends_with('"') {
                     let var_name_static = Box::leak(var_name.clone().into_boxed_str());
-                    COLLECTED_VARS.lock().unwrap().push((var_name.clone(), "str"));
+                    collected_vars.push((var_name.clone(), "str"));
                     ast.push(AST::Var(Variables::Str(var_name_static, processed_value)));
                 } else if is_quoted {
                     if processed_value.chars().count() != 1 {
-                        if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
-                            unsafe { errors.push(ErrTypes::CharVarLen(LINE)) };
-                        }
+                        collected_errors.push(ErrTypes::CharVarLen(*line));
                         return;
                     }
                     let var_name_static = Box::leak(var_name.clone().into_boxed_str());
-                    COLLECTED_VARS.lock().unwrap().push((var_name.clone(), "ch"));
-                    ast.push(AST::Var(Variables::Char(var_name_static, processed_value.chars().next().unwrap())));
+                    collected_vars.push((var_name.clone(), "ch"));
+                    ast.push(AST::Var(Variables::Char(
+                        var_name_static,
+                        processed_value.chars().next().unwrap(),
+                    )));
                 } else {
                     let mut forced_type = None;
                     if processed_value.ends_with(')') {
@@ -279,9 +272,7 @@ pub fn parse2(
                                     slice.trim().to_string()
                                 };
                                 if trimmed_value.is_empty() {
-                                    if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
-                                        unsafe { errors.push(ErrTypes::MissingValue(LINE)) };
-                                    }
+                                    collected_errors.push(ErrTypes::MissingValue(*line));
                                     return;
                                 }
                                 processed_value = trimmed_value;
@@ -293,67 +284,55 @@ pub fn parse2(
                         match ty.as_str() {
                             "i8" => {
                                 if let Ok(val) = processed_value.parse::<i8>() {
-                                    COLLECTED_VARS.lock().unwrap().push((var_name.clone(), "i8"));
+                                    collected_vars.push((var_name.clone(), "i8"));
                                     ast.push(AST::Var(Variables::I8(var_name_static, val)));
                                 } else {
-                                    if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
-                                        unsafe { errors.push(ErrTypes::VarNotFound(LINE)) };
-                                    }
+                                    collected_errors.push(ErrTypes::VarNotFound(*line));
                                     return;
                                 }
                             }
                             "i16" => {
                                 if let Ok(val) = processed_value.parse::<i16>() {
-                                    COLLECTED_VARS.lock().unwrap().push((var_name.clone(), "i16"));
+                                    collected_vars.push((var_name.clone(), "i16"));
                                     ast.push(AST::Var(Variables::I16(var_name_static, val)));
                                 } else {
-                                    if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
-                                        unsafe { errors.push(ErrTypes::VarNotFound(LINE)) };
-                                    }
+                                    collected_errors.push(ErrTypes::VarNotFound(*line));
                                     return;
                                 }
                             }
                             "i32" => {
                                 if let Ok(val) = processed_value.parse::<i32>() {
-                                    COLLECTED_VARS.lock().unwrap().push((var_name.clone(), "i32"));
+                                    collected_vars.push((var_name.clone(), "i32"));
                                     ast.push(AST::Var(Variables::I32(var_name_static, val)));
                                 } else {
-                                    if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
-                                        unsafe { errors.push(ErrTypes::VarNotFound(LINE)) };
-                                    }
+                                    collected_errors.push(ErrTypes::VarNotFound(*line));
                                     return;
                                 }
                             }
                             "i64" => {
                                 if let Ok(val) = processed_value.parse::<i64>() {
-                                    COLLECTED_VARS.lock().unwrap().push((var_name.clone(), "i64"));
+                                    collected_vars.push((var_name.clone(), "i64"));
                                     ast.push(AST::Var(Variables::I64(var_name_static, val)));
                                 } else {
-                                    if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
-                                        unsafe { errors.push(ErrTypes::VarNotFound(LINE)) };
-                                    }
+                                    collected_errors.push(ErrTypes::VarNotFound(*line));
                                     return;
                                 }
                             }
                             "f32" => {
                                 if let Ok(val) = processed_value.parse::<f32>() {
-                                    COLLECTED_VARS.lock().unwrap().push((var_name.clone(), "f32"));
+                                    collected_vars.push((var_name.clone(), "f32"));
                                     ast.push(AST::Var(Variables::F32(var_name_static, val)));
                                 } else {
-                                    if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
-                                        unsafe { errors.push(ErrTypes::VarNotFound(LINE)) };
-                                    }
+                                    collected_errors.push(ErrTypes::VarNotFound(*line));
                                     return;
                                 }
                             }
                             "f64" => {
                                 if let Ok(val) = processed_value.parse::<f64>() {
-                                    COLLECTED_VARS.lock().unwrap().push((var_name.clone(), "f64"));
+                                    collected_vars.push((var_name.clone(), "f64"));
                                     ast.push(AST::Var(Variables::F64(var_name_static, val)));
                                 } else {
-                                    if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
-                                        unsafe { errors.push(ErrTypes::VarNotFound(LINE)) };
-                                    }
+                                    collected_errors.push(ErrTypes::VarNotFound(*line));
                                     return;
                                 }
                             }
@@ -361,30 +340,28 @@ pub fn parse2(
                         }
                     } else {
                         if let Ok(val) = processed_value.parse::<i8>() {
-                            COLLECTED_VARS.lock().unwrap().push((var_name.clone(), "i8"));
+                            collected_vars.push((var_name.clone(), "i8"));
                             ast.push(AST::Var(Variables::I8(var_name_static, val)));
                         } else if let Ok(val) = processed_value.parse::<i16>() {
-                            COLLECTED_VARS.lock().unwrap().push((var_name.clone(), "i16"));
+                            collected_vars.push((var_name.clone(), "i16"));
                             ast.push(AST::Var(Variables::I16(var_name_static, val)));
                         } else if let Ok(val) = processed_value.parse::<i32>() {
-                            COLLECTED_VARS.lock().unwrap().push((var_name.clone(), "i32"));
+                            collected_vars.push((var_name.clone(), "i32"));
                             ast.push(AST::Var(Variables::I32(var_name_static, val)));
                         } else if let Ok(val) = processed_value.parse::<i64>() {
-                            COLLECTED_VARS.lock().unwrap().push((var_name.clone(), "i64"));
+                            collected_vars.push((var_name.clone(), "i64"));
                             ast.push(AST::Var(Variables::I64(var_name_static, val)));
                         } else if let Ok(val) = processed_value.parse::<f32>() {
-                            COLLECTED_VARS.lock().unwrap().push((var_name.clone(), "f32"));
+                            collected_vars.push((var_name.clone(), "f32"));
                             ast.push(AST::Var(Variables::F32(var_name_static, val)));
                         } else if let Ok(val) = processed_value.parse::<f64>() {
-                            COLLECTED_VARS.lock().unwrap().push((var_name.clone(), "f64"));
+                            collected_vars.push((var_name.clone(), "f64"));
                             ast.push(AST::Var(Variables::F64(var_name_static, val)));
-                        } else if COLLECTED_VARS.lock().unwrap().iter().any(|(name, _)| name == &processed_value) {
-                            COLLECTED_VARS.lock().unwrap().push((var_name.clone(), "ref"));
+                        } else if collected_vars.iter().any(|(name, _)| name == &processed_value) {
+                            collected_vars.push((var_name.clone(), "ref"));
                             ast.push(AST::Var(Variables::REF(var_name_static, processed_value)));
                         } else {
-                            if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
-                                unsafe { errors.push(ErrTypes::VarNotFound(LINE)) };
-                            }
+                            collected_errors.push(ErrTypes::VarNotFound(*line));
                             return;
                         }
                     }
@@ -392,13 +369,11 @@ pub fn parse2(
             }
         }
         Token::EOL => {
-            if let Ok(mut errors) = COLLECTED_ERRORS.lock() {
-                unsafe { errors.push(ErrTypes::UnexpectedToken(LINE)) };
-            }
+            collected_errors.push(ErrTypes::UnexpectedToken(*line));
             return;
         }
         other => {
-            parse3(token, token_iter, ast, code);
+            parse3(token, token_iter, ast, code, collected_vars, collected_errors, line);
         }
     }
 }

@@ -2,20 +2,11 @@ use std::process::exit;
 
 use colored::Colorize;
 use parse1::p1;
-
 use crate::{
-    err_system::{self, err_types::ErrTypes}, helpers::Condition, tok_system::tokens::Token
+    err_system::{err_types::ErrTypes, error_msg_gen::gen_error_msg},
+    helpers::Condition,
+    tok_system::tokens::Token,
 };
-
-pub static mut LINE: i32 = 1;
-use lazy_static::lazy_static;
-
-lazy_static! {
-    pub static ref COLLECTED_ERRORS: std::sync::Mutex<Vec<ErrTypes>> =
-        std::sync::Mutex::new(Vec::new());
-    pub static ref COLLECTED_VARS: std::sync::Mutex<Vec<(String, &'static str)>> =
-        std::sync::Mutex::new(Vec::new());
-}
 
 #[derive(Debug)]
 pub enum AST {
@@ -24,27 +15,28 @@ pub enum AST {
         text: Vec<PrintTokTypes>,
     },
     Var(Variables),
-    While(Vec<AST>,Condition,),
-    IF(Vec<AST>,Condition),
+    While(Vec<AST>, Condition),
+    IF(Vec<AST>, Condition),
     VarAssign(Variables),
 }
-#[derive(Debug)]
 
-///diff types for the print tokens that it will store like newline or variable and all
+#[derive(Debug)]
+/// Different types of print tokens, e.g. variables, words, spaces, and newlines.
 pub enum PrintTokTypes {
-    Var(String), //later take in variable enum to ensure types easily
+    Var(String),
     Newline,
     Word(String),
     Space,
 }
-#[derive(Debug, Clone, Copy)]
 
-///file descriptors
+#[derive(Debug, Clone, Copy)]
+/// File descriptors.
 pub enum FileDescriptors {
     STDOUT = 1,
     STDERR = 2,
     STDIN = 0,
 }
+
 impl FileDescriptors {
     pub fn display(self) -> i32 {
         self as i32
@@ -52,7 +44,7 @@ impl FileDescriptors {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-///Variables enums
+/// Variable types.
 pub enum Variables {
     I32(&'static str, i32),
     I8(&'static str, i8),
@@ -62,9 +54,9 @@ pub enum Variables {
     Str(&'static str, String),
     F32(&'static str, f32),
     F64(&'static str, f64),
-    // first is the name of the variable, second is the ref var name
+    // First is the variable name, second is the reference variable name.
     REF(&'static str, String),
-    //variable containing maths operations
+    // Variable holding mathematical operations.
     MATH(String, String),
 }
 
@@ -73,27 +65,46 @@ pub mod parse2;
 pub mod parse3;
 pub mod parse4;
 
-pub fn parse(tokens: &Vec<Token>, code: &String) -> Vec<AST> {
-    let ast = p1(tokens,code);
-    match COLLECTED_ERRORS.lock() {
-        Ok(errors) => {
-            if !errors.is_empty() {
-                eprintln!("{}", "┌[ERRORS]".bold().red());
-                for err in errors.iter() {
-                    eprintln!("{}", format!("++++++++++++++++++++++++++++++++++++++++\n{}\n+++++++++++++++++++++++++++++++++++++++++++", err_system::error_msg_gen::gen_error_msg(*err, code)).red());
-                }
-                exit(1);
-            }
-        }
-        Err(e) => {
-            eprintln!("{}", e);
-            exit(1);
-        }
+/// Parses tokens into an AST while collecting variables and reporting errors.
+/// 
+/// # Arguments
+/// - `tokens`: The tokens to parse.
+/// - `code`: The source code (for error messages).
+/// - `file`: Name of the file being parsed.
+/// - `use_args_vars_err`: If `true`, the function uses the provided vectors without clearing them;
+///   if `false`, it clears the provided vectors before parsing.
+/// - `collected_vars`: A mutable reference to a vector of variable tuples (name and type).
+/// - `collected_errors`: A mutable reference to a vector of errors.
+/// 
+/// # Returns
+/// A triple containing:
+/// - The parsed AST (owned),
+/// - A reference to the collected variables,
+/// - A reference to the collected errors.
+pub fn parse<'a>(
+    tokens: &'a Vec<Token>,
+    code: &'a String,
+    file: &'static str,
+    use_args_vars_err: bool,
+    collected_vars: &'a mut Vec<(String, &'static str)>,
+    collected_errors: &'a mut Vec<ErrTypes>,
+) -> (Vec<AST>, &'a Vec<(String, &'static str)>, &'a Vec<ErrTypes>) {
+    if !use_args_vars_err {
+        collected_vars.clear();
+        collected_errors.clear();
     }
-    // println!("{}", "┌[AST]".bold().green());
-    // for ast in ast.iter() {
-    //     println!("{:?}", ast);
-    // }
-    // println!("{}", "└[AST]".bold().green());
-    ast
+    
+    let mut line = 1;
+    let ast = p1(tokens, code, collected_errors, collected_vars, &mut line);
+    
+    if !collected_errors.is_empty() {
+        println!("{}{}", "[!] Errors in file ".bold().red(), file);
+        for err in collected_errors.iter() {
+            println!("{}\n+++++", gen_error_msg(*err, code));
+        }
+        eprintln!("{}", "[!]".bold().red());
+        exit(1);
+    }
+    
+    (ast, collected_vars, collected_errors)
 }

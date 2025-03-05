@@ -1,10 +1,17 @@
 use crate::{
     helpers::c_condmk::mk_c_cond,
-    parse_systems::{PrintTokTypes, Variables, AST, COLLECTED_VARS},
+    parse_systems::{PrintTokTypes, Variables, AST},
 };
 use std::fmt::Write;
+use crate::err_system::err_types::ErrTypes;
 
-pub fn make_c(ast: &[AST], gen_main_function: bool) -> String {
+#[allow(non_snake_case)]
+pub fn make_c(
+    ast: &[AST],
+    gen_main_function: bool,
+    collected_vars: &Vec<(String, &'static str)>,
+    collected_errors: &mut Vec<ErrTypes>,
+) -> String {
     let mut code = String::with_capacity(1024);
     if gen_main_function {
         code.push_str("#include \"nulibc.h\"\n#include <stdio.h>\n#include <stdlib.h>\nint main(){\n");
@@ -14,14 +21,14 @@ pub fn make_c(ast: &[AST], gen_main_function: bool) -> String {
             AST::Print { descriptor: fd, text } => {
                 let mut format_string = String::with_capacity(text.len() * 4);
                 let mut args = Vec::new();
-                let collected = COLLECTED_VARS.lock().unwrap();
+                // Use the passed collected_vars directly.
                 for ptok in text {
                     match ptok {
                         PrintTokTypes::Newline => format_string.push_str("\\n"),
                         PrintTokTypes::Space => format_string.push(' '),
                         PrintTokTypes::Word(word) => format_string.push_str(word),
                         PrintTokTypes::Var(var) => {
-                            if let Some((_, var_type)) = collected.iter().find(|(name, _)| name == var) {
+                            if let Some((_, var_type)) = collected_vars.iter().find(|(name, _)| name == var) {
                                 match *var_type {
                                     "ch" => format_string.push_str("%c"),
                                     "i8" | "i16" | "i32" | "i64" => format_string.push_str("%d"),
@@ -71,6 +78,7 @@ pub fn make_c(ast: &[AST], gen_main_function: bool) -> String {
                         write!(&mut code, "nstring {} = nstr_new(\"{}\");\n", name, value).unwrap();
                     }
                     Variables::REF(name, value) => {
+                        // Follow the chain of REF variables to determine the actual value and type.
                         let mut actual_value = value;
                         let mut actual_type = "auto";
                         loop {
@@ -126,21 +134,22 @@ pub fn make_c(ast: &[AST], gen_main_function: bool) -> String {
                 }
             }
             AST::While(body, cond) => {
-                let cond = mk_c_cond(cond);
-                write!(&mut code, "while({}) {{\n", cond).unwrap();
-                let cond_code = make_c(&body, false);
-                code.push_str(&cond_code);
+                // Pass collected_errors and collected_vars to mk_c_cond.
+                let cond_str = mk_c_cond(cond, collected_errors, collected_vars, 0);
+                write!(&mut code, "while({}) {{\n", cond_str).unwrap();
+                let body_code = make_c(body, false, collected_vars, collected_errors);
+                code.push_str(&body_code);
                 code.push_str("}\n");
             }
             AST::IF(body, cond) => {
-                let cond = mk_c_cond(cond);
-                write!(&mut code, "if({}) {{\n", cond).unwrap();
-                let cond_code = make_c(&body, false);
-                code.push_str(&cond_code);
+                let cond_str = mk_c_cond(cond, collected_errors, collected_vars, 0);
+                write!(&mut code, "if({}) {{\n", cond_str).unwrap();
+                let body_code = make_c(body, false, collected_vars, collected_errors);
+                code.push_str(&body_code);
                 code.push_str("}\n");
             }
             AST::VarAssign(var) => {
-                // For reassignment, we simply output: variable = value;
+                // For reassignment, simply output: variable = value;
                 match var {
                     Variables::MATH(name, value) => {
                         write!(&mut code, "{} = {};\n", name, value).unwrap();

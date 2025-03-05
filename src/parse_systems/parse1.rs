@@ -1,7 +1,8 @@
-use super::{parse2::parse2, FileDescriptors, PrintTokTypes, AST, LINE};
-use crate::tok_system::tokens::Token;
+use super::{parse2::parse2, FileDescriptors, PrintTokTypes, AST};
+use crate::{err_system::err_types::ErrTypes, tok_system::tokens::Token};
 
-pub fn p1(tokens: &[Token], code: &String) -> Vec<AST> {
+#[allow(non_snake_case)]
+pub fn p1(tokens: &[Token], code: &String,COLLECTED_ERRORS : &mut Vec<ErrTypes>,COLLECTED_VARS : &mut Vec<(String,&'static str)>,LINE : &mut i32) -> Vec<AST> {
     let mut ast = Vec::new();
     let mut tokens_iter = tokens.iter().peekable();
     while let Some(token) = tokens_iter.next() {
@@ -20,7 +21,7 @@ pub fn p1(tokens: &[Token], code: &String) -> Vec<AST> {
                     loop {
                         match tokens_iter.next() {
                             Some(Token::EOL) | Some(Token::EOF) => {
-                                unsafe { LINE += 1 };
+                                *LINE += 1;
                                 if add_newline {
                                     content.push(PrintTokTypes::Newline);
                                 }
@@ -66,11 +67,11 @@ pub fn p1(tokens: &[Token], code: &String) -> Vec<AST> {
                 
             }
             Token::EOL => {
-                unsafe { LINE += 1 };
+                *LINE += 1;
             }
             Token::Space => {}
             _ => {
-                parse2(token, &mut tokens_iter, &mut ast, code);
+                parse2(token, &mut tokens_iter, &mut ast,code,COLLECTED_VARS,COLLECTED_ERRORS,LINE);
             }
         }
     }
