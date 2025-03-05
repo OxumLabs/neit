@@ -1,7 +1,2 @@
-print hi
-may age = 16
-may agee = 0
-while age != 33{
-    age += 1
-    print %age
-}
+print Hello world(\n)
+eprint lol
