@@ -25,8 +25,7 @@ pub fn p1(
                 let mut escape_mode = false;
                 let mut has_seen_delim_space = false;
                 loop {
-                    let next_token = tokens_iter.next();
-                    match next_token {
+                    match tokens_iter.next() {
                         Some(Token::EOL) | Some(Token::EOF) => {
                             *LINE += 1;
                             if add_newline {
@@ -67,7 +66,6 @@ pub fn p1(
                                 content.push(PrintTokTypes::Word(text.clone()));
                             }
                         }
-                        // For any other token type, add its character representation.
                         Some(other) => {
                             let repr = match other {
                                 Token::Quote          => "\"",
@@ -96,11 +94,8 @@ pub fn p1(
                     }
                 }
             }
-            Token::EOL => {
-                *LINE += 1;
-                break;
-            }
-            Token::Space => {}
+            Token::EOL => *LINE += 1,
+            Token::Space => {},
             _ => {
                 parse2(token, &mut tokens_iter, &mut ast, code, COLLECTED_VARS, COLLECTED_ERRORS, LINE);
             }

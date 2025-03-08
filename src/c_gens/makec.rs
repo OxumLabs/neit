@@ -1,192 +1,152 @@
 use crate::{
     helpers::c_condmk::mk_c_cond,
     parse_systems::{PrintTokTypes, Variables, AST},
+    err_system::err_types::ErrTypes,
 };
 use std::fmt::Write;
-use crate::err_system::err_types::ErrTypes;
+use std::collections::HashMap;
 
 #[allow(non_snake_case)]
 pub fn make_c(
     ast: &[AST],
     gen_main_function: bool,
-    collected_vars: &Vec<(String, &'static str)>,
+    collected_vars: &Vec<(String, &'static str)>, // Changed to Vec for mk_c_cond compatibility
     collected_errors: &mut Vec<ErrTypes>,
 ) -> String {
-    let mut code = String::with_capacity(1024);
+    let mut code = String::with_capacity(4096);
+    
+    let var_types: HashMap<_, _> = collected_vars
+        .iter()
+        .map(|(name, typ)| (name.as_str(), *typ))
+        .collect();
+
+    const HEADER: &str = "#include \"nulibc.h\"\n#include <stdio.h>\n#include <stdlib.h>\nint main(){\n";
+    
     if gen_main_function {
-        code.push_str("#include \"nulibc.h\"\n#include <stdio.h>\n#include <stdlib.h>\nint main(){\n");
+        code.push_str(HEADER);
     }
+
+    static FORMAT_SPECIFIERS: [(&str, &str); 6] = [
+        ("ch", "%c"),
+        ("i8", "%d"),
+        ("i16", "%d"),
+        ("i32", "%d"),
+        ("i64", "%d"),
+        ("f32", "%f"),
+    ];
+    
+    let format_map: HashMap<&str, &str> = FORMAT_SPECIFIERS.iter().copied().collect();
+
     for node in ast {
         match node {
             AST::Print { descriptor: fd, text } => {
-                let mut format_string = String::with_capacity(text.len() * 4);
+                let mut fmt = String::with_capacity(text.len() * 2);
                 let mut args = Vec::new();
-                // Use the passed collected_vars directly.
+
                 for ptok in text {
                     match ptok {
-                        PrintTokTypes::Newline => format_string.push_str("\\n"),
-                        PrintTokTypes::Space => format_string.push(' '),
-                        PrintTokTypes::Word(word) => format_string.push_str(word),
-                        PrintTokTypes::Var(var) => {
-                            if let Some((_, var_type)) = collected_vars.iter().find(|(name, _)| name == var) {
-                                match *var_type {
-                                    "ch" => format_string.push_str("%c"),
-                                    "i8" | "i16" | "i32" | "i64" => format_string.push_str("%d"),
-                                    "f32" => format_string.push_str("%f"),
-                                    "f64" => format_string.push_str("%lf"),
-                                    "str" => format_string.push_str("%s"),
-                                    _ => {}
+                        PrintTokTypes::Newline => fmt.push_str("\\n"),
+                        PrintTokTypes::Space => fmt.push(' '),
+                        PrintTokTypes::Word(w) => fmt.push_str(w),
+                        PrintTokTypes::Var(v) => {
+                            if let Some(&typ) = var_types.get(v.as_str()) {
+                                if let Some(fmt_spec) = format_map.get(typ) {
+                                    fmt.push_str(fmt_spec);
                                 }
                             }
-                            args.push(var.clone());
+                            args.push(v.as_str());
                         }
                     }
                 }
+
                 if !args.is_empty() {
-                    write!(&mut code, "nprintf({},\"{}\",{});\n", fd.display(), format_string, args.join(",")).unwrap();
+                    write!(&mut code, "nprintf({},\"{}\",{});\n", fd.display(), fmt, args.join(","))
                 } else {
-                    write!(&mut code, "nprintf({},\"{}\");\n", fd.display(), format_string).unwrap();
-                }
+                    write!(&mut code, "nprintf({},\"{}\");\n", fd.display(), fmt)
+                }.unwrap();
             }
             AST::Var(var) => {
+                use Variables::*;
                 match var {
-                    Variables::MATH(name, value) => {
-                        write!(&mut code, "f32 {} = {};\n", name, value).unwrap();
+                    MATH(n, v) => write!(&mut code, "f32 {} = {};\n", n, v),
+                    Char(n, v) => write!(&mut code, "char {} = '{}';\n", n, v),
+                    I8(n, v) => write!(&mut code, "i8 {} = {};\n", n, v),
+                    I16(n, v) => write!(&mut code, "i16 {} = {};\n", n, v),
+                    I32(n, v) => write!(&mut code, "i32 {} = {};\n", n, v),
+                    I64(n, v) => write!(&mut code, "i64 {} = {};\n", n, v),
+                    F32(n, v) => write!(&mut code, "f32 {} = {};\n", n, v),
+                    F64(n, v) => write!(&mut code, "double {} = {};\n", n, v),
+                    Str(n, v) => write!(&mut code, "nstring {} = nstr_new(\"{}\");\n", n, v),
+                    REF(n, v) => {
+                        let (typ, actual) = resolve_ref(ast, v);
+                        write!(&mut code, "{} {} = {};\n", typ, n, actual)
                     }
-                    Variables::Char(name, value) => {
-                        write!(&mut code, "char {} = '{}';\n", name, value).unwrap();
-                    }
-                    Variables::I8(name, value) => {
-                        write!(&mut code, "i8 {} = {};\n", name, value).unwrap();
-                    }
-                    Variables::I16(name, value) => {
-                        write!(&mut code, "i16 {} = {};\n", name, value).unwrap();
-                    }
-                    Variables::I32(name, value) => {
-                        write!(&mut code, "i32 {} = {};\n", name, value).unwrap();
-                    }
-                    Variables::I64(name, value) => {
-                        write!(&mut code, "i64 {} = {};\n", name, value).unwrap();
-                    }
-                    Variables::F32(name, value) => {
-                        write!(&mut code, "f32 {} = {};\n", name, value).unwrap();
-                    }
-                    Variables::F64(name, value) => {
-                        write!(&mut code, "double {} = {};\n", name, value).unwrap();
-                    }
-                    Variables::Str(name, value) => {
-                        write!(&mut code, "nstring {} = nstr_new(\"{}\");\n", name, value).unwrap();
-                    }
-                    Variables::REF(name, value) => {
-                        // Follow the chain of REF variables to determine the actual value and type.
-                        let mut actual_value = value;
-                        let mut actual_type = "auto";
-                        loop {
-                            if let Some(next) = ast.iter().find_map(|node| {
-                                if let AST::Var(Variables::REF(var_name, next_value)) = node {
-                                    if var_name == actual_value {
-                                        Some(next_value)
-                                    } else {
-                                        None
-                                    }
-                                } else {
-                                    None
-                                }
-                            }) {
-                                actual_value = next;
-                            } else {
-                                break;
-                            }
-                        }
-                        if let Some(var) = ast.iter().find(|node| {
-                            if let AST::Var(variable) = node {
-                                match variable {
-                                    Variables::Char(var_name, _) => var_name == actual_value,
-                                    Variables::I8(var_name, _) => var_name == actual_value,
-                                    Variables::I16(var_name, _) => var_name == actual_value,
-                                    Variables::I32(var_name, _) => var_name == actual_value,
-                                    Variables::I64(var_name, _) => var_name == actual_value,
-                                    Variables::F32(var_name, _) => var_name == actual_value,
-                                    Variables::F64(var_name, _) => var_name == actual_value,
-                                    Variables::REF(_, _) => false,
-                                    Variables::MATH(var_name, _) => var_name == actual_value,
-                                    Variables::Str(var_name, _) => var_name == actual_value,
-                                }
-                            } else {
-                                false
-                            }
-                        }) {
-                            actual_type = match var {
-                                AST::Var(Variables::Char(_, _)) => "char",
-                                AST::Var(Variables::I8(_, _)) => "i8",
-                                AST::Var(Variables::I16(_, _)) => "i16",
-                                AST::Var(Variables::I32(_, _)) => "i32",
-                                AST::Var(Variables::I64(_, _)) => "i64",
-                                AST::Var(Variables::F32(_, _)) => "f32",
-                                AST::Var(Variables::F64(_, _)) => "double",
-                                AST::Var(Variables::MATH(_, _)) => "f64",
-                                AST::Var(Variables::Str(_, _)) => "str",
-                                _ => "auto",
-                            };
-                        }
-                        write!(&mut code, "{} {} = {};\n", actual_type, name, actual_value).unwrap();
-                    }
-                }
+                }.unwrap();
             }
             AST::While(body, cond) => {
-                // Pass collected_errors and collected_vars to mk_c_cond.
                 let cond_str = mk_c_cond(cond, collected_errors, collected_vars, 0);
                 write!(&mut code, "while({}) {{\n", cond_str).unwrap();
-                let body_code = make_c(body, false, collected_vars, collected_errors);
-                code.push_str(&body_code);
+                code.push_str(&make_c(body, false, collected_vars, collected_errors));
                 code.push_str("}\n");
             }
             AST::IF(body, cond) => {
                 let cond_str = mk_c_cond(cond, collected_errors, collected_vars, 0);
                 write!(&mut code, "if({}) {{\n", cond_str).unwrap();
-                let body_code = make_c(body, false, collected_vars, collected_errors);
-                code.push_str(&body_code);
+                code.push_str(&make_c(body, false, collected_vars, collected_errors));
                 code.push_str("}\n");
             }
             AST::VarAssign(var) => {
-                // For reassignment, simply output: variable = value;
+                use Variables::*;
                 match var {
-                    Variables::MATH(name, value) => {
-                        write!(&mut code, "{} = {};\n", name, value).unwrap();
-                    }
-                    Variables::Char(name, value) => {
-                        write!(&mut code, "{} = '{}';\n", name, value).unwrap();
-                    }
-                    Variables::I8(name, value) => {
-                        write!(&mut code, "{} = {};\n", name, value).unwrap();
-                    }
-                    Variables::I16(name, value) => {
-                        write!(&mut code, "{} = {};\n", name, value).unwrap();
-                    }
-                    Variables::I32(name, value) => {
-                        write!(&mut code, "{} = {};\n", name, value).unwrap();
-                    }
-                    Variables::I64(name, value) => {
-                        write!(&mut code, "{} = {};\n", name, value).unwrap();
-                    }
-                    Variables::F32(name, value) => {
-                        write!(&mut code, "{} = {};\n", name, value).unwrap();
-                    }
-                    Variables::F64(name, value) => {
-                        write!(&mut code, "{} = {};\n", name, value).unwrap();
-                    }
-                    Variables::Str(name, value) => {
-                        write!(&mut code, "{} = nstr_new(\"{}\");\n", name, value).unwrap();
-                    }
-                    Variables::REF(name, value) => {
-                        write!(&mut code, "{} = {};\n", name, value).unwrap();
-                    }
-                }
+                    MATH(n, v) => write!(&mut code, "{} = {};\n", n, v),
+                    Char(n, v) => write!(&mut code, "{} = '{}';\n", n, v),
+                    I8(n, v) => write!(&mut code, "{} = {};\n", n, v),
+                    I16(n, v) => write!(&mut code, "{} = {};\n", n, v),
+                    I32(n, v) => write!(&mut code, "{} = {};\n", n, v),
+                    I64(n, v) => write!(&mut code, "{} = {};\n", n, v),
+                    F32(n, v) => write!(&mut code, "{} = {};\n", n, v),
+                    F64(n, v) => write!(&mut code, "{} = {};\n", n, v),
+                    Str(n, v) => write!(&mut code, "{} = nstr_new(\"{}\");\n", n, v),
+                    REF(n, v) => write!(&mut code, "{} = {};\n", n, v),
+                }.unwrap();
             }
         }
     }
+
     if gen_main_function {
         code.push_str("return 0;\n}");
     }
     code
+}
+
+#[inline]
+fn resolve_ref<'a>(ast: &'a [AST], mut current: &'a str) -> (&'static str, &'a str) {
+    while let Some(next) = ast.iter().find_map(|node| {
+        if let AST::Var(Variables::REF(name, next_val)) = node {
+            if name == &current { Some(next_val.as_str()) } else { None }
+        } else { None }
+    }) {
+        current = next;
+    }
+
+    let typ = ast.iter().find_map(|node| {
+        if let AST::Var(var) = node {
+            match var {
+                Variables::Char(name, _) if &name[..] == current => Some("char"),
+                Variables::I8(name, _) if &name[..] == current => Some("i8"),
+                Variables::I16(name, _) if &name[..] == current => Some("i16"),
+                Variables::I32(name, _) if &name[..] == current => Some("i32"),
+                Variables::I64(name, _) if &name[..] == current => Some("i64"),
+                Variables::F32(name, _) if &name[..] == current => Some("f32"),
+                Variables::F64(name, _) if &name[..] == current => Some("double"),
+                Variables::MATH(name, _) if &name[..] == current => Some("f32"),
+                Variables::Str(name, _) if &name[..] == current => Some("nstring"),
+                _ => None,
+            }
+        } else {
+            None
+        }
+    }).unwrap_or("auto");
+
+    (typ, current)
 }

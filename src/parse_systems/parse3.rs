@@ -1,9 +1,12 @@
 use crate::{
-    err_system::err_types::ErrTypes, helpers::condition_parser::parse_condition, parse_systems::parse, tok_system::tokens::Token
+    err_system::err_types::ErrTypes,
+    helpers::condition_parser::parse_condition,
+    parse_systems::parse,
+    tok_system::tokens::Token,
 };
 use super::{parse4::parse4, AST};
 
-#[allow(unused)]
+#[inline(always)]
 pub fn parse3(
     token: &Token,
     token_iter: &mut std::iter::Peekable<std::slice::Iter<Token>>,
@@ -46,7 +49,7 @@ pub fn parse3(
                     body.push(tok.clone());
                 }
             }
-            let body = parse(&body, &collected_code, "",true, collected_vars, collected_errors);
+            let body = parse(&body, &collected_code, "", true, collected_vars, collected_errors);
             ast.push(AST::While(body.0, parsed_cond));
         }
         Token::Iden(iden) if iden == "if" => {
@@ -81,7 +84,7 @@ pub fn parse3(
                     body.push(tok.clone());
                 }
             }
-            let body = parse(&body, &collected_code, "",true,collected_vars, collected_errors);
+            let body = parse(&body, &collected_code, "", true, collected_vars, collected_errors);
             ast.push(AST::IF(body.0, parsed_cond));
         }
         _ => {

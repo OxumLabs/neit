@@ -17,7 +17,7 @@ pub enum Operand {
 }
 
 /// Tokens for conditional operators.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq,Copy,Eq,Hash)]
 pub enum CondToks {
     GreaterThan,
     LessThan,

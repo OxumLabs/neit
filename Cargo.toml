@@ -5,11 +5,12 @@ edition = "2021"
 
 [dependencies]
 colored = "3.0.0"
-lazy_static = "1.5.0"
-
 [profile.release]
-opt-level = "z"
-lto = true
+opt-level = 3
+lto = "fat"
 codegen-units = 1
-panic = "abort"
+panic = "unwind"
 incremental = false
+rpath = false
+debug = false
+overflow-checks = false

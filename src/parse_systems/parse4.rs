@@ -5,7 +5,7 @@ use crate::{
     tok_system::tokens::Token,
 };
 
-/// Parses a variable assignment expression, handling various data types, forced type annotations, and operators.
+#[inline(always)]
 pub fn parse4(
     token: &Token,
     token_iter: &mut std::iter::Peekable<std::slice::Iter<Token>>,
@@ -15,14 +15,13 @@ pub fn parse4(
     collected_errors: &mut Vec<ErrTypes>,
     line: &mut i32,
 ) {
-    // Get variable name from token.
-    let var_name = if let Token::Iden(ref name) = token {
-        name.clone()
-    } else {
-        return;
+    // Get variable name.
+    let var_name = match token {
+        Token::Iden(name) => name.clone(),
+        _ => return,
     };
 
-    // Find the variable's information from the collected_vars.
+    // Check if variable exists and is not const.
     let var_info_option = collected_vars.iter().find(|(name, _)| name == &var_name).cloned();
     if var_info_option.is_none() {
         collected_errors.push(ErrTypes::VarNotFound(*line));
@@ -34,16 +33,16 @@ pub fn parse4(
         return;
     }
 
-    // Skip any spaces.
-    while let Some(Token::Space) = token_iter.peek() {
+    // Skip spaces.
+    while matches!(token_iter.peek(), Some(Token::Space)) {
         token_iter.next();
     }
 
-    // Check for compound assignment operator.
+    // Check for assignment or compound operator.
     let mut compound_operator: Option<char> = None;
     if let Some(op_token) = token_iter.next() {
         match op_token {
-            Token::EqSign => { }
+            Token::EqSign => {}
             Token::ADDOP | Token::SUBOP | Token::MULTIOP | Token::DIVOP => {
                 compound_operator = match op_token {
                     Token::ADDOP => Some('+'),
@@ -52,10 +51,11 @@ pub fn parse4(
                     Token::DIVOP => Some('/'),
                     _ => None,
                 };
-                while let Some(Token::Space) = token_iter.peek() {
+                while matches!(token_iter.peek(), Some(Token::Space)) {
                     token_iter.next();
                 }
                 if let Some(Token::EqSign) = token_iter.next() {
+                    // OK
                 } else {
                     collected_errors.push(ErrTypes::MissingOperator(*line));
                     return;
@@ -70,21 +70,21 @@ pub fn parse4(
         collected_errors.push(ErrTypes::MissingOperator(*line));
         return;
     }
-    while let Some(Token::Space) = token_iter.peek() {
+    while matches!(token_iter.peek(), Some(Token::Space)) {
         token_iter.next();
     }
 
-    // Build the raw value expression.
+    // Build the raw expression.
     let mut raw_value = String::new();
     while let Some(tok) = token_iter.peek() {
         match tok {
             Token::EOL | Token::EOF => break,
-            Token::Space => { token_iter.next(); },
-            Token::Iden(val) => { raw_value.push_str(val); token_iter.next(); },
-            Token::ADDOP => { raw_value.push('+'); token_iter.next(); },
-            Token::SUBOP => { raw_value.push('-'); token_iter.next(); },
-            Token::MULTIOP => { raw_value.push('*'); token_iter.next(); },
-            Token::DIVOP => { raw_value.push('/'); token_iter.next(); },
+            Token::Space => { token_iter.next(); }
+            Token::Iden(val) => { raw_value.push_str(val); token_iter.next(); }
+            Token::ADDOP => { raw_value.push('+'); token_iter.next(); }
+            Token::SUBOP => { raw_value.push('-'); token_iter.next(); }
+            Token::MULTIOP => { raw_value.push('*'); token_iter.next(); }
+            Token::DIVOP => { raw_value.push('/'); token_iter.next(); }
             _ => { token_iter.next(); }
         }
     }
@@ -93,18 +93,17 @@ pub fn parse4(
         return;
     }
 
-    // Process the raw value to validate and format each operand.
+    // Process each operand and rebuild expression.
     let mut final_expr = {
         let mut result = String::new();
         let mut current_operand = String::new();
         for c in raw_value.chars() {
-            if c == '+' || c == '-' || c == '*' || c == '/' {
+            if "+-*/".contains(c) {
                 if !current_operand.is_empty() {
                     if !validate_operand(&current_operand, &var_name, collected_vars, collected_errors, *line) {
                         return;
                     }
-                    let formatted = format_operand(&current_operand);
-                    result.push_str(&formatted);
+                    result.push_str(&format_operand(&current_operand));
                     current_operand.clear();
                 }
                 result.push(c);
@@ -116,25 +115,24 @@ pub fn parse4(
             if !validate_operand(&current_operand, &var_name, collected_vars, collected_errors, *line) {
                 return;
             }
-            let formatted = format_operand(&current_operand);
-            result.push_str(&formatted);
+            result.push_str(&format_operand(&current_operand));
         }
         result
     };
 
-    // For compound assignment, prepend the variable name and operator.
+    // Prepend compound assignment operator if any.
     if let Some(op) = compound_operator {
         final_expr = format!("{}{}{}", var_name, op, final_expr);
     }
 
-    // If the expression contains arithmetic operators, treat it as a math expression.
+    // If the expression is arithmetic, treat it as math.
     if final_expr.contains('+') || final_expr.contains('-') || final_expr.contains('*') || final_expr.contains('/') {
         let new_var = Variables::MATH(var_name.clone(), final_expr.clone());
         ast.push(AST::VarAssign(new_var));
         return;
     }
 
-    // Otherwise, create the variable based on its type.
+    // Create variable based on type.
     let new_var: Variables = if final_expr.starts_with('\"') && final_expr.ends_with('\"') {
         let processed = final_expr[1..final_expr.len()-1].to_string();
         if var_type == "str" {
@@ -156,7 +154,6 @@ pub fn parse4(
             return;
         }
     } else {
-        // --- Forced type logic begins here ---
         let mut processed_value = final_expr.clone();
         let mut forced_type = None;
         if processed_value.ends_with(')') {
@@ -174,8 +171,6 @@ pub fn parse4(
                 }
             }
         }
-        // --- Forced type logic ends here ---
-
         if let Some(ty) = forced_type {
             match ty.as_str() {
                 "i8" => {
@@ -232,7 +227,6 @@ pub fn parse4(
                 }
             }
         } else {
-            // No forced type: fall back to the type from collected_vars.
             match var_type {
                 "i8" => {
                     if let Ok(val) = processed_value.parse::<i8>() {
@@ -282,9 +276,7 @@ pub fn parse4(
                         return;
                     }
                 },
-                _ => {
-                    Variables::MATH(var_name.clone(), processed_value.clone())
-                },
+                _ => Variables::MATH(var_name.clone(), processed_value.clone()),
             }
         }
     };
@@ -292,6 +284,7 @@ pub fn parse4(
     ast.push(AST::VarAssign(new_var));
 }
 
+#[inline(always)]
 fn validate_operand(
     operand: &str,
     _var_name: &str,
@@ -305,24 +298,23 @@ fn validate_operand(
         return false;
     }
     let cleaned = if trimmed.ends_with('f') || trimmed.ends_with('F') {
-        &trimmed[..trimmed.len()-1]
+        &trimmed[..trimmed.len() - 1]
     } else {
         trimmed
     };
-    if cleaned.parse::<f32>().is_ok() {
-        return true;
+    if cleaned.parse::<f32>().is_ok() || collected_vars.iter().any(|(name, _)| name == cleaned) {
+        true
+    } else {
+        collected_errors.push(ErrTypes::VarNotFound(line));
+        false
     }
-    if collected_vars.iter().any(|(name, _)| name == cleaned) {
-        return true;
-    }
-    collected_errors.push(ErrTypes::VarNotFound(line));
-    false
 }
 
+#[inline(always)]
 fn format_operand(operand: &str) -> String {
     let trimmed = operand.trim();
     let cleaned = if trimmed.ends_with('f') || trimmed.ends_with('F') {
-        &trimmed[..trimmed.len()-1]
+        &trimmed[..trimmed.len() - 1]
     } else {
         trimmed
     };
@@ -330,7 +322,7 @@ fn format_operand(operand: &str) -> String {
         if num.fract().abs() < 1e-6 {
             format!("{}.0", num)
         } else {
-            format!("{}", num)
+            num.to_string()
         }
     } else {
         cleaned.to_string()
