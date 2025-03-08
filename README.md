@@ -21,9 +21,8 @@ Welcome to Neit, the programming language crafted to ignite your passion for cod
 
 - **Better Error Messages:**  
   Neit's error messages are better than most other programming languages, making it easier to debug and understand. We are constantly working to improve them!
-
-~~- **SemiGen Engine:**  
-  The **SemiGen Engine** is a cutting-edge new tool in Neit that allows for the creation of custom syntax at runtime. (Still a work in progress, but already showing great potential!)~~~
+- ~~**SemiGen Engine:**  
+  The **SemiGen Engine** is a cutting-edge new tool in Neit that allows for the creation of custom syntax at runtime. (Still a work in progress, but already showing great potential!)~~
 
 ---
 

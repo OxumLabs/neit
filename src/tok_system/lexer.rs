@@ -5,87 +5,64 @@ pub trait LexicalAnalysis {
 }
 
 impl LexicalAnalysis for Vec<Token> {
+    #[inline(always)]
     fn run_lexical_analysis(&mut self, code: &str) {
-        let mut word = String::new();
+        let mut word = String::with_capacity(16);
         let mut chars = code.chars().peekable();
+
+        #[inline(always)]
+        fn flush_word(word: &mut String, tokens: &mut Vec<Token>) {
+            if !word.is_empty() {
+                tokens.push(Token::Iden(std::mem::take(word)));
+            }
+        }
+
         while let Some(c) = chars.next() {
             match c {
                 '(' => {
-                    if !word.is_empty() {
-                        self.push(Token::Iden(word.clone()));
-                        word.clear();
-                    }
+                    flush_word(&mut word, self);
                     self.push(Token::LSmallBrac);
                 }
                 ')' => {
-                    if !word.is_empty() {
-                        self.push(Token::Iden(word.clone()));
-                        word.clear();
-                    }
+                    flush_word(&mut word, self);
                     self.push(Token::RSmallBracket);
                 }
                 '!' => {
-                    if !word.is_empty() {
-                        self.push(Token::Iden(word.clone()));
-                        word.clear();
-                    }
+                    flush_word(&mut word, self);
                     self.push(Token::Not);
                 }
                 '|' if chars.peek() == Some(&'|') => {
-                    if !word.is_empty() {
-                        self.push(Token::Iden(word.clone()));
-                        word.clear();
-                    }
+                    flush_word(&mut word, self);
+                    chars.next();
                     self.push(Token::Or);
                 }
                 '>' => {
-                    if !word.is_empty() {
-                        self.push(Token::Iden(word.clone()));
-                        word.clear();
-                    }
+                    flush_word(&mut word, self);
                     self.push(Token::GreaterThan);
                 }
                 '<' => {
-                    if !word.is_empty() {
-                        self.push(Token::Iden(word.clone()));
-                        word.clear();
-                    }
+                    flush_word(&mut word, self);
                     self.push(Token::LessThan);
                 }
                 '&' if chars.peek() == Some(&'&') => {
-                    if !word.is_empty() {
-                        self.push(Token::Iden(word.clone()));
-                        word.clear();
-                    }
+                    flush_word(&mut word, self);
                     chars.next();
                     self.push(Token::And);
                 }
                 '{' => {
-                    if !word.is_empty() {
-                        self.push(Token::Iden(word.clone()));
-                        word.clear();
-                    }
+                    flush_word(&mut word, self);
                     self.push(Token::LCurly);
                 }
                 '}' => {
-                    if !word.is_empty() {
-                        self.push(Token::Iden(word.clone()));
-                        word.clear();
-                    }
+                    flush_word(&mut word, self);
                     self.push(Token::RCurly);
                 }
                 '%' => {
-                    if !word.is_empty() {
-                        self.push(Token::Iden(word.clone()));
-                        word.clear();
-                    }
+                    flush_word(&mut word, self);
                     self.push(Token::PercentSign);
                 }
                 '=' => {
-                    if !word.is_empty() {
-                        self.push(Token::Iden(word.clone()));
-                        word.clear();
-                    }
+                    flush_word(&mut word, self);
                     if chars.peek() == Some(&'=') {
                         chars.next();
                         self.push(Token::DoubleEqSign);
@@ -94,61 +71,38 @@ impl LexicalAnalysis for Vec<Token> {
                     }
                 }
                 ' ' | '\t' => {
-                    if !word.is_empty() {
-                        self.push(Token::Iden(word.clone()));
-                        word.clear();
-                    }
+                    flush_word(&mut word, self);
                     self.push(Token::Space);
                 }
                 '\n' => {
-                    if !word.is_empty() {
-                        self.push(Token::Iden(word.clone()));
-                        word.clear();
-                    }
+                    flush_word(&mut word, self);
                     self.push(Token::EOL);
                 }
                 '\r' => {}
                 '\\' => {
-                    if !word.is_empty() {
-                        self.push(Token::Iden(word.clone()));
-                        word.clear();
-                    }
+                    flush_word(&mut word, self);
                     self.push(Token::BackSlash);
                 }
                 '+' => {
-                    if !word.is_empty() {
-                        self.push(Token::Iden(word.clone()));
-                        word.clear();
-                    }
+                    flush_word(&mut word, self);
                     self.push(Token::ADDOP);
                 }
                 '-' => {
-                    if !word.is_empty() {
-                        self.push(Token::Iden(word.clone()));
-                        word.clear();
-                    }
+                    flush_word(&mut word, self);
                     self.push(Token::SUBOP);
                 }
                 '/' => {
-                    if !word.is_empty() {
-                        self.push(Token::Iden(word.clone()));
-                        word.clear();
-                    }
+                    flush_word(&mut word, self);
                     self.push(Token::DIVOP);
                 }
                 '*' => {
-                    if !word.is_empty() {
-                        self.push(Token::Iden(word.clone()));
-                        word.clear();
-                    }
+                    flush_word(&mut word, self);
                     self.push(Token::MULTIOP);
                 }
                 _ => word.push(c),
             }
         }
-        if !word.is_empty() {
-            self.push(Token::Iden(word));
-        }
+        flush_word(&mut word, self);
         self.push(Token::EOF);
     }
 }

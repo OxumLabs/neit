@@ -4,6 +4,7 @@ use std::{
     path::Path,
     process::{exit, Command},
     thread,
+    time::Instant,
 };
 
 use crate::{nulibc::{NULIBC, NULIBCH}, Config};
@@ -20,24 +21,14 @@ fn create_nulibc_files() -> Result<(), Error> {
 
 fn translate_target(comp: &str, target: &str) -> String {
     if comp.contains("zig") {
-        if target.contains("windows") {
-            "x86_64-windows".into()
-        } else if target.contains("linux") {
-            "x86_64-linux".into()
-        } else {
-            target.into()
-        }
+        if target.contains("windows") { "x86_64-windows".into() }
+        else if target.contains("linux") { "x86_64-linux".into() }
+        else { target.into() }
     } else if comp == "clang" {
-        if target.contains("windows") {
-            "x86_64-pc-windows-msvc".into()
-        } else if target.contains("linux") {
-            "x86_64-linux-gnu".into()
-        } else {
-            target.into()
-        }
-    } else {
-        target.into()
-    }
+        if target.contains("windows") { "x86_64-pc-windows-msvc".into() }
+        else if target.contains("linux") { "x86_64-linux-gnu".into() }
+        else { target.into() }
+    } else { target.into() }
 }
 
 fn find_compiler(compiler: &str) -> Option<String> {
@@ -57,6 +48,8 @@ fn find_compiler(compiler: &str) -> Option<String> {
 }
 
 pub fn linux_b_64(code: &String, config: &Config) -> Result<(), Error> {
+    let overall_start = Instant::now();
+
     File::create(SRC_FILE)?.write_all(code.as_bytes())?;
     create_nulibc_files()?;
     let compiler_key = if config.cc.is_empty() { "clang" } else { config.cc };
@@ -65,7 +58,8 @@ pub fn linux_b_64(code: &String, config: &Config) -> Result<(), Error> {
         exit(1);
     });
     let host_is_linux = cfg!(target_os = "linux");
-    let mingw_available = host_is_linux && Command::new("x86_64-w64-mingw32-gcc").arg("--version").output().is_ok();
+    let mingw_available = host_is_linux && Command::new("x86_64-w64-mingw32-gcc")
+        .arg("--version").output().is_ok();
     let targets = config.targets.clone();
     let out_base = config.out;
     let static_flag = config.static_flag;
@@ -99,6 +93,7 @@ pub fn linux_b_64(code: &String, config: &Config) -> Result<(), Error> {
         }
         println!("┌[*] Using {} for target {}", lcomp, target);
         let handle = thread::spawn(move || {
+            let compile_start = Instant::now();
             let mut cmd = Command::new(&lcomp);
             if lcomp.contains("zig") {
                 cmd.arg("cc");
@@ -121,11 +116,12 @@ pub fn linux_b_64(code: &String, config: &Config) -> Result<(), Error> {
                 eprintln!("Compile error: {}", e);
                 exit(1);
             });
+            let compile_time = compile_start.elapsed().as_millis();
             if !output.status.success() {
                 eprintln!("Failed {}: {}", target, String::from_utf8_lossy(&output.stderr));
                 exit(1);
             } else {
-                println!("├─ Succeeded {}: {}", target, out_file);
+                println!("├─ Succeeded {}: {} ({} ms)", target, out_file, compile_time);
             }
         });
         handles.push(handle);
@@ -133,5 +129,7 @@ pub fn linux_b_64(code: &String, config: &Config) -> Result<(), Error> {
     for handle in handles {
         handle.join().expect("Compilation thread panicked");
     }
+    let overall_time = overall_start.elapsed().as_millis();
+    println!("└─ Total compilation time: {} ms", overall_time);
     Ok(())
 }

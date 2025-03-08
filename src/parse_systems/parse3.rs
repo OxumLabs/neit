@@ -22,12 +22,13 @@ pub fn parse3(
             let mut cond = Vec::new();
             let mut body = Vec::new();
 
+            // Collect condition tokens until '{'
             while let Some(tok) = token_iter.next() {
                 if tok == &Token::LCurly {
                     break;
                 } else if tok == &Token::EOL {
+                    collected_errors.push(ErrTypes::UnexpectedToken(*line));
                     *line += 1;
-                    continue;
                 } else {
                     if let Some(line_str) = code.lines().nth((*line - 1) as usize) {
                         collected_code.push_str(line_str);
@@ -38,6 +39,7 @@ pub fn parse3(
             }
             let parsed_cond = parse_condition(&cond, collected_errors, collected_vars, *line);
 
+            // Collect body tokens until '}'
             while let Some(tok) = token_iter.next() {
                 if tok == &Token::RCurly {
                     break;
@@ -49,14 +51,15 @@ pub fn parse3(
                     body.push(tok.clone());
                 }
             }
-            let body = parse(&body, &collected_code, "", true, collected_vars, collected_errors);
-            ast.push(AST::While(body.0, parsed_cond));
+            let body_parsed = parse(&body, &collected_code, "", true, collected_vars, collected_errors);
+            ast.push(AST::While(body_parsed.0, parsed_cond));
         }
         Token::Iden(iden) if iden == "if" => {
             let mut collected_code = String::new();
             let mut cond = Vec::new();
             let mut body = Vec::new();
 
+            // Collect condition tokens until '{'
             while let Some(tok) = token_iter.next() {
                 if tok == &Token::LCurly {
                     break;
@@ -73,6 +76,7 @@ pub fn parse3(
             }
             let parsed_cond = parse_condition(&cond, collected_errors, collected_vars, *line);
 
+            // Collect body tokens until '}'
             while let Some(tok) = token_iter.next() {
                 if tok == &Token::RCurly {
                     break;
@@ -84,8 +88,8 @@ pub fn parse3(
                     body.push(tok.clone());
                 }
             }
-            let body = parse(&body, &collected_code, "", true, collected_vars, collected_errors);
-            ast.push(AST::IF(body.0, parsed_cond));
+            let body_parsed = parse(&body, &collected_code, "", true, collected_vars, collected_errors);
+            ast.push(AST::IF(body_parsed.0, parsed_cond));
         }
         _ => {
             parse4(token, token_iter, ast, code, collected_vars, collected_errors, line);

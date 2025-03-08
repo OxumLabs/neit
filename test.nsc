@@ -1,1 +1,4 @@
-may age = 0(f64)
+may age = 0
+while age != 100{
+    age += 1
+}

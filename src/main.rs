@@ -3,7 +3,7 @@ use std::{
     fs::File,
     io::Read,
     path::Path,
-    process::exit,
+    process::exit, time::Duration,
 };
 
 use build_system::linux_b::linux_b_64;
@@ -29,14 +29,16 @@ pub struct Config {
     cc: &'static str,
 }
 
+#[inline(always)]
 fn normalize_target(input: &str) -> &'static str {
     match input.trim().to_lowercase().as_str() {
         "windows-x86-64" | "winx8664" => "windows-x86-64",
-        "linux-x86-64" | "linx8664" => "linux-x86-64",
+        "linux-x86-64" | "linx8664"   => "linux-x86-64",
         other => Box::leak(other.to_string().into_boxed_str()),
     }
 }
 
+#[inline(always)]
 fn parse_config() -> Config {
     let args: Vec<String> = args().collect();
     if args.len() < 3 {
@@ -62,11 +64,7 @@ fn parse_config() -> Config {
             out = Box::leak(arg_static["--out=".len()..].to_string().into_boxed_str());
         } else if arg_static.starts_with("--target=") {
             let value = &arg_static["--target=".len()..];
-            let normalized: Vec<&'static str> = value
-                .split(',')
-                .map(|s| normalize_target(s))
-                .collect();
-            targets = normalized;
+            targets = value.split(',').map(|s| normalize_target(s)).collect();
         } else if arg_static.starts_with("--cc=") {
             cc = Box::leak(arg_static["--cc=".len()..].to_string().into_boxed_str());
         } else {
@@ -76,6 +74,7 @@ fn parse_config() -> Config {
     Config { command, path, static_flag, out, targets, cc }
 }
 
+#[inline(always)]
 fn print_help() {
     println!("┌[*] Neit Programming Language - Help");
     println!("├─ Usage: neit <command> <file/folder> <options>");
@@ -92,8 +91,11 @@ fn print_help() {
     println!("│   └─ --cc=<compiler>         - Specify compiler (zig, clang, gcc)");
     println!("└─ Example: neit build ./source.neit --out=program --target=linux-x86-64,winx8664 --cc=zig");
 }
-
-fn main() {
+#[inline(always)]
+fn main_logic() {
+    use std::time::Instant;
+    
+    let total_start = Instant::now();
     let config = parse_config();
     if config.command == "help" {
         print_help();
@@ -120,19 +122,16 @@ fn main() {
         eprintln!("└─ Please provide a file path.");
         exit(1);
     }
-    let mut file = match File::open(config.path) {
-        Ok(f) => f,
-        Err(e) => {
-            eprintln!("┌[Error]");
-            eprintln!("├─ Unable to open file '{}': {}", config.path, e);
-            eprintln!("└─ Check file permissions.");
-            exit(1);
-        }
-    };
-    let mut code = String::new();
-    if let Err(e) = file.read_to_string(&mut code) {
+    let mut file = File::open(config.path).unwrap_or_else(|e| {
         eprintln!("┌[Error]");
-        eprintln!("├─ Failed to read file '{}': {}", config.path, e);
+        eprintln!("├─ Unable to open file '{}': {}", config.path, e);
+        eprintln!("└─ Check file permissions.");
+        exit(1);
+    });
+    let mut code = String::new();
+    if file.read_to_string(&mut code).is_err() {
+        eprintln!("┌[Error]");
+        eprintln!("├─ Failed to read file '{}'", config.path);
         eprintln!("└─ Please ensure the file is accessible.");
         exit(1);
     }
@@ -142,18 +141,35 @@ fn main() {
     println!("├─ Tokenization complete ({} tokens generated).", tokens.len());
     let proj_path: &'static str = Box::leak(proj.display().to_string().into_boxed_str());
     
-    // Create mutable vectors for variables and errors.
     let mut collected_vars = Vec::new();
     let mut collected_errors = Vec::new();
     
-    // Parse tokens into an AST.
     let (ast, _, _) = parse(&tokens, &code, proj_path, false, &mut collected_vars, &mut collected_errors);
     println!("├─ Parsing complete. AST generated.");
-    
-    // Generate C code using the AST and the mutable collected_vars/collected_errors.
     let c_code = make_c(&ast, true, &collected_vars, &mut collected_errors);
-    println!("└─ C code generated. Initiating build process...");
+    println!("├─ C code generated");
+    fn format_duration(duration: Duration) -> String {
+        let nanos = duration.as_nanos();
+        if nanos >= 1_000_000_000 {
+            // More than or equal to 1 second.
+            let secs = duration.as_secs_f64();
+            format!("{:.3} sec", secs)
+        } else if nanos >= 1_000_000 {
+            // More than or equal to 1 millisecond.
+            let ms = (nanos as f64) / 1_000_000.0;
+            format!("{:.3} ms", ms)
+        } else if nanos >= 1_000 {
+            // More than or equal to 1 microsecond.
+            let micros = (nanos as f64) / 1_000.0;
+            format!("{:.3} µs", micros)
+        } else {
+            // Less than 1 microsecond.
+            format!("{} ns", nanos)
+        }
+    }
+    println!("└─ Total build time (init to C code generation): {}", format_duration(total_start.elapsed()));
     
+    let compiler_start = Instant::now();
     match linux_b_64(&c_code, &config) {
         Ok(()) => println!("└─ Build succeeded for '{}'.", config.path),
         Err(e) => {
@@ -163,4 +179,9 @@ fn main() {
             exit(1);
         }
     }
+    println!("Compiler run time: {} ms", compiler_start.elapsed().as_millis());
+}
+
+fn main() {
+    main_logic();
 }

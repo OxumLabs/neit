@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 int main(){
-double age = 0;
+i8 age = 0;
+while((age != 100)) {
+age = age+1.0;
+}
 return 0;
 }

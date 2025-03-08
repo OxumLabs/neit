@@ -55,7 +55,6 @@ pub fn parse4(
                     token_iter.next();
                 }
                 if let Some(Token::EqSign) = token_iter.next() {
-                    // OK
                 } else {
                     collected_errors.push(ErrTypes::MissingOperator(*line));
                     return;
@@ -79,13 +78,32 @@ pub fn parse4(
     while let Some(tok) = token_iter.peek() {
         match tok {
             Token::EOL | Token::EOF => break,
-            Token::Space => { token_iter.next(); }
-            Token::Iden(val) => { raw_value.push_str(val); token_iter.next(); }
-            Token::ADDOP => { raw_value.push('+'); token_iter.next(); }
-            Token::SUBOP => { raw_value.push('-'); token_iter.next(); }
-            Token::MULTIOP => { raw_value.push('*'); token_iter.next(); }
-            Token::DIVOP => { raw_value.push('/'); token_iter.next(); }
-            _ => { token_iter.next(); }
+            Token::Space => {
+                token_iter.next();
+            }
+            Token::Iden(val) => {
+                raw_value.push_str(val);
+                token_iter.next();
+            }
+            Token::ADDOP => {
+                raw_value.push('+');
+                token_iter.next();
+            }
+            Token::SUBOP => {
+                raw_value.push('-');
+                token_iter.next();
+            }
+            Token::MULTIOP => {
+                raw_value.push('*');
+                token_iter.next();
+            }
+            Token::DIVOP => {
+                raw_value.push('/');
+                token_iter.next();
+            }
+            _ => {
+                token_iter.next();
+            }
         }
     }
     if raw_value.trim().is_empty() {

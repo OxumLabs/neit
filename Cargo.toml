@@ -5,12 +5,13 @@ edition = "2021"
 
 [dependencies]
 colored = "3.0.0"
+lazy_static = "1.5.0"
+phf = { version = "0.11.3", features = ["macros"] }
 [profile.release]
 opt-level = 3
 lto = "fat"
 codegen-units = 1
 panic = "unwind"
-incremental = false
 rpath = false
 debug = false
 overflow-checks = false
