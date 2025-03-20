@@ -50,6 +50,11 @@
               RUST_SRC_PATH = "${pkgs.rustToolchain}/lib/rustlib/src/rust/library";
             };
 
+            nativeBuildInputs = with pkgs; [
+              pkgsCross.mingwW64.stdenv.cc
+              pkgsCross.mingwW64.windows.pthreads
+            ];
+
             packages = with pkgs; [
               rustToolchain
               cargo
