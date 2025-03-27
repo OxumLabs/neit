@@ -14,6 +14,7 @@ pub fn parse2(
     line: &mut i32,
 ) {
     match token {
+        Token::EOL => *line += 1,
         Token::Iden(ref id) if id == "may" => {
             while let Some(Token::Space) = token_iter.peek() {
                 token_iter.next();

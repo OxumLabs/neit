@@ -1,4 +1,4 @@
-may age = 0
-while age != 100{
-    age += 1
+may ii = 1
+while ii != 10000000{
+    ii += 1
 }

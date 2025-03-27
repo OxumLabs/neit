@@ -3,9 +3,7 @@ use std::process::exit;
 use colored::Colorize;
 use parse1::p1;
 use crate::{
-    err_system::{err_types::ErrTypes, error_msg_gen::gen_error_msg},
-    helpers::Condition,
-    tok_system::tokens::Token,
+    err_system::{err_types::ErrTypes, error_msg_gen::gen_error_msg}, helpers::Condition, optimisers::pass1::pass1, tok_system::tokens::Token
 };
 
 #[derive(Debug)]
@@ -64,6 +62,7 @@ pub mod parse1;
 pub mod parse2;
 pub mod parse3;
 pub mod parse4;
+pub mod parse5;
 
 /// Parses tokens into an AST while collecting variables and reporting errors.
 /// 
@@ -83,24 +82,27 @@ pub mod parse4;
 /// - A reference to the collected errors.
 pub fn parse<'a>(
     tokens: &'a Vec<Token>,
-    code: &'a String,
+    code: &String,
     file: &'static str,
     use_args_vars_err: bool,
     collected_vars: &'a mut Vec<(String, &'static str)>,
     collected_errors: &'a mut Vec<ErrTypes>,
+    line : i32,
 ) -> (Vec<AST>, &'a Vec<(String, &'static str)>, &'a Vec<ErrTypes>) {
+
     if !use_args_vars_err {
         collected_vars.clear();
         collected_errors.clear();
     }
-    
-    let mut line = 1;
-    let ast = p1(tokens, code, collected_errors, collected_vars, &mut line);
+    let tpcode = code.clone();
+    let mut line = line;
+    let mut ast = p1(tokens, &tpcode, collected_errors, collected_vars, &mut line);
+    pass1(&mut ast);
     
     if !collected_errors.is_empty() {
         println!("{}{}", "[!] Errors in file ".bold().red(), file);
         for err in collected_errors.iter() {
-            println!("{}\n+++++", gen_error_msg(*err, code));
+            println!("{}\n──+++++++++++++++──", gen_error_msg(*err, code));
         }
         eprintln!("{}", "[!]".bold().red());
         exit(1);

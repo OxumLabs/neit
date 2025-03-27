@@ -1,9 +1,5 @@
-use super::AST;
-use crate::{
-    err_system::err_types::ErrTypes,
-    parse_systems::Variables,
-    tok_system::tokens::Token,
-};
+use super::{parse5::parse5, AST};
+use crate::{err_system::err_types::ErrTypes, parse_systems::Variables, tok_system::tokens::Token};
 
 #[inline(always)]
 pub fn parse4(
@@ -15,14 +11,38 @@ pub fn parse4(
     collected_errors: &mut Vec<ErrTypes>,
     line: &mut i32,
 ) {
-    // Get variable name.
-    let var_name = match token {
-        Token::Iden(name) => name.clone(),
-        _ => return,
+    let var_name: String = match token {
+        Token::Iden(name) => {
+            
+            if name == "const" || name == "global" {
+                
+                parse5(
+                    token,
+                    token_iter,
+                    ast,
+                    _code,
+                    collected_vars,
+                    collected_errors,
+                    line,
+                );
+    
+                
+                return;
+            } else {
+                
+                name.clone()
+            }
+        }
+        _ => {
+            return;
+        }
     };
-
+    
     // Check if variable exists and is not const.
-    let var_info_option = collected_vars.iter().find(|(name, _)| name == &var_name).cloned();
+    let var_info_option = collected_vars
+        .iter()
+        .find(|(name, _)| name == &var_name)
+        .cloned();
     if var_info_option.is_none() {
         collected_errors.push(ErrTypes::VarNotFound(*line));
         return;
@@ -77,7 +97,7 @@ pub fn parse4(
     let mut raw_value = String::new();
     while let Some(tok) = token_iter.peek() {
         match tok {
-            Token::EOL | Token::EOF => break,
+            Token::EOL | Token::EOF => {*line += 1;break},
             Token::Space => {
                 token_iter.next();
             }
@@ -118,7 +138,13 @@ pub fn parse4(
         for c in raw_value.chars() {
             if "+-*/".contains(c) {
                 if !current_operand.is_empty() {
-                    if !validate_operand(&current_operand, &var_name, collected_vars, collected_errors, *line) {
+                    if !validate_operand(
+                        &current_operand,
+                        &var_name,
+                        collected_vars,
+                        collected_errors,
+                        *line,
+                    ) {
                         return;
                     }
                     result.push_str(&format_operand(&current_operand));
@@ -130,7 +156,13 @@ pub fn parse4(
             }
         }
         if !current_operand.is_empty() {
-            if !validate_operand(&current_operand, &var_name, collected_vars, collected_errors, *line) {
+            if !validate_operand(
+                &current_operand,
+                &var_name,
+                collected_vars,
+                collected_errors,
+                *line,
+            ) {
                 return;
             }
             result.push_str(&format_operand(&current_operand));
@@ -144,7 +176,11 @@ pub fn parse4(
     }
 
     // If the expression is arithmetic, treat it as math.
-    if final_expr.contains('+') || final_expr.contains('-') || final_expr.contains('*') || final_expr.contains('/') {
+    if final_expr.contains('+')
+        || final_expr.contains('-')
+        || final_expr.contains('*')
+        || final_expr.contains('/')
+    {
         let new_var = Variables::MATH(var_name.clone(), final_expr.clone());
         ast.push(AST::VarAssign(new_var));
         return;
@@ -152,7 +188,7 @@ pub fn parse4(
 
     // Create variable based on type.
     let new_var: Variables = if final_expr.starts_with('\"') && final_expr.ends_with('\"') {
-        let processed = final_expr[1..final_expr.len()-1].to_string();
+        let processed = final_expr[1..final_expr.len() - 1].to_string();
         if var_type == "str" {
             Variables::Str(Box::leak(var_name.clone().into_boxed_str()), processed)
         } else {
@@ -160,13 +196,16 @@ pub fn parse4(
             return;
         }
     } else if final_expr.starts_with('\'') && final_expr.ends_with('\'') {
-        let processed = final_expr[1..final_expr.len()-1].to_string();
+        let processed = final_expr[1..final_expr.len() - 1].to_string();
         if processed.chars().count() != 1 {
             collected_errors.push(ErrTypes::CharVarLen(*line));
             return;
         }
         if var_type == "ch" {
-            Variables::Char(Box::leak(var_name.clone().into_boxed_str()), processed.chars().next().unwrap())
+            Variables::Char(
+                Box::leak(var_name.clone().into_boxed_str()),
+                processed.chars().next().unwrap(),
+            )
         } else {
             collected_errors.push(ErrTypes::TypeMismatch(*line));
             return;
@@ -176,9 +215,16 @@ pub fn parse4(
         let mut forced_type = None;
         if processed_value.ends_with(')') {
             if let Some(start) = processed_value.rfind('(') {
-                let potential = processed_value[start + 1..processed_value.len()-1].trim().to_string();
-                if potential == "i8" || potential == "i16" || potential == "i32" ||
-                   potential == "i64" || potential == "f32" || potential == "f64" {
+                let potential = processed_value[start + 1..processed_value.len() - 1]
+                    .trim()
+                    .to_string();
+                if potential == "i8"
+                    || potential == "i16"
+                    || potential == "i32"
+                    || potential == "i64"
+                    || potential == "f32"
+                    || potential == "f64"
+                {
                     forced_type = Some(potential);
                     let trimmed_value = processed_value[..start].trim().to_string();
                     if trimmed_value.is_empty() {
@@ -198,7 +244,7 @@ pub fn parse4(
                         collected_errors.push(ErrTypes::InvalidNumberFormat(*line));
                         return;
                     }
-                },
+                }
                 "i16" => {
                     if let Ok(val) = processed_value.parse::<i16>() {
                         Variables::I16(Box::leak(var_name.clone().into_boxed_str()), val)
@@ -206,7 +252,7 @@ pub fn parse4(
                         collected_errors.push(ErrTypes::InvalidNumberFormat(*line));
                         return;
                     }
-                },
+                }
                 "i32" => {
                     if let Ok(val) = processed_value.parse::<i32>() {
                         Variables::I32(Box::leak(var_name.clone().into_boxed_str()), val)
@@ -214,7 +260,7 @@ pub fn parse4(
                         collected_errors.push(ErrTypes::InvalidNumberFormat(*line));
                         return;
                     }
-                },
+                }
                 "i64" => {
                     if let Ok(val) = processed_value.parse::<i64>() {
                         Variables::I64(Box::leak(var_name.clone().into_boxed_str()), val)
@@ -222,7 +268,7 @@ pub fn parse4(
                         collected_errors.push(ErrTypes::InvalidNumberFormat(*line));
                         return;
                     }
-                },
+                }
                 "f32" => {
                     if let Ok(val) = processed_value.parse::<f32>() {
                         Variables::F32(Box::leak(var_name.clone().into_boxed_str()), val)
@@ -230,7 +276,7 @@ pub fn parse4(
                         collected_errors.push(ErrTypes::InvalidNumberFormat(*line));
                         return;
                     }
-                },
+                }
                 "f64" => {
                     if let Ok(val) = processed_value.parse::<f64>() {
                         Variables::F64(Box::leak(var_name.clone().into_boxed_str()), val)
@@ -238,7 +284,7 @@ pub fn parse4(
                         collected_errors.push(ErrTypes::InvalidNumberFormat(*line));
                         return;
                     }
-                },
+                }
                 _ => {
                     collected_errors.push(ErrTypes::TypeMismatch(*line));
                     return;
@@ -253,7 +299,7 @@ pub fn parse4(
                         collected_errors.push(ErrTypes::InvalidNumberFormat(*line));
                         return;
                     }
-                },
+                }
                 "i16" => {
                     if let Ok(val) = processed_value.parse::<i16>() {
                         Variables::I16(Box::leak(var_name.clone().into_boxed_str()), val)
@@ -261,7 +307,7 @@ pub fn parse4(
                         collected_errors.push(ErrTypes::InvalidNumberFormat(*line));
                         return;
                     }
-                },
+                }
                 "i32" => {
                     if let Ok(val) = processed_value.parse::<i32>() {
                         Variables::I32(Box::leak(var_name.clone().into_boxed_str()), val)
@@ -269,7 +315,7 @@ pub fn parse4(
                         collected_errors.push(ErrTypes::InvalidNumberFormat(*line));
                         return;
                     }
-                },
+                }
                 "i64" => {
                     if let Ok(val) = processed_value.parse::<i64>() {
                         Variables::I64(Box::leak(var_name.clone().into_boxed_str()), val)
@@ -277,7 +323,7 @@ pub fn parse4(
                         collected_errors.push(ErrTypes::InvalidNumberFormat(*line));
                         return;
                     }
-                },
+                }
                 "f32" => {
                     if let Ok(val) = processed_value.parse::<f32>() {
                         Variables::F32(Box::leak(var_name.clone().into_boxed_str()), val)
@@ -285,7 +331,7 @@ pub fn parse4(
                         collected_errors.push(ErrTypes::InvalidNumberFormat(*line));
                         return;
                     }
-                },
+                }
                 "f64" => {
                     if let Ok(val) = processed_value.parse::<f64>() {
                         Variables::F64(Box::leak(var_name.clone().into_boxed_str()), val)
@@ -293,7 +339,7 @@ pub fn parse4(
                         collected_errors.push(ErrTypes::InvalidNumberFormat(*line));
                         return;
                     }
-                },
+                }
                 _ => Variables::MATH(var_name.clone(), processed_value.clone()),
             }
         }
