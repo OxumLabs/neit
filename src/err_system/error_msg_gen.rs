@@ -1,7 +1,7 @@
 use colored::Colorize;
 use super::err_types::ErrTypes;
-use rand::seq::IndexedRandom;
-use rand::rng;
+use rand::seq::{IndexedRandom, SliceRandom};
+use rand::{rng, thread_rng};
 use std::convert::TryInto;
 
 // A large collection of taunting messages to incite frustration.
@@ -65,87 +65,95 @@ fn get_random_taunt() -> &'static str {
 }
 
 /// Formats an error message in a compact style using vertical bars.
-/// The message includes a header, the error line number, a hint,
-/// and a randomly selected taunt.
-fn format_error_msg(header: &str, line: u32, hint: &str) -> String {
+/// The message includes a header, the adjusted error line number,
+/// the corresponding code piece, a hint, and a randomly selected taunt.
+fn format_error_msg(header: &str, line: u32, hint: &str, code: &String) -> String {
+    // Subtract one from the line number, avoiding underflow if line is 0.
+    let adjusted_line = line.saturating_sub(1);
+    let code_piece = code
+        .lines()
+        .nth(adjusted_line as usize)
+        .unwrap_or("Code snippet unavailable");
     format!(
-        "┌[{}] at line {}\n├ Hint: {}\n└ {}",
+        "┌[{}] at line {}\n├ Code Piece: {}\n├ Hint: {}\n└ {}",
         header.red().bold(),
-        line,
+        adjusted_line,
+        code_piece,
         hint.cyan(),
         get_random_taunt().yellow().bold()
     )
 }
 
 /// Generates an error message based on the error type and source code.
-/// Now, only the line number is used (no code snippet is included).
+/// The returned message includes the adjusted line number, the code piece, and error details.
 pub fn gen_error_msg(err_type: ErrTypes, _code: &String) -> String {
+    println!("code:\n{}", _code);
     match err_type {
         ErrTypes::SyntaxError(line) => {
-            format_error_msg("Syntax Error", line.try_into().unwrap(), "Check your syntax and try again")
+            format_error_msg("Syntax Error", line.try_into().unwrap(), "Check your syntax and try again", _code)
         }
         ErrTypes::DivisionByZero(line) => {
-            format_error_msg("Division By Zero", line.try_into().unwrap(), "Ensure the denominator is not zero")
+            format_error_msg("Division By Zero", line.try_into().unwrap(), "Ensure the denominator is not zero", _code)
         }
         ErrTypes::MissingOperator(line) => {
-            format_error_msg("Missing Operator", line.try_into().unwrap(), "Insert the appropriate operator")
+            format_error_msg("Missing Operator", line.try_into().unwrap(), "Insert the appropriate operator", _code)
         }
         ErrTypes::UnexpectedToken(line) => {
-            format_error_msg("Unexpected Token", line.try_into().unwrap(), "Review your tokens")
+            format_error_msg("Unexpected Token", line.try_into().unwrap(), "Review your tokens", _code)
         }
         ErrTypes::TypeMismatch(line) => {
-            format_error_msg("Type Mismatch", line.try_into().unwrap(), "Ensure types match as expected")
+            format_error_msg("Type Mismatch", line.try_into().unwrap(), "Ensure types match as expected", _code)
         }
         ErrTypes::MissingValue(line) => {
-            format_error_msg("Missing Value", line.try_into().unwrap(), "Provide the missing value")
+            format_error_msg("Missing Value", line.try_into().unwrap(), "Provide the missing value", _code)
         }
         ErrTypes::ReservedKeyword(line) => {
-            format_error_msg("Reserved Keyword", line.try_into().unwrap(), "Avoid using reserved keywords")
+            format_error_msg("Reserved Keyword", line.try_into().unwrap(), "Avoid using reserved keywords", _code)
         }
         ErrTypes::UnbalancedParentheses(line) => {
-            format_error_msg("Unbalanced Parentheses", line.try_into().unwrap(), "Balance your parentheses")
+            format_error_msg("Unbalanced Parentheses", line.try_into().unwrap(), "Balance your parentheses", _code)
         }
         ErrTypes::VarNotFound(line) => {
-            format_error_msg("Variable Not Found", line.try_into().unwrap(), "Declare or check the variable")
+            format_error_msg("Variable Not Found", line.try_into().unwrap(), "Declare or check the variable", _code)
         }
         ErrTypes::UnknownCMD(line) => {
-            format_error_msg("Unknown Command", line.try_into().unwrap(), "Check the command and try again")
+            format_error_msg("Unknown Command", line.try_into().unwrap(), "Check the command and try again", _code)
         }
         ErrTypes::UnsupportedVarType(line) => {
-            format_error_msg("Unsupported Variable Type", line.try_into().unwrap(), "Use a supported variable type")
+            format_error_msg("Unsupported Variable Type", line.try_into().unwrap(), "Use a supported variable type", _code)
         }
         ErrTypes::VarAlreadyExists(line) => {
-            format_error_msg("Variable Already Exists", line.try_into().unwrap(), "Rename or remove the duplicate")
+            format_error_msg("Variable Already Exists", line.try_into().unwrap(), "Rename or remove the duplicate", _code)
         }
         ErrTypes::CharVarLen(line) => {
-            format_error_msg("Char Variable Length Error", line.try_into().unwrap(), "Check the character length")
+            format_error_msg("Char Variable Length Error", line.try_into().unwrap(), "Check the character length", _code)
         }
         ErrTypes::InvalidMathUsage(line) => {
-            format_error_msg("Invalid Math Usage", line.try_into().unwrap(), "Review your math operations")
+            format_error_msg("Invalid Math Usage", line.try_into().unwrap(), "Review your math operations", _code)
         }
         ErrTypes::DuplicateOperator(line) => {
-            format_error_msg("Duplicate Operator", line.try_into().unwrap(), "Remove the extra operator")
+            format_error_msg("Duplicate Operator", line.try_into().unwrap(), "Remove the extra operator", _code)
         }
         ErrTypes::InvalidConditionSyntax(line) => {
-            format_error_msg("Invalid Condition Syntax", line.try_into().unwrap(), "Correct the condition syntax")
+            format_error_msg("Invalid Condition Syntax", line.try_into().unwrap(), "Correct the condition syntax", _code)
         }
         ErrTypes::InvalidNumberFormat(line) => {
-            format_error_msg("Invalid Number Format", line.try_into().unwrap(), "Ensure the number is correctly formatted")
+            format_error_msg("Invalid Number Format", line.try_into().unwrap(), "Ensure the number is correctly formatted", _code)
         }
         ErrTypes::MissingLeftOperand(line) => {
-            format_error_msg("Missing Left Operand", line.try_into().unwrap(), "Provide the left operand")
+            format_error_msg("Missing Left Operand", line.try_into().unwrap(), "Provide the left operand", _code)
         }
         ErrTypes::MissingRightOperand(line) => {
-            format_error_msg("Missing Right Operand", line.try_into().unwrap(), "Provide the right operand")
+            format_error_msg("Missing Right Operand", line.try_into().unwrap(), "Provide the right operand", _code)
         }
         ErrTypes::UnexpectedEndOfInput(line) => {
-            format_error_msg("Unexpected End Of Input", line.try_into().unwrap(), "Complete the input")
+            format_error_msg("Unexpected End Of Input", line.try_into().unwrap(), "Complete the input", _code)
         }
         ErrTypes::UnsupportedOperator(line) => {
-            format_error_msg("Unsupported Operator", line.try_into().unwrap(), "Use a supported operator")
+            format_error_msg("Unsupported Operator", line.try_into().unwrap(), "Use a supported operator", _code)
         }
         ErrTypes::VarISConst(line) => {
-            format_error_msg("Constant Variable Error", line.try_into().unwrap(), "Constants cannot be modified")
+            format_error_msg("Constant Variable Error", line.try_into().unwrap(), "Constants cannot be modified", _code)
         }
     }
 }

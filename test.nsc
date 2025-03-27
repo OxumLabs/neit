@@ -1,2 +1,2 @@
-const name = "joy"
+const name = k
 println %name
