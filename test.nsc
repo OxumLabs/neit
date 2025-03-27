@@ -1,4 +1,2 @@
-may ii = 1
-while ii != 10000000{
-    ii += 1
-}
+const name = "joy"
+println %name

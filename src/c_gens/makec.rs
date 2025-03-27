@@ -46,6 +46,15 @@ fn eval_math_expr(expr: &str, math_values: &HashMap<String, f64>) -> Option<f64>
     }
 }
 
+fn write_decl(code: &mut String, declared_type: &str, name: &str, value: &str) {
+    if declared_type.starts_with("const;") {
+        let real_type = &declared_type["const;".len()..];
+        write!(code, "const {} {} = {};\n", real_type, name, value).unwrap();
+    } else {
+        write!(code, "{} {} = {};\n", declared_type, name, value).unwrap();
+    }
+}
+
 #[allow(non_snake_case)]
 pub fn make_c(
     ast: &[AST],
@@ -55,10 +64,12 @@ pub fn make_c(
     math_values: &mut HashMap<String, f64>,
 ) -> String {
     let mut code = String::with_capacity(4096);
-    let binding = collected_vars.clone();
-    let var_types: HashMap<&str, &'static str> = binding.iter().map(|(name, typ)| (name.as_str(), *typ)).collect();
-    const HEADER: &str = "#include \"nulibc.h\"\n#include <stdio.h>\n#include <stdlib.h>\nint main(){\n";
     
+    let binding = collected_vars.clone();
+    let var_types: HashMap<&str, &'static str> =
+        binding.iter().map(|(name, typ)| (name.as_str(), *typ)).collect();
+    
+    const HEADER: &str = "#include \"nulibc.h\"\n#include <stdio.h>\n#include <stdlib.h>\nint main(){\n";
     if gen_main_function {
         code.push_str(HEADER);
     }
@@ -71,7 +82,6 @@ pub fn make_c(
         ("i64", "%d"),
         ("f32", "%f"),
     ];
-    
     let format_map: HashMap<&str, &str> = FORMAT_SPECIFIERS.iter().copied().collect();
 
     for node in ast {
@@ -105,51 +115,36 @@ pub fn make_c(
                 match var {
                     MATH(n, v) => {
                         let computed_value = eval_math_expr(v, math_values);
-                        let determined_type = if let Some(result) = computed_value {
-                            if result.fract() == 0.0 {
-                                if result >= i32::MIN as f64 && result <= i32::MAX as f64 {
-                                    "i32"
-                                } else {
-                                    "i64"
-                                }
-                            } else {
-                                let f32_val = result as f32;
-                                if (f32_val as f64) != result {
-                                    "f64"
-                                } else {
-                                    "f32"
-                                }
-                            }
-                        } else {
-                            if v.contains('.') {
-                                "f32"
-                            } else {
-                                "i32"
-                            }
-                        };
-                        collected_vars.push((n.clone(), determined_type));
+                        let base_type = "f32";
+                        let declared_type = var_types.get(n.as_str()).unwrap_or(&base_type);
+                        collected_vars.push((n.clone(), declared_type));
                         if let Some(result) = computed_value {
                             math_values.insert(n.clone(), result);
                         }
-                        if determined_type == "i32" || determined_type == "i64" {
+                        if declared_type.contains("i32") || declared_type.contains("i64") {
                             if let Some(result) = computed_value {
-                                write!(&mut code, "{} {} = {};\n", determined_type, n, result as i64).unwrap();
+                                write_decl(&mut code, declared_type, n, &format!("{}", result as i64));
                             } else {
                                 let v_clean = if v.ends_with(".0") { &v[..v.len()-2] } else { v };
-                                write!(&mut code, "{} {} = {};\n", determined_type, n, v_clean).unwrap();
+                                write_decl(&mut code, declared_type, n, v_clean);
                             }
                         } else {
-                            write!(&mut code, "{} {} = {};\n", determined_type, n, v).unwrap();
+                            write_decl(&mut code, declared_type, n, v);
                         }
                     }
-                    Char(n, v) => write!(&mut code, "char {} = '{}';\n", n, v).unwrap(),
-                    I8(n, v) => write!(&mut code, "i8 {} = {};\n", n, v).unwrap(),
-                    I16(n, v) => write!(&mut code, "i16 {} = {};\n", n, v).unwrap(),
-                    I32(n, v) => write!(&mut code, "i32 {} = {};\n", n, v).unwrap(),
-                    I64(n, v) => write!(&mut code, "i64 {} = {};\n", n, v).unwrap(),
-                    F32(n, v) => write!(&mut code, "f32 {} = {};\n", n, v).unwrap(),
-                    F64(n, v) => write!(&mut code, "double {} = {};\n", n, v).unwrap(),
-                    Str(n, v) => write!(&mut code, "nstring {} = nstr_new(\"{}\");\n", n, v).unwrap(),
+                    Char(n, v) => write_decl(&mut code, var_types.get(n).unwrap_or(&"char"), n, &format!("'{}'", v)),
+                    I8(n, v) => write_decl(&mut code, var_types.get(n).unwrap_or(&"i8"), n, &format!("{}", v)),
+                    I16(n, v) => write_decl(&mut code, var_types.get(n).unwrap_or(&"i16"), n, &format!("{}", v)),
+                    I32(n, v) => write_decl(&mut code, var_types.get(n).unwrap_or(&"i32"), n, &format!("{}", v)),
+                    I64(n, v) => write_decl(&mut code, var_types.get(n).unwrap_or(&"i64"), n, &format!("{}", v)),
+                    F32(n, v) => write_decl(&mut code, var_types.get(n).unwrap_or(&"f32"), n, &format!("{}", v)),
+                    F64(n, v) => write_decl(&mut code, var_types.get(n).unwrap_or(&"double"), n, &format!("{}", v)),
+                    Str(n, v) => {
+                        let typ = var_types.get(n).unwrap_or(&"nstring");
+                        // If the type is "str", override it with "nstring"
+                        let typ = if *typ == "str" { "nstring" } else { "nstring" };
+                        write_decl(&mut code, typ, n, &format!("nstr_new(\"{}\")", v))
+                    },
                     REF(n, v) => {
                         let (typ, actual) = resolve_ref(ast, v);
                         write!(&mut code, "{} {} = {};\n", typ, n, actual).unwrap();
@@ -173,54 +168,34 @@ pub fn make_c(
                 match var {
                     MATH(n, v) => {
                         let computed_value = eval_math_expr(v, math_values);
-                        let new_type = if let Some(result) = computed_value {
-                            if result.fract() == 0.0 {
-                                if result >= i32::MIN as f64 && result <= i32::MAX as f64 {
-                                    "i32"
-                                } else {
-                                    "i64"
-                                }
-                            } else {
-                                let f32_val = result as f32;
-                                if (f32_val as f64) != result {
-                                    "f64"
-                                } else {
-                                    "f32"
-                                }
-                            }
-                        } else {
-                            if v.contains('.') {
-                                "f32"
-                            } else {
-                                collected_vars.iter()
-                                    .find(|(name, _)| name == n)
-                                    .map(|(_, typ)| *typ)
-                                    .unwrap_or("i32")
-                            }
-                        };
+                        let declared_type = var_types.get(n.as_str()).unwrap_or(&"f32");
                         if let Some(result) = computed_value {
                             math_values.insert(n.clone(), result);
                         }
-                        if new_type == "i32" || new_type == "i64" {
+                        if declared_type.contains("i32") || declared_type.contains("i64") {
                             if let Some(result) = computed_value {
-                                write!(&mut code, "{} = {};\n", n, result as i64).unwrap();
+                                write_decl(&mut code, declared_type, n, &format!("{}", result as i64));
                             } else {
                                 let v_clean = if v.ends_with(".0") { &v[..v.len()-2] } else { v };
-                                write!(&mut code, "{} = {};\n", n, v_clean).unwrap();
+                                write_decl(&mut code, declared_type, n, v_clean);
                             }
                         } else {
-                            write!(&mut code, "{} = {};\n", n, v).unwrap();
+                            write_decl(&mut code, declared_type, n, v);
                         }
                     }
-                    Char(n, v) => write!(&mut code, "{} = '{}';\n", n, v).unwrap(),
-                    I8(n, v) => write!(&mut code, "{} = {};\n", n, v).unwrap(),
-                    I16(n, v) => write!(&mut code, "{} = {};\n", n, v).unwrap(),
-                    I32(n, v) => write!(&mut code, "{} = {};\n", n, v).unwrap(),
-                    I64(n, v) => write!(&mut code, "{} = {};\n", n, v).unwrap(),
-                    F32(n, v) => write!(&mut code, "{} = {};\n", n, v).unwrap(),
-                    F64(n, v) => write!(&mut code, "{} = {};\n", n, v).unwrap(),
-                    Str(n, v) => write!(&mut code, "{} = nstr_new(\"{}\");\n", n, v).unwrap(),
-                    REF(n, v) => write!(&mut code, "{} = {};\n", n, v).unwrap(),
+                    Char(n, v) => write_decl(&mut code, var_types.get(n).unwrap_or(&"char"), n, &format!("'{}'", v)),
+                    I8(n, v) => write_decl(&mut code, var_types.get(n).unwrap_or(&"i8"), n, &format!("{}", v)),
+                    I16(n, v) => write_decl(&mut code, var_types.get(n).unwrap_or(&"i16"), n, &format!("{}", v)),
+                    I32(n, v) => write_decl(&mut code, var_types.get(n).unwrap_or(&"i32"), n, &format!("{}", v)),
+                    I64(n, v) => write_decl(&mut code, var_types.get(n).unwrap_or(&"i64"), n, &format!("{}", v)),
+                    F32(n, v) => write_decl(&mut code, var_types.get(n).unwrap_or(&"f32"), n, &format!("{}", v)),
+                    F64(n, v) => write_decl(&mut code, var_types.get(n).unwrap_or(&"double"), n, &format!("{}", v)),
+                    Str(n, v) => {
+                        let typ = var_types.get(n).unwrap_or(&"nstring");
+                        let typ = if *typ == "str" { "nstring" } else { typ };
+                        write_decl(&mut code, typ, n, &format!("nstr_new(\"{}\")", v))
+                    },
+                    REF(n, v) => write!( &mut code, "{} = {};\n", n, v).unwrap(),
                 }
             }
         }
@@ -243,15 +218,15 @@ fn resolve_ref<'a>(ast: &'a [AST], mut current: &'a str) -> (&'static str, &'a s
     let typ = ast.iter().find_map(|node| {
         if let AST::Var(var) = node {
             match var {
-                Variables::Char(name, _) if &name[..] == current => Some("char"),
-                Variables::I8(name, _) if &name[..] == current => Some("i8"),
-                Variables::I16(name, _) if &name[..] == current => Some("i16"),
-                Variables::I32(name, _) if &name[..] == current => Some("i32"),
-                Variables::I64(name, _) if &name[..] == current => Some("i64"),
-                Variables::F32(name, _) if &name[..] == current => Some("f32"),
-                Variables::F64(name, _) if &name[..] == current => Some("double"),
-                Variables::MATH(name, _) if &name[..] == current => Some("f32"),
-                Variables::Str(name, _) if &name[..] == current => Some("nstring"),
+                Variables::Char(name, _) if *name == current => Some("char"),
+                Variables::I8(name, _) if *name == current => Some("i8"),
+                Variables::I16(name, _) if *name == current => Some("i16"),
+                Variables::I32(name, _) if *name == current => Some("i32"),
+                Variables::I64(name, _) if *name == current => Some("i64"),
+                Variables::F32(name, _) if *name == current => Some("f32"),
+                Variables::F64(name, _) if *name == current => Some("double"),
+                Variables::MATH(name, _) if *name == current => Some("f32"),
+                Variables::Str(name, _) if *name == current => Some("nstring"),
                 _ => None,
             }
         } else {
