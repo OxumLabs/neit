@@ -1,10 +1,8 @@
-use crate::{
-    err_system::err_types::ErrTypes,
-    helpers::condition_parser::parse_condition,
-    parse_systems::parse,
-    tok_system::tokens::Token,
-};
 use super::{parse4::parse4, AST};
+use crate::{
+    err_system::err_types::ErrTypes, helpers::condition_parser::parse_condition,
+    parse_systems::parse, tok_system::tokens::Token,
+};
 
 #[inline(always)]
 pub fn parse3(
@@ -51,7 +49,15 @@ pub fn parse3(
                     body.push(tok.clone());
                 }
             }
-            let body_parsed = parse(&body, &collected_code, "", true, collected_vars, collected_errors,*line);
+            let body_parsed = parse(
+                &body,
+                &collected_code,
+                "",
+                true,
+                collected_vars,
+                collected_errors,
+                *line,
+            );
             ast.push(AST::While(body_parsed.0, parsed_cond));
         }
         Token::Iden(iden) if iden == "if" => {
@@ -88,12 +94,28 @@ pub fn parse3(
                     body.push(tok.clone());
                 }
             }
-            let body_parsed = parse(&body, &collected_code, "", true, collected_vars, collected_errors,*line);
+            let body_parsed = parse(
+                &body,
+                &collected_code,
+                "",
+                true,
+                collected_vars,
+                collected_errors,
+                *line,
+            );
             ast.push(AST::IF(body_parsed.0, parsed_cond));
         }
         Token::EOL => *line += 1,
         _ => {
-            parse4(token, token_iter, ast, code, collected_vars, collected_errors, line);
+            parse4(
+                token,
+                token_iter,
+                ast,
+                code,
+                collected_vars,
+                collected_errors,
+                line,
+            );
         }
     }
 }

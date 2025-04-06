@@ -6,8 +6,11 @@ use std::{
     time::Instant,
 };
 
-use crate::{nulibc::{NULIBC, NULIBCH}, Config};
-use sha2::{Sha256, Digest};
+use crate::{
+    nulibc::{NULIBC, NULIBCH},
+    Config,
+};
+use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader};
 
@@ -66,7 +69,10 @@ fn ensure_source_file(code: &str, hash_map: &mut HashMap<String, String>) -> Res
 
 fn create_nulibc_files(hash_map: &mut HashMap<String, String>) -> Result<(), Error> {
     if needs_update(NULIBC_C, NULIBC, hash_map) {
-        println!("[*] Nulibc source '{}' has changed. Updating file.", NULIBC_C);
+        println!(
+            "[*] Nulibc source '{}' has changed. Updating file.",
+            NULIBC_C
+        );
         File::create(NULIBC_C)?.write_all(NULIBC.as_bytes())?;
         let new_hash = compute_hash(NULIBC);
         hash_map.insert(NULIBC_C.to_string(), new_hash);
@@ -74,7 +80,10 @@ fn create_nulibc_files(hash_map: &mut HashMap<String, String>) -> Result<(), Err
         println!("[*] Nulibc source '{}' is up-to-date.", NULIBC_C);
     }
     if needs_update(NULIBC_H, NULIBCH, hash_map) {
-        println!("[*] Nulibc header '{}' has changed. Updating file.", NULIBC_H);
+        println!(
+            "[*] Nulibc header '{}' has changed. Updating file.",
+            NULIBC_H
+        );
         File::create(NULIBC_H)?.write_all(NULIBCH.as_bytes())?;
         let new_hash = compute_hash(NULIBCH);
         hash_map.insert(NULIBC_H.to_string(), new_hash);
@@ -130,7 +139,7 @@ fn find_compiler(compiler: &str) -> Option<String> {
     let exe_suffix = ".exe";
     #[cfg(not(target_os = "windows"))]
     let exe_suffix = "";
-    
+
     let local_path = format!("executables/{}{}", compiler, exe_suffix);
     if Path::new(&local_path).exists() {
         return Some(local_path);
@@ -182,13 +191,16 @@ pub fn linux_b_64(code: &String, config: &Config) -> Result<(), Error> {
     }
 
     if !needs_recompile(&out_file) {
-        println!("[*] No changes detected. Reusing existing output file: '{}'", out_file);
+        println!(
+            "[*] No changes detected. Reusing existing output file: '{}'",
+            out_file
+        );
         return Ok(());
     }
 
     let targets = config.targets.clone();
     let static_flag = config.static_flag;
-    
+
     // For each target, compile using the selected compiler.
     // However, the final output file is always named as config.out.
     for target in targets {
@@ -229,13 +241,20 @@ pub fn linux_b_64(code: &String, config: &Config) -> Result<(), Error> {
         });
         let compile_time = compile_start.elapsed().as_millis();
         if !output.status.success() {
-            eprintln!("[X] Failed {}: {}", target, String::from_utf8_lossy(&output.stderr));
+            eprintln!(
+                "[X] Failed {}: {}",
+                target,
+                String::from_utf8_lossy(&output.stderr)
+            );
             exit(1);
         } else {
-            println!("[*] Success {}: {} ({} ms)", target, current_out, compile_time);
+            println!(
+                "[*] Success {}: {} ({} ms)",
+                target, current_out, compile_time
+            );
         }
     }
-    
+
     if let Err(e) = write_hashes(&hash_map) {
         eprintln!("[X] Error writing hash file: {}", e);
     }

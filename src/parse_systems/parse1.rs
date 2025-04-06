@@ -14,7 +14,9 @@ pub fn p1(
     let mut tokens_iter = tokens.iter().peekable();
     while let Some(token) = tokens_iter.next() {
         match token {
-            Token::Iden(cmd) if cmd == "print" || cmd == "println" || cmd == "eprint" || cmd == "eprintln" => {
+            Token::Iden(cmd)
+                if cmd == "print" || cmd == "println" || cmd == "eprint" || cmd == "eprintln" =>
+            {
                 let fd = if cmd == "eprint" || cmd == "eprintln" {
                     FileDescriptors::STDERR
                 } else {
@@ -68,23 +70,23 @@ pub fn p1(
                         }
                         Some(other) => {
                             let repr = match other {
-                                Token::Quote          => "\"",
-                                Token::EqSign         => "=",
-                                Token::ADDOP          => "+",
-                                Token::SUBOP          => "-",
-                                Token::DIVOP          => "/",
-                                Token::MULTIOP        => "*",
-                                Token::DoubleEqSign   => "==",
-                                Token::LCurly         => "{",
-                                Token::RCurly         => "}",
-                                Token::And            => "&",
-                                Token::Or             => "|",
-                                Token::Not            => "!",
-                                Token::GreaterThan    => ">",
-                                Token::LessThan       => "<",
-                                Token::LSmallBrac     => "(",
-                                Token::RSmallBracket  => ")",
-                                _                     => "",
+                                Token::Quote => "\"",
+                                Token::EqSign => "=",
+                                Token::ADDOP => "+",
+                                Token::SUBOP => "-",
+                                Token::DIVOP => "/",
+                                Token::MULTIOP => "*",
+                                Token::DoubleEqSign => "==",
+                                Token::LCurly => "{",
+                                Token::RCurly => "}",
+                                Token::And => "&",
+                                Token::Or => "|",
+                                Token::Not => "!",
+                                Token::GreaterThan => ">",
+                                Token::LessThan => "<",
+                                Token::LSmallBrac => "(",
+                                Token::RSmallBracket => ")",
+                                _ => "",
                             };
                             if !repr.is_empty() {
                                 content.push(PrintTokTypes::Word(repr.to_string()));
@@ -95,9 +97,17 @@ pub fn p1(
                 }
             }
             Token::EOL => *LINE += 1,
-            Token::Space => {},
+            Token::Space => {}
             _ => {
-                parse2(token, &mut tokens_iter, &mut ast, code, COLLECTED_VARS, COLLECTED_ERRORS, LINE);
+                parse2(
+                    token,
+                    &mut tokens_iter,
+                    &mut ast,
+                    code,
+                    COLLECTED_VARS,
+                    COLLECTED_ERRORS,
+                    LINE,
+                );
             }
         }
     }

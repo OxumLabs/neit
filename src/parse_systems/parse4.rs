@@ -13,9 +13,7 @@ pub fn parse4(
 ) {
     let var_name: String = match token {
         Token::Iden(name) => {
-            
             if name == "const" || name == "global" {
-                
                 parse5(
                     token,
                     token_iter,
@@ -25,11 +23,9 @@ pub fn parse4(
                     collected_errors,
                     line,
                 );
-    
-                
+
                 return;
             } else {
-                
                 name.clone()
             }
         }
@@ -37,7 +33,7 @@ pub fn parse4(
             return;
         }
     };
-    
+
     // Check if variable exists and is not const.
     let var_info_option = collected_vars
         .iter()
@@ -97,7 +93,10 @@ pub fn parse4(
     let mut raw_value = String::new();
     while let Some(tok) = token_iter.peek() {
         match tok {
-            Token::EOL | Token::EOF => {*line += 1;break},
+            Token::EOL | Token::EOF => {
+                *line += 1;
+                break;
+            }
             Token::Space => {
                 token_iter.next();
             }

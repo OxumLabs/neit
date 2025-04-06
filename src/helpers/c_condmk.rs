@@ -41,7 +41,7 @@ pub fn mk_c_cond(
 ) -> String {
     // Pre-allocate with estimated capacity
     let mut result = String::with_capacity(cond.child_conditions.len() * 32);
-    
+
     // Create variable type lookup table
     let var_types: HashMap<&str, &'static str> = collected_vars
         .iter()
@@ -50,12 +50,13 @@ pub fn mk_c_cond(
 
     #[inline(always)]
     fn is_numeric_literal(lit: &str) -> bool {
-        lit.bytes().all(|b| b.is_ascii_digit() || b == b'.' || b == b'-')
+        lit.bytes()
+            .all(|b| b.is_ascii_digit() || b == b'.' || b == b'-')
     }
 
     for (i, child) in cond.child_conditions.iter().enumerate() {
         let op_str = OPERATORS[&child.operator];
-        
+
         let snippet = match (&child.left, &child.right) {
             (Operand::Variable(var_name), Operand::Literal(lit)) => {
                 handle_var_lit(var_name, lit, op_str, &var_types, collected_errors, line)
@@ -66,8 +67,8 @@ pub fn mk_c_cond(
             (Operand::Variable(v1), Operand::Variable(v2)) => {
                 handle_var_var(v1, v2, op_str, &var_types)
             }
-            (Operand::Variable(var_name), Operand::Numeric(num)) |
-            (Operand::Numeric(num), Operand::Variable(var_name)) => {
+            (Operand::Variable(var_name), Operand::Numeric(num))
+            | (Operand::Numeric(num), Operand::Variable(var_name)) => {
                 handle_var_num(var_name, *num, op_str, &var_types, collected_errors, line)
             }
             (Operand::Numeric(n1), Operand::Numeric(n2)) => {
@@ -84,7 +85,7 @@ pub fn mk_c_cond(
         };
 
         result.push_str(&snippet);
-        
+
         if i < cond.child_conditions.len() - 1 {
             result.push_str(if let Some(joiner) = &child.joiner {
                 match joiner {
@@ -96,7 +97,7 @@ pub fn mk_c_cond(
             });
         }
     }
-    
+
     result
 }
 
@@ -109,12 +110,16 @@ fn handle_var_lit(
     collected_errors: &mut Vec<ErrTypes>,
     line: i32,
 ) -> String {
-    if lit.bytes().all(|b| b.is_ascii_digit() || b == b'.' || b == b'-') {
+    if lit
+        .bytes()
+        .all(|b| b.is_ascii_digit() || b == b'.' || b == b'-')
+    {
         format!("({var_name} {op_str} {lit})")
     } else {
         match var_types.get(var_name) {
-            Some(&"Str") | Some(&"char") => 
-                format!("(strcmp({var_name}.str, \"{lit}\") {op_str} 0)"),
+            Some(&"Str") | Some(&"char") => {
+                format!("(strcmp({var_name}.str, \"{lit}\") {op_str} 0)")
+            }
             Some(&typ) if NUMERIC_TYPES.contains(typ) => {
                 collected_errors.push(ErrTypes::TypeMismatch(line));
                 String::from("0")
@@ -133,12 +138,16 @@ fn handle_lit_var(
     collected_errors: &mut Vec<ErrTypes>,
     line: i32,
 ) -> String {
-    if lit.bytes().all(|b| b.is_ascii_digit() || b == b'.' || b == b'-') {
+    if lit
+        .bytes()
+        .all(|b| b.is_ascii_digit() || b == b'.' || b == b'-')
+    {
         format!("({lit} {op_str} {var_name})")
     } else {
         match var_types.get(var_name) {
-            Some(&"Str") | Some(&"Char") => 
-                format!("(strcmp(\"{lit}\", {var_name}.str) {op_str} 0)"),
+            Some(&"Str") | Some(&"Char") => {
+                format!("(strcmp(\"{lit}\", {var_name}.str) {op_str} 0)")
+            }
             Some(&typ) if NUMERIC_TYPES.contains(typ) => {
                 collected_errors.push(ErrTypes::TypeMismatch(line));
                 String::from("0")
@@ -156,10 +165,8 @@ fn handle_var_var(
     var_types: &HashMap<&str, &'static str>,
 ) -> String {
     match var_types.get(v1) {
-        Some(&"Char") | Some(&"Str") => 
-            format!("(strcmp({v1}.str, {v2}.str) {op_str} 0)"),
-        Some(&typ) if NUMERIC_TYPES.contains(typ) => 
-            format!("({v1} {op_str} {v2})"),
+        Some(&"Char") | Some(&"Str") => format!("(strcmp({v1}.str, {v2}.str) {op_str} 0)"),
+        Some(&typ) if NUMERIC_TYPES.contains(typ) => format!("({v1} {op_str} {v2})"),
         _ => format!("({v1} {op_str} {v2})"),
     }
 }
@@ -174,8 +181,7 @@ fn handle_var_num(
     line: i32,
 ) -> String {
     match var_types.get(var_name) {
-        Some(&typ) if NUMERIC_TYPES.contains(typ) => 
-            format!("({var_name} {op_str} {num})"),
+        Some(&typ) if NUMERIC_TYPES.contains(typ) => format!("({var_name} {op_str} {num})"),
         Some(&"Char") | Some(&"Str") => {
             collected_errors.push(ErrTypes::TypeMismatch(line));
             String::from("0")
@@ -193,9 +199,12 @@ fn handle_mixed_operands(
     line: i32,
 ) -> String {
     match (left, right) {
-        (Operand::Numeric(num), Operand::Literal(lit)) |
-        (Operand::Literal(lit), Operand::Numeric(num)) => {
-            if lit.bytes().all(|b| b.is_ascii_digit() || b == b'.' || b == b'-') {
+        (Operand::Numeric(num), Operand::Literal(lit))
+        | (Operand::Literal(lit), Operand::Numeric(num)) => {
+            if lit
+                .bytes()
+                .all(|b| b.is_ascii_digit() || b == b'.' || b == b'-')
+            {
                 format!("({num} {op_str} {lit})")
             } else {
                 collected_errors.push(ErrTypes::TypeMismatch(line));

@@ -1,6 +1,6 @@
 use crate::{
     helpers::{Condition, Operand},
-    parse_systems::{AST, PrintTokTypes, Variables},
+    parse_systems::{PrintTokTypes, Variables, AST},
 };
 use std::collections::HashSet;
 
@@ -32,7 +32,10 @@ pub fn pass1(ast: &mut Vec<AST>) {
     fn collect_usage_ast(ast: &Vec<AST>, used: &mut HashSet<String>) {
         for node in ast {
             match node {
-                AST::Print { descriptor: _, text } => {
+                AST::Print {
+                    descriptor: _,
+                    text,
+                } => {
                     for ptok in text {
                         if let PrintTokTypes::Var(v) = ptok {
                             used.insert(v.clone());

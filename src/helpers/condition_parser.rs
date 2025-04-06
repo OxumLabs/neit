@@ -1,8 +1,5 @@
-use crate::{
-    err_system::err_types::ErrTypes,
-    tok_system::tokens::Token,
-};
-use super::{ChildCond, Condition, LogicalJoin, Operand, CondToks};
+use super::{ChildCond, CondToks, Condition, LogicalJoin, Operand};
+use crate::{err_system::err_types::ErrTypes, tok_system::tokens::Token};
 use std::collections::HashMap;
 
 // Pre-computed valid type combinations using phf for O(1) lookup
@@ -32,7 +29,7 @@ pub fn parse_condition(
     // Pre-allocate with estimated capacity
     let mut child_conditions = Vec::with_capacity(raw_cond.len() / 4);
     let mut tokens = raw_cond.iter().peekable();
-    
+
     // Create variable type lookup table
     let var_types: HashMap<&str, &'static str> = collected_vars
         .iter()
@@ -47,7 +44,7 @@ pub fn parse_condition(
         line: i32,
     ) -> (Operand, &'static str) {
         if s.starts_with('"') && s.ends_with('"') {
-            (Operand::Literal(s[1..s.len()-1].to_string()), "str")
+            (Operand::Literal(s[1..s.len() - 1].to_string()), "str")
         } else if let Ok(n) = s.parse::<f64>() {
             (Operand::Numeric(n), "f64")
         } else if let Some(&var_type) = var_types.get(s) {

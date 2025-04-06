@@ -1,10 +1,13 @@
 use std::process::exit;
 
+use crate::{
+    err_system::{err_types::ErrTypes, error_msg_gen::gen_error_msg},
+    helpers::Condition,
+    optimisers::pass1::pass1,
+    tok_system::tokens::Token,
+};
 use colored::Colorize;
 use parse1::p1;
-use crate::{
-    err_system::{err_types::ErrTypes, error_msg_gen::gen_error_msg}, helpers::Condition, optimisers::pass1::pass1, tok_system::tokens::Token
-};
 
 #[derive(Debug)]
 pub enum AST {
@@ -16,6 +19,7 @@ pub enum AST {
     While(Vec<AST>, Condition),
     IF(Vec<AST>, Condition),
     VarAssign(Variables),
+    Input(Variables),
 }
 
 #[derive(Debug)]
@@ -63,9 +67,10 @@ pub mod parse2;
 pub mod parse3;
 pub mod parse4;
 pub mod parse5;
+pub mod parse6;
 
 /// Parses tokens into an AST while collecting variables and reporting errors.
-/// 
+///
 /// # Arguments
 /// - `tokens`: The tokens to parse.
 /// - `code`: The source code (for error messages).
@@ -74,7 +79,7 @@ pub mod parse5;
 ///   if `false`, it clears the provided vectors before parsing.
 /// - `collected_vars`: A mutable reference to a vector of variable tuples (name and type).
 /// - `collected_errors`: A mutable reference to a vector of errors.
-/// 
+///
 /// # Returns
 /// A triple containing:
 /// - The parsed AST (owned),
@@ -87,9 +92,8 @@ pub fn parse<'a>(
     use_args_vars_err: bool,
     collected_vars: &'a mut Vec<(String, &'static str)>,
     collected_errors: &'a mut Vec<ErrTypes>,
-    line : i32,
+    line: i32,
 ) -> (Vec<AST>, &'a Vec<(String, &'static str)>, &'a Vec<ErrTypes>) {
-
     if !use_args_vars_err {
         collected_vars.clear();
         collected_errors.clear();
@@ -98,7 +102,7 @@ pub fn parse<'a>(
     let mut line = line;
     let mut ast = p1(tokens, &tpcode, collected_errors, collected_vars, &mut line);
     pass1(&mut ast);
-    
+
     if !collected_errors.is_empty() {
         println!("{}{}", "[!] Errors in file ".bold().red(), file);
         for err in collected_errors.iter() {
@@ -107,6 +111,6 @@ pub fn parse<'a>(
         eprintln!("{}", "[!]".bold().red());
         exit(1);
     }
-    
+
     (ast, collected_vars, collected_errors)
 }

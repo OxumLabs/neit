@@ -1,2 +1,12 @@
-const name = k
-println %name
+may age = 0
+const tst = "1"(i32)
+while age != 1000{
+    if age == 50{
+        println half way there!
+    }
+}
+##
+multiline comment
+##
+# single line comment
+print Hello , without a new line!

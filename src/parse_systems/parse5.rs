@@ -1,9 +1,5 @@
 use super::AST;
-use crate::{
-    err_system::err_types::ErrTypes,
-    parse_systems::Variables,
-    tok_system::tokens::Token,
-};
+use crate::{err_system::err_types::ErrTypes, parse_systems::Variables, tok_system::tokens::Token};
 
 #[inline(always)]
 pub fn parse5(
@@ -43,7 +39,7 @@ pub fn parse5(
         collected_errors.push(ErrTypes::VarAlreadyExists(*line));
         return;
     }
-    
+
     // Skip spaces before assignment operator.
     while matches!(token_iter.peek(), Some(Token::Space)) {
         token_iter.next();
@@ -53,7 +49,7 @@ pub fn parse5(
     let mut compound_operator: Option<char> = None;
     if let Some(op_token) = token_iter.next() {
         match op_token {
-            Token::EqSign => { }
+            Token::EqSign => {}
             Token::ADDOP | Token::SUBOP | Token::MULTIOP | Token::DIVOP => {
                 compound_operator = match op_token {
                     Token::ADDOP => Some('+'),
@@ -91,15 +87,34 @@ pub fn parse5(
         match tok {
             Token::EOL | Token::EOF => {
                 *line += 1;
-                break
-            },
-            Token::Space => { token_iter.next(); },
-            Token::Iden(val) => { raw_value.push_str(val); token_iter.next(); },
-            Token::ADDOP => { raw_value.push('+'); token_iter.next(); },
-            Token::SUBOP => { raw_value.push('-'); token_iter.next(); },
-            Token::MULTIOP => { raw_value.push('*'); token_iter.next(); },
-            Token::DIVOP => { raw_value.push('/'); token_iter.next(); },
-            _ => { token_iter.next(); },
+                break;
+            }
+            Token::Space => {
+                token_iter.next();
+            }
+            Token::Iden(val) => {
+                raw_value.push_str(val);
+                token_iter.next();
+            }
+            Token::ADDOP => {
+                raw_value.push('+');
+                token_iter.next();
+            }
+            Token::SUBOP => {
+                raw_value.push('-');
+                token_iter.next();
+            }
+            Token::MULTIOP => {
+                raw_value.push('*');
+                token_iter.next();
+            }
+            Token::DIVOP => {
+                raw_value.push('/');
+                token_iter.next();
+            }
+            _ => {
+                token_iter.next();
+            }
         }
     }
     if raw_value.trim().is_empty() {
@@ -109,7 +124,7 @@ pub fn parse5(
 
     // Process operands and rebuild expression.
     let final_expr = if (raw_value.starts_with('\"') && raw_value.ends_with('\"'))
-        || (raw_value.starts_with('\'') && raw_value.ends_with('\'')) 
+        || (raw_value.starts_with('\'') && raw_value.ends_with('\''))
     {
         raw_value
     } else {
@@ -118,7 +133,13 @@ pub fn parse5(
         for c in raw_value.chars() {
             if "+-*/".contains(c) {
                 if !current_operand.is_empty() {
-                    if !validate_operand(&current_operand, &var_name, collected_vars, collected_errors, *line) {
+                    if !validate_operand(
+                        &current_operand,
+                        &var_name,
+                        collected_vars,
+                        collected_errors,
+                        *line,
+                    ) {
                         return;
                     }
                     result.push_str(&format_operand(&current_operand));
@@ -130,7 +151,13 @@ pub fn parse5(
             }
         }
         if !current_operand.is_empty() {
-            if !validate_operand(&current_operand, &var_name, collected_vars, collected_errors, *line) {
+            if !validate_operand(
+                &current_operand,
+                &var_name,
+                collected_vars,
+                collected_errors,
+                *line,
+            ) {
                 return;
             }
             result.push_str(&format_operand(&current_operand));
@@ -146,16 +173,23 @@ pub fn parse5(
 
     // Create constant variable.
     let new_var: Variables = if final_expr.starts_with('\"') && final_expr.ends_with('\"') {
-        let processed = final_expr[1..final_expr.len()-1].to_string();
+        let processed = final_expr[1..final_expr.len() - 1].to_string();
         Variables::Str(Box::leak(var_name.clone().into_boxed_str()), processed)
     } else if final_expr.starts_with('\'') && final_expr.ends_with('\'') {
-        let processed = final_expr[1..final_expr.len()-1].to_string();
+        let processed = final_expr[1..final_expr.len() - 1].to_string();
         if processed.chars().count() != 1 {
             collected_errors.push(ErrTypes::CharVarLen(*line));
             return;
         }
-        Variables::Char(Box::leak(var_name.clone().into_boxed_str()), processed.chars().next().unwrap())
-    } else if final_expr.contains('+') || final_expr.contains('-') || final_expr.contains('*') || final_expr.contains('/') {
+        Variables::Char(
+            Box::leak(var_name.clone().into_boxed_str()),
+            processed.chars().next().unwrap(),
+        )
+    } else if final_expr.contains('+')
+        || final_expr.contains('-')
+        || final_expr.contains('*')
+        || final_expr.contains('/')
+    {
         Variables::MATH(var_name.clone(), final_expr.clone())
     } else {
         if let Ok(val) = final_expr.parse::<i32>() {
@@ -169,22 +203,22 @@ pub fn parse5(
     };
 
     let const_type = match &new_var {
-        Variables::I8(_, _)   => "const;i8",
-        Variables::I16(_, _)  => "const;i16",
-        Variables::I32(_, _)  => "const;i32",
-        Variables::I64(_, _)  => "const;i64",
-        Variables::F32(_, _)  => "const;f32",
-        Variables::F64(_, _)  => "const;f64",
-        Variables::Str(_, _)  => "const;str",
+        Variables::I8(_, _) => "const;i8",
+        Variables::I16(_, _) => "const;i16",
+        Variables::I32(_, _) => "const;i32",
+        Variables::I64(_, _) => "const;i64",
+        Variables::F32(_, _) => "const;f32",
+        Variables::F64(_, _) => "const;f64",
+        Variables::Str(_, _) => "const;str",
         Variables::Char(_, _) => "const;ch",
         Variables::MATH(_, _) => "const;f32",
-        Variables::REF(_, _)  => "const;ref",
+        Variables::REF(_, _) => "const;ref",
     };
 
     collected_vars.push((var_name.clone(), const_type));
     ast.push(AST::Var(new_var));
 }
- 
+
 #[inline(always)]
 fn validate_operand(
     operand: &str,
@@ -199,7 +233,7 @@ fn validate_operand(
         return false;
     }
     let cleaned = if trimmed.ends_with('f') || trimmed.ends_with('F') {
-        &trimmed[..trimmed.len()-1]
+        &trimmed[..trimmed.len() - 1]
     } else {
         trimmed
     };
@@ -215,7 +249,7 @@ fn validate_operand(
 fn format_operand(operand: &str) -> String {
     let trimmed = operand.trim();
     let cleaned = if trimmed.ends_with('f') || trimmed.ends_with('F') {
-        &trimmed[..trimmed.len()-1]
+        &trimmed[..trimmed.len() - 1]
     } else {
         trimmed
     };

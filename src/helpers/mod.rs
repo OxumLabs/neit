@@ -17,7 +17,7 @@ pub enum Operand {
 }
 
 /// Tokens for conditional operators.
-#[derive(Debug, Clone, PartialEq,Copy,Eq,Hash)]
+#[derive(Debug, Clone, PartialEq, Copy, Eq, Hash)]
 pub enum CondToks {
     GreaterThan,
     LessThan,
@@ -43,5 +43,5 @@ pub struct ChildCond {
 pub struct Condition {
     pub child_conditions: Vec<ChildCond>,
 }
-pub mod condition_parser;
 pub mod c_condmk;
+pub mod condition_parser;

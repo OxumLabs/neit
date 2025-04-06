@@ -42,10 +42,22 @@ pub fn parse2(
             if let Some(first) = token_iter.next() {
                 match first {
                     Token::EqSign => found_eq = true,
-                    Token::ADDOP => { found_math_op = true; math_operator = Some('+'); },
-                    Token::SUBOP => { found_math_op = true; math_operator = Some('-'); },
-                    Token::MULTIOP => { found_math_op = true; math_operator = Some('*'); },
-                    Token::DIVOP => { found_math_op = true; math_operator = Some('/'); },
+                    Token::ADDOP => {
+                        found_math_op = true;
+                        math_operator = Some('+');
+                    }
+                    Token::SUBOP => {
+                        found_math_op = true;
+                        math_operator = Some('-');
+                    }
+                    Token::MULTIOP => {
+                        found_math_op = true;
+                        math_operator = Some('*');
+                    }
+                    Token::DIVOP => {
+                        found_math_op = true;
+                        math_operator = Some('/');
+                    }
                     _ => {
                         collected_errors.push(ErrTypes::UnknownCMD(*line));
                         return;
@@ -63,10 +75,26 @@ pub fn parse2(
             if found_eq && !found_math_op {
                 if let Some(next_tok) = token_iter.peek() {
                     match next_tok {
-                        Token::ADDOP => { found_math_op = true; math_operator = Some('+'); token_iter.next(); },
-                        Token::SUBOP => { found_math_op = true; math_operator = Some('-'); token_iter.next(); },
-                        Token::MULTIOP => { found_math_op = true; math_operator = Some('*'); token_iter.next(); },
-                        Token::DIVOP => { found_math_op = true; math_operator = Some('/'); token_iter.next(); },
+                        Token::ADDOP => {
+                            found_math_op = true;
+                            math_operator = Some('+');
+                            token_iter.next();
+                        }
+                        Token::SUBOP => {
+                            found_math_op = true;
+                            math_operator = Some('-');
+                            token_iter.next();
+                        }
+                        Token::MULTIOP => {
+                            found_math_op = true;
+                            math_operator = Some('*');
+                            token_iter.next();
+                        }
+                        Token::DIVOP => {
+                            found_math_op = true;
+                            math_operator = Some('/');
+                            token_iter.next();
+                        }
                         _ => {}
                     }
                 }
@@ -95,15 +123,40 @@ pub fn parse2(
             while let Some(tok) = token_iter.peek() {
                 match tok {
                     Token::EOL | Token::EOF => break,
-                    Token::Space => { token_iter.next(); },
-                    Token::Iden(val) => { raw_value.push_str(val); token_iter.next(); },
-                    Token::ADDOP => { raw_value.push('+'); token_iter.next(); },
-                    Token::SUBOP => { raw_value.push('-'); token_iter.next(); },
-                    Token::MULTIOP => { raw_value.push('*'); token_iter.next(); },
-                    Token::DIVOP => { raw_value.push('/'); token_iter.next(); },
-                    Token::LSmallBrac => { raw_value.push('('); token_iter.next(); },
-                    Token::RSmallBracket => { raw_value.push(')'); token_iter.next(); },
-                    _ => { token_iter.next(); }
+                    Token::Space => {
+                        token_iter.next();
+                    }
+                    Token::Iden(val) => {
+                        raw_value.push_str(val);
+                        token_iter.next();
+                    }
+                    Token::ADDOP => {
+                        raw_value.push('+');
+                        token_iter.next();
+                    }
+                    Token::SUBOP => {
+                        raw_value.push('-');
+                        token_iter.next();
+                    }
+                    Token::MULTIOP => {
+                        raw_value.push('*');
+                        token_iter.next();
+                    }
+                    Token::DIVOP => {
+                        raw_value.push('/');
+                        token_iter.next();
+                    }
+                    Token::LSmallBrac => {
+                        raw_value.push('(');
+                        token_iter.next();
+                    }
+                    Token::RSmallBracket => {
+                        raw_value.push(')');
+                        token_iter.next();
+                    }
+                    _ => {
+                        token_iter.next();
+                    }
                 }
             }
 
@@ -119,8 +172,10 @@ pub fn parse2(
                     _ => {}
                 }
 
-                if raw_value.contains('+') || raw_value.contains('-') ||
-                   raw_value.contains('*') || raw_value.contains('/')
+                if raw_value.contains('+')
+                    || raw_value.contains('-')
+                    || raw_value.contains('*')
+                    || raw_value.contains('/')
                 {
                     let mut expr_tokens = Vec::new();
                     let mut current = String::new();
@@ -152,8 +207,8 @@ pub fn parse2(
                             }
                         }
                         for i in 0..expr_tokens.len() - 1 {
-                            if "+-*/".contains(expr_tokens[i].as_str()) &&
-                               "+-*/".contains(expr_tokens[i + 1].as_str())
+                            if "+-*/".contains(expr_tokens[i].as_str())
+                                && "+-*/".contains(expr_tokens[i + 1].as_str())
                             {
                                 collected_errors.push(ErrTypes::InvalidMathUsage(*line));
                                 return;
@@ -200,9 +255,16 @@ pub fn parse2(
                     let mut forced_type = None;
                     if processed_value.ends_with(')') {
                         if let Some(start) = processed_value.rfind('(') {
-                            let potential = processed_value[start + 1..processed_value.len() - 1].trim().to_string();
-                            if potential == "i8" || potential == "i16" || potential == "i32" ||
-                               potential == "i64" || potential == "f32" || potential == "f64" {
+                            let potential = processed_value[start + 1..processed_value.len() - 1]
+                                .trim()
+                                .to_string();
+                            if potential == "i8"
+                                || potential == "i16"
+                                || potential == "i32"
+                                || potential == "i64"
+                                || potential == "f32"
+                                || potential == "f64"
+                            {
                                 forced_type = Some(potential);
                                 let trimmed_value = processed_value[..start].trim().to_string();
                                 if trimmed_value.is_empty() {
@@ -291,7 +353,10 @@ pub fn parse2(
                         } else if let Ok(val) = processed_value.parse::<f64>() {
                             collected_vars.push((var_name.clone(), "f64"));
                             ast.push(AST::Var(Variables::F64(var_name_static, val)));
-                        } else if collected_vars.iter().any(|(name, _)| name == &processed_value) {
+                        } else if collected_vars
+                            .iter()
+                            .any(|(name, _)| name == &processed_value)
+                        {
                             collected_vars.push((var_name.clone(), "ref"));
                             ast.push(AST::Var(Variables::REF(var_name_static, processed_value)));
                         } else {
@@ -306,7 +371,15 @@ pub fn parse2(
             collected_errors.push(ErrTypes::UnexpectedToken(*line));
         }
         _ => {
-            parse3(token, token_iter, ast, code, collected_vars, collected_errors, line);
+            parse3(
+                token,
+                token_iter,
+                ast,
+                code,
+                collected_vars,
+                collected_errors,
+                line,
+            );
         }
     }
 }
